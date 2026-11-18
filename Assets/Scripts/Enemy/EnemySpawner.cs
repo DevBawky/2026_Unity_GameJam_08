@@ -62,6 +62,11 @@ public class EnemySpawner : MonoBehaviour
         stageNumber = cartStations.StageNumber;
         elapsed = 0f;
         nextWave = 0;
+        ClearEnemies();
+    }
+
+    public void ClearEnemies()
+    {
         foreach (var enemy in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
             if (enemy.IsSpawned) enemy.NetworkObject.Despawn(true);
         foreach (var arrow in FindObjectsByType<Arrow>(FindObjectsSortMode.None))

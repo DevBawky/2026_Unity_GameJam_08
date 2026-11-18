@@ -177,7 +177,7 @@ public sealed class CartStations : NetworkBehaviour
         if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
         princeAnxiety = Mathf.Clamp01(princeAnxiety + anxietyPerSecond * Time.deltaTime);
         princessAnxiety = Mathf.Clamp01(princessAnxiety + anxietyPerSecond * Time.deltaTime);
-        if (princeAnxiety >= 1f || princessAnxiety >= 1f)
+        if (!DevInvincible && (princeAnxiety >= 1f || princessAnxiety >= 1f))
         {
             FailStage("PASSENGER ESCAPED");
             return;
@@ -366,7 +366,7 @@ public sealed class CartStations : NetworkBehaviour
     public void ReceiveCollision(float damage)
     {
         if (!IsServer || !Running) return;
-        durability = Mathf.Max(0f, durability - Mathf.Max(0f, damage));
+        if (!DevInvincible) durability = Mathf.Max(0f, durability - Mathf.Max(0f, damage));
         if (damage >= shellHoldDamageThreshold) ApplyImpact();
         AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength);
         if (StageDistance >= wheelLossMinDistance && !wheelDetached && Random.value < wheelLossChance) DetachWheel();
@@ -545,6 +545,14 @@ public sealed class CartStations : NetworkBehaviour
         cameraRig.Shake(shake,duration);
         if (NetworkPlayer.LocalPlayer != null) NetworkPlayer.LocalPlayer.Cannon.ApplyImpact(aim,duration);
     }
+    // 개발자 패널(F1) 전용. 서버에서만 동작한다.
+    public bool DevInvincible { get; set; }
+    public void DevRepair() { if (!IsServer) return; durability = MaxDurability; if (wheelDetached) RepairWheel(); Refresh(); }
+    public void DevCalm() { if (!IsServer) return; princeAnxiety = princessAnxiety = 0f; Refresh(); }
+    public void DevRefillShells() { if (!IsServer) return; shellsInPile = StartShellsInPile; loaded = true; Refresh(); }
+    public void DevClearStage() { if (IsServer && flow == StageFlow.Running) BeginUpgradeSelection(); }
+    public void DevFail() { if (IsServer) FailStage("DEV FAIL"); }
+
     private void Refresh()
     {
         Publish();
