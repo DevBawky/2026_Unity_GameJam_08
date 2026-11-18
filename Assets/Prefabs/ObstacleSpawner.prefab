@@ -51,10 +51,13 @@ MonoBehaviour:
   - {fileID: 8006847307704388264, guid: b7ec9cf3fb1ced444903c50932266376, type: 3}
   - {fileID: 5925149844747649662, guid: 55360678debb48641927acd929d2f563, type: 3}
   - {fileID: 5925149844747649662, guid: 87e6c9b8c3060554f91f8f417101fef7, type: 3}
-  baseGap: 76
+  warningPrefab: {fileID: 7654902377544819746, guid: a97fd4a99953e3b4d902073e1f2d42ed, type: 3}
+  firstWarningDistance: 42
+  warningSeconds: 4
+  baseGap: 138
   gapPerStage: 4
-  minGap: 32
-  randomGap: 23
+  minGap: 125
+  randomGap: 12
   spawnDistance: 9.5
-  spawnSideRange: 4
+  outerLaneY: 2
   collisionHeightFraction: 0.65

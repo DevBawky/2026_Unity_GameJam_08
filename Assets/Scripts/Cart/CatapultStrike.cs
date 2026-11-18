@@ -19,6 +19,8 @@ public struct CatapultState : INetworkSerializeByMemcpy, IEquatable<CatapultStat
 public sealed class CatapultStrike : NetworkBehaviour
 {
     [SerializeField] private CartStations stations;
+    [Tooltip("도로 장애물과 겹치지 않게 발사 시점·착탄 쪽을 정할 때 쓴다. 비어 있으면 무시")]
+    [SerializeField] private ObstacleSpawner obstacles;
 
     [Header("Visual (프리팹 자식)")]
     [SerializeField] private SpriteRenderer warning;
@@ -127,8 +129,19 @@ public sealed class CatapultStrike : NetworkBehaviour
         State.Value = s;
     }
 
+    // 착탄까지 남은 시간. 날아가는 중이 아니면 false (ObstacleSpawner가 소환을 미룰지 볼 때 쓴다).
+    public bool Airborne(out float landIn)
+    {
+        CatapultState s = State.Value;
+        landIn = flightTime - s.Time;
+        return s.Active && !s.Landed;
+    }
+
+    // 장애물과 겹치면 발사하지 않고 돌아간다. Simulate가 다음 프레임에 다시 시도한다(웹판 advanceCatapult).
     private void Launch()
     {
+        // 착탄이 장애물의 마차 앞 통과와 겹치면 미룬다.
+        if (obstacles != null && obstacles.StrikeOverlapsObstacle(flightTime)) return;
         CartMotion cart = stations.Cart;
         float halfHeight = stations.CartBody.bounds.extents.y;
         float offset = Random.Range(offsetRange.x, offsetRange.y) * halfHeight;
@@ -138,6 +151,16 @@ public sealed class CatapultStrike : NetworkBehaviour
         float side = Random.value < 0.5f ? 1f : -1f;
         if (cart.LateralLimit - cartY < clearance) side = 1f;
         else if (cartY + cart.LateralLimit < clearance) side = -1f;
+        // 앞에 장애물이 있으면 바위와 장애물을 함께 피할 차선을 남긴다. 안 되면 반대쪽, 둘 다 안 되면 미룬다.
+        if (obstacles != null && obstacles.HasThreatAhead)
+        {
+            float rockClearance = halfHeight + hitRadius.y;
+            if (!obstacles.HasEscapeLane(cartY + side * offset, rockClearance))
+            {
+                if (!obstacles.HasEscapeLane(cartY - side * offset, rockClearance)) return;
+                side = -side;
+            }
+        }
 
         State.Value = new CatapultState
         {
