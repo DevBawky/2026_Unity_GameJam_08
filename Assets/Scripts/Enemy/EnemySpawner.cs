@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 스폰 영역 중심에 둔다(카메라 최대 범위 밖). 스테이지 시작부터 경과 시간이 웨이브 startTime을 지나면
+// 스폰 영역 중심에 둔다(카메라 최대 범위 밖). 스테이지 시작부터 경과 시간이 웨이브 waveStartTime을 지나면
 // 그 웨이브의 몬스터를 한 프레임에 전부 영역 안 무작위 위치에 소환한다.
 public class EnemySpawner : MonoBehaviour
 {
@@ -14,7 +14,7 @@ public class EnemySpawner : MonoBehaviour
     void Update()
     {
         elapsed += Time.deltaTime;
-        while (nextWave < stage.waves.Count && stage.waves[nextWave].startTime <= elapsed)
+        while (nextWave < stage.waves.Count && stage.waves[nextWave].waveStartTime <= elapsed)
             SpawnWave(stage.waves[nextWave++]);
     }
 
