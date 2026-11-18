@@ -48,7 +48,7 @@ public sealed class CannonAim : MonoBehaviour
     private void Update()
     {
         bool active=actor!=null && actor.IsSpawned && actor.Assigned.Value;
-        bool aiming=active && CartStations.Running && (actor.Local ? timing.IsCannonFocus : (actor.TaskState.Value.Action==(int)StationAction.Cannon && CartStations.Instance.HoldsStation(StationAction.Cannon,actor)) || (CartStations.Instance.IsFiring && CartStations.Instance.Gunner.Value==actor.OwnerClientId)) && muzzle!=null;
+        bool aiming=active && CartStations.Running && (actor.Local ? timing.IsCannonFocus : (actor.TaskState.Value.Action==(int)StationAction.Cannon && CartStations.Instance.HoldsStation(StationAction.Cannon,actor)) || (CartStations.Instance.IsFiring && CartStations.Instance.Gunner.Value==actor.NetworkObjectId)) && muzzle!=null;
         if (aimLine != null) aimLine.enabled = aiming;
         if (crosshair != null) crosshair.enabled = aiming;
         if (!aiming)
@@ -60,8 +60,9 @@ public sealed class CannonAim : MonoBehaviour
 
         if (actor.Local) ReadInput();
         else direction=actor.Aim.Value;
+        float fuseWobble = CartStations.Instance.IsFiring ? Mathf.Sin(Time.time * 13f) * 3f / (1 + CartRules.Active.stabilizer.amount * CartStations.Instance.Stabilizer.Value) : 0;
         float jitter = impactTime > 0f ? Random.Range(-impactDegrees, impactDegrees) * (impactTime / impactDuration) : 0f;
-        displayedDirection = Quaternion.Euler(0f, 0f, jitter) * direction;
+        displayedDirection = Quaternion.Euler(0f, 0f, jitter + fuseWobble) * direction;
         impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
 
         if (actor.Local && Time.unscaledTime>=nextAimSend && (sentAim-displayedDirection).sqrMagnitude>0.0001f)
@@ -79,12 +80,18 @@ public sealed class CannonAim : MonoBehaviour
 
     private void ReadInput()
     {
+        if (actor.SecondLocal)
+        {
+            var keys=Keyboard.current;
+            if (keys!=null) SetDirection(new Vector2((keys.rightArrowKey.isPressed?1:0)-(keys.leftArrowKey.isPressed?1:0),(keys.upArrowKey.isPressed?1:0)-(keys.downArrowKey.isPressed?1:0)));
+            return;
+        }
         Vector2 input = Vector2.zero;
         if (aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.Direction.sqrMagnitude > MinInputSqr)
             input = aimJoystick.Direction;
-        else if (Gamepad.current != null && Gamepad.current.rightStick.ReadValue().sqrMagnitude > MinInputSqr)
-            input = Gamepad.current.rightStick.ReadValue();
-        else if (Keyboard.current != null)
+        else if (Gamepad.current != null && Gamepad.current.leftStick.ReadValue().sqrMagnitude > MinInputSqr)
+            input = Gamepad.current.leftStick.ReadValue();
+        else if (Keyboard.current != null && LobbySession.LocalSeats != 2)
             input = new Vector2((Keyboard.current.rightArrowKey.isPressed ? 1 : 0) - (Keyboard.current.leftArrowKey.isPressed ? 1 : 0),
                 (Keyboard.current.upArrowKey.isPressed ? 1 : 0) - (Keyboard.current.downArrowKey.isPressed ? 1 : 0));
 

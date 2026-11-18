@@ -23,6 +23,12 @@ public sealed class LobbyRoster : NetworkBehaviour
     public NetworkList<LobbyPlayerInfo> Players;
     public NetworkVariable<FixedString64Bytes> Code = new();
     public NetworkVariable<bool> Starting = new(false);
+    [Rpc(SendTo.NotServer,InvokePermission=RpcInvokePermission.Server)]
+    public void CheckpointRpc(byte[] bytes) => LobbySession.Remember(bytes);
     private void Awake() { Players = new NetworkList<LobbyPlayerInfo>(); }
-    public override void OnNetworkSpawn() { DontDestroyOnLoad(gameObject); }
+    public override void OnNetworkSpawn()
+    {
+        DontDestroyOnLoad(gameObject);
+        FindFirstObjectByType<LobbySession>().BindRoster(this);
+    }
 }

@@ -22,6 +22,20 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<int> Slot = new(-1);
     public NetworkVariable<FixedString64Bytes> Nickname = new();
     public NetworkVariable<bool> Carrying = new(false);
+    public NetworkVariable<bool> CookingHeld = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<Vector2> DriverAim = new(new Vector2(.6f, .5f), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<int> Emote = new();
+    public NetworkVariable<double> EmoteTime = new(-10);
+    public bool SecondLocal => Local && LobbySession.LocalSeats == 2 && Slot.Value == 1;
+    public bool TouchHeld {get; set;}
+    public NetworkVariable<bool> SpareWheel = new();
+    public NetworkVariable<bool> Snack = new();
+    // The completed station becomes available to this player again after stepping outside it.
+    public NetworkVariable<int> CompletedStation = new(-1);
+    public NetworkVariable<float> CookProgress = new();
+    public bool InCellar => transform.localPosition.y > CellarOffset * 0.5f;
+    public const float CellarOffset = 64f;
+    public bool HandsFree => !Carrying.Value && !SpareWheel.Value && !Snack.Value && !CartStations.Instance.IsCarryingChild(this);
     public NetworkVariable<bool> Holding = new(false);
     public NetworkVariable<double> HoldDeadline = new();
     public NetworkVariable<PlayerTaskState> TaskState = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -37,20 +51,17 @@ public sealed class NetworkPlayer : NetworkBehaviour
     [SerializeField] private Image emoteIcon;
     [Tooltip("캐릭터 옆 이모티콘 말풍선 표시 시간(초)")]
     [SerializeField, Min(0f)] private float emoteBubbleSeconds = 2.6f;
-    private const float EmoteCooldown = 1f;
-    // 모든 클라이언트에서 이모티콘이 표시될 때 (보낸 플레이어, 이모티콘 번호).
+    // 모든 클라이언트에서 이모티콘을 받았을 때 (보낸 플레이어, 0부터 시작하는 이모티콘 번호).
     public static event Action<NetworkPlayer, int> Emoted;
     private float emoteHideTime;
-    private float nextEmoteTime;
-    private double lastEmoteTime = double.MinValue;
     private double lastActionTime = -1;
     private float nextRequestTime;
     private float nextReservationTime;
+    private int shownEmote;
     private bool shown;
     private bool carryingShown;
     private FixedString64Bytes shownName;
     public bool Local => IsSpawned && Assigned.Value && IsOwner;
-    public bool CanEmote => Local && Time.unscaledTime >= nextEmoteTime && CartStations.EmoteAllowed;
     public static NetworkPlayer LocalPlayer { get; private set; }
     public PlayerTiming Timing => timing;
     public CannonAim Cannon => cannon;
@@ -64,13 +75,19 @@ public sealed class NetworkPlayer : NetworkBehaviour
         carriedShell.SetActive(false);
         // mainGame처럼 말풍선을 아직 배치하지 않은 씬에서는 팀 알림만 뜬다.
         if (emoteBubble != null) emoteBubble.SetActive(false);
+        EmoteTime.OnValueChanged += EmoteReceived;
+    }
+    // Emote(1~7)가 EmoteTime보다 먼저 선언돼 있어 이 시점에 이미 새 값이다.
+    private void EmoteReceived(double before, double after)
+    {
+        if (Emote.Value > 0) Emoted?.Invoke(this, Emote.Value - 1);
     }
     public override void OnGainedOwnership() => RefreshAssignment();
     public override void OnLostOwnership() { if (LocalPlayer == this) LocalPlayer = null; }
     private void AssignmentChanged(bool before, bool after) => RefreshAssignment();
     private void RefreshAssignment()
     {
-        if (Local) LocalPlayer = this;
+        if (Local && !SecondLocal) LocalPlayer = this;
         else if (LocalPlayer == this) LocalPlayer = null;
     }
     private void Update()
@@ -81,7 +98,21 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (carryingShown != carrying) { carryingShown = carrying; carriedShell.SetActive(carrying); }
         if (emoteBubble != null && emoteBubble.activeSelf && (!active || Time.unscaledTime >= emoteHideTime)) emoteBubble.SetActive(false);
         if (!active) return;
-        if (shownName != Nickname.Value) { shownName = Nickname.Value; nameLabel.text = shownName.ToString(); }
+        if (IsServer && CompletedStation.Value >= 0 && !timing.IsInActionArea((StationAction)CompletedStation.Value))
+            CompletedStation.Value = -1;
+        if (Local)
+        {
+            var keys = UnityEngine.InputSystem.Keyboard.current;
+            bool pressed = SecondLocal ? keys?.enterKey.isPressed == true : keys?.spaceKey.isPressed == true || UnityEngine.InputSystem.Gamepad.current?.buttonSouth.isPressed == true || UnityEngine.InputSystem.Gamepad.current?.rightTrigger.isPressed == true;
+            bool cooking = timing.IsAt(StationAction.Kitchen) && (pressed || TouchHeld);
+            if (cooking != CookingHeld.Value) CookingHeld.Value = cooking;
+        }
+        bool showEmote=Emote.Value>0 && NetworkManager.ServerTime.Time-EmoteTime.Value<3;
+        if (shownName != Nickname.Value || shownEmote != (showEmote ? Emote.Value : 0))
+        {
+            shownName=Nickname.Value; shownEmote=showEmote ? Emote.Value : 0;
+            nameLabel.text=shownName.ToString()+(showEmote ? " · "+CrewControls.Messages[shownEmote-1] : "");
+        }
         if (IsServer && CartStations.Running && Holding.Value && NetworkManager.ServerTime.Time >= HoldDeadline.Value)
             CartStations.Instance.ResolveShellHold(this, false);
     }
@@ -97,14 +128,34 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public void Release()
     {
         if (!IsServer) return;
-        CartStations.Instance.ReleaseStations(OwnerClientId);
+        CartStations.Instance.ReleaseStations(NetworkObjectId);
+        if (CartStations.Instance.Votes.Count > Slot.Value) CartStations.Instance.Votes[Slot.Value] = -1;
         Assigned.Value = false;
-        Carrying.Value = Holding.Value = false;
-        NetworkObject.RemoveOwnership();
+        CartStations.Instance.TallyChoices();
+        Holding.Value = false;
+        CookProgress.Value = 0;
+        CompletedStation.Value = -1;
+        if (IsSpawned && OwnerClientId != NetworkManager.ServerClientId) NetworkObject.RemoveOwnership();
     }
+    public void SendEmote(int id) { if(Local) EmoteRpc(id); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void EmoteRpc(int id)
+    {
+        if(!Assigned.Value || id<1 || id>7 || NetworkManager.ServerTime.Time-EmoteTime.Value<0.3) return;
+        Emote.Value=id; EmoteTime.Value=NetworkManager.ServerTime.Time;
+    }
+
+    public void SubmitChoice(int choice)
+    {
+        var game = CartStations.Instance;
+        if (Local && game != null) VoteRpc(choice, game.ShopRound.Value, game.StageNumber);
+    }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void VoteRpc(int choice, int round, int stage) => CartStations.Instance.ReceiveChoice(this, choice, round, stage);
+
     public void RequestStation(int action)
     {
-        if (!Local || Time.unscaledTime < nextReservationTime) return;
+        if (!Local || (action >= 0 && Time.unscaledTime < nextReservationTime)) return;
         nextReservationTime = Time.unscaledTime + 0.2f;
         ReserveRpc(action);
     }
@@ -117,40 +168,27 @@ public sealed class NetworkPlayer : NetworkBehaviour
     {
         if (!Local || (!hold && Time.unscaledTime < nextRequestTime)) return;
         if (!hold) nextRequestTime = Time.unscaledTime + 0.12f;
-        ActionRpc(action, success, hold);
+        var stations = CartStations.Instance;
+        var care = TimingArea.IsRoyal(action) ? stations.AvailableCare(action, this) : CareAction.None;
+        ActionRpc(action, success, hold, stations.StageNumber, care, DriverAim.Value);
     }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void ActionRpc(StationAction action, bool success, bool hold)
+    private void ActionRpc(StationAction action, bool success, bool hold, int stage, CareAction care, Vector2 whipAim)
     {
         var stations = CartStations.Instance;
-        if (!Assigned.Value || stations == null || !CartStations.Running) return;
+        if (!Assigned.Value || stations == null || stage != stations.StageNumber || !CartStations.Running) return;
         if (hold) { if (Holding.Value) stations.ResolveShellHold(this, success); return; }
         if (Holding.Value) return;
         double now = NetworkManager.ServerTime.Time;
         if (now-lastActionTime < 0.12 || !timing.IsInActionArea(action) || !stations.CanUse(action,this)) return;
+        if (TimingArea.IsRoyal(action) && care != stations.AvailableCare(action, this)) return;
         lastActionTime = now;
         if (action == StationAction.ShellDeposit) stations.Enter(action,this);
         else if (action == StationAction.Cannon) stations.Ignite(this);
+        else if (success && action == StationAction.Driver) stations.StrikeHorse(whipAim);
         else if (success) stations.Succeed(action,this);
         else stations.Fail(action);
     }
-    public void SendEmote(int key)
-    {
-        if (!CanEmote || key < 0 || key >= EmoteSet.MaxCount) return;
-        nextEmoteTime = Time.unscaledTime + EmoteCooldown;
-        EmoteRpc(key);
-    }
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void EmoteRpc(int key)
-    {
-        double now = NetworkManager.ServerTime.Time;
-        // 클라이언트 시계와의 오차만큼 쿨다운을 조금 느슨하게 본다.
-        if (!Assigned.Value || key < 0 || key >= EmoteSet.MaxCount ||!CartStations.EmoteAllowed || now - lastEmoteTime < EmoteCooldown - 0.1) return;
-        lastEmoteTime = now;
-        ShowEmoteRpc(key);
-    }
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ShowEmoteRpc(int key) => Emoted?.Invoke(this, key);
     // TeamEmotes가 아이콘을 골라 호출한다.
     public void ShowEmoteBubble(Sprite icon)
     {
@@ -169,6 +207,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         Assigned.OnValueChanged -= AssignmentChanged;
+        EmoteTime.OnValueChanged -= EmoteReceived;
         if (LocalPlayer == this) LocalPlayer = null;
     }
 }

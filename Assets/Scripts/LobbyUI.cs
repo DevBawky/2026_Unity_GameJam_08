@@ -19,8 +19,6 @@ public sealed class LobbyUI : MonoBehaviour
     {
         nickname.text = PlayerPrefs.GetString("Lobby.Nickname", "");
         ShowTitle();
-        settingsPanel.SetActive(false);
-        loadingPanel.SetActive(false);
     }
     private void Update()
     {
@@ -66,4 +64,6 @@ public sealed class LobbyUI : MonoBehaviour
         GUIUtility.systemCopyBuffer = session.Roster.Code.Value.ToString();
         copiedUntil = Time.unscaledTime + 2f;
     }
+    public void PracticeSolo() => session.StartPractice(1);
+    public void PracticePair() => session.StartPractice(2);
 }

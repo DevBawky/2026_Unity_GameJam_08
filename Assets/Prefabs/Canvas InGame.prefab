@@ -1,97 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &550455371504482494
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8637892288599024369}
-  - component: {fileID: 4998651868218734718}
-  - component: {fileID: 7599979155501476722}
-  - component: {fileID: 4314238229937211650}
-  m_Layer: 5
-  m_Name: Panel | Horse_Left
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &8637892288599024369
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 550455371504482494}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4095894912055479468}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.1, y: 0.2}
-  m_AnchorMax: {x: 0.23, y: 0.4}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &4998651868218734718
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 550455371504482494}
-  m_CullTransparentMesh: 1
---- !u!114 &7599979155501476722
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 550455371504482494}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.8315603, g: 0.53396225, b: 1, a: 0.4392157}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &4314238229937211650
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 550455371504482494}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 0
-  action: 1
-  circularTargetAngle: 60
-  circularSpeed: 180
 --- !u!1 &3145671450888821725
 GameObject:
   m_ObjectHideFlags: 0
@@ -180,10 +88,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 1
   action: 3
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &3715669901632687764
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,10 +180,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 1
   action: 5
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &3777364077164688692
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,10 +272,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 1
   action: 4
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &4132244187752349562
 GameObject:
   m_ObjectHideFlags: 0
@@ -381,7 +289,7 @@ GameObject:
   - component: {fileID: 7253480705557160445}
   - component: {fileID: 3528168978506629175}
   m_Layer: 5
-  m_Name: Panel | Horse_Right
+  m_Name: "\uB9C8\uBD80\uC11D"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -403,7 +311,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.1, y: 0.6}
   m_AnchorMax: {x: 0.23, y: 0.8}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -0.32000017, y: -1}
   m_SizeDelta: {x: -0.000000014901161, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6512667146364984602
@@ -456,10 +364,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 0
   action: 0
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &6112022490218517002
 GameObject:
   m_ObjectHideFlags: 0
@@ -548,10 +456,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 0
   action: 6
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &6212022342887672199
 GameObject:
   m_ObjectHideFlags: 0
@@ -584,7 +492,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2998084670886035330}
-  - {fileID: 8637892288599024369}
   - {fileID: 6372352742522879576}
   - {fileID: 8199637023958031708}
   - {fileID: 3351199354622641078}
@@ -709,10 +616,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 1
   action: 7
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
 --- !u!1 &6837296573667854295
 GameObject:
   m_ObjectHideFlags: 0
@@ -801,7 +708,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58caf3d02d3b49169d56328f43162c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimingArea
-  pattern: 0
   action: 2
   circularTargetAngle: 60
   circularSpeed: 180
+  profile: {fileID: 0}
