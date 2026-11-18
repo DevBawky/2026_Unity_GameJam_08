@@ -1,6 +1,9 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// 화면 조이스틱. 누른 손가락 하나만 따라가며 Direction(-1~1)을 내고, 손을 떼면 Released를 알린다.
+// 에디터에서는 F6으로 모바일 모드를 켜고 끌 수 있다.
 public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [SerializeField] private RectTransform handle;
@@ -9,7 +12,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private RectTransform area;
     private int pointerId = int.MinValue;
 
-    public event System.Action Released;
+    public event Action Released;
     public Vector2 Direction { get; private set; }
     public bool IsMobileMode { get; private set; }
 

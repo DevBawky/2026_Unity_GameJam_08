@@ -1,21 +1,9 @@
 using UnityEngine;
 
-public class WorldScroller : MonoBehaviour
+// 월드 루트(길·배경)에 붙는다. 마차 진행에 맞춰 좌우로만 흐른다. 위아래 이동은 마차(CartMotion)가 직접 한다.
+public sealed class WorldScroller : MonoBehaviour
 {
     [SerializeField] private CartMotion cart;
-    private Transform roadSurface;
-    private void Awake() { roadSurface = transform.Find("RoadSurface"); }
-    private void Update()
-    {
-        if (cart == null) return;
-        float angle = cart.Heading * Mathf.Deg2Rad;
-        transform.position += new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (cart.Speed * 5f * Time.deltaTime);
-        // The uniform road must cover the camera even after the scrolling tiles have looped.
-        if (roadSurface != null && Camera.main != null)
-        {
-            Vector3 roadPosition = roadSurface.position;
-            roadPosition.x = Camera.main.transform.position.x;
-            roadSurface.position = roadPosition;
-        }
-    }
+
+    private void Update() => transform.position += cart.ScrollVelocity * Time.deltaTime;
 }

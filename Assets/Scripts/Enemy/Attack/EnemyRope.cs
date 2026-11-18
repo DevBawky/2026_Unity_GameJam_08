@@ -19,6 +19,9 @@ public class EnemyRope : MonoBehaviour
 
     private LineRenderer line;
     private RopeSkillSO skill;
+    private Transform cart;
+    private Vector3 bodyOffset;
+    private Vector3 endOffset;
 
     private void Awake()
     {
@@ -26,15 +29,25 @@ public class EnemyRope : MonoBehaviour
         line.enabled = false;
     }
 
-    // 마차는 화면에 고정이고 로프를 건 추격조도 멈추므로 줄 위치는 한 번만 잡는다.
-    public void Attach(RopeSkillSO ropeSkill, Vector3 cartPoint)
+    // 마차가 위아래로 움직이므로 추격조와 줄 끝을 마차 기준 위치로 붙잡아 같이 움직인다.
+    public void Attach(RopeSkillSO ropeSkill, Transform cartTransform, Vector3 cartPoint)
     {
         skill = ropeSkill;
+        cart = cartTransform;
+        bodyOffset = transform.position - cart.position;
+        endOffset = cartPoint - cart.position;
         Attached = true;
         attached.Add(this);
-        line.SetPosition(0, transform.position);
-        line.SetPosition(1, cartPoint);
         line.enabled = true;
+        LateUpdate();
+    }
+
+    private void LateUpdate()
+    {
+        if (!Attached) return;
+        transform.position = cart.position + bodyOffset;
+        line.SetPosition(0, transform.position);
+        line.SetPosition(1, cart.position + endOffset);
     }
 
     private void OnDisable()

@@ -34,6 +34,9 @@ public class UnitSO : ScriptableObject
     [Min(0)] public float hp = 1f;
 
     [Header("궁수")]
+    [Tooltip("화면 오른쪽 끝에서 이만큼(m) 안쪽에 들어오면 멈춰서 쏜다.\n기준은 스테이지 시작 때의 기본 카메라 화면 (대포 조준 확대와 무관)")]
+    [Min(0)] public float screenInset = 1f;
+
     [Tooltip("화살 프리팹 (Arrow 컴포넌트 필요)")]
     public GameObject arrowPrefab;
 
