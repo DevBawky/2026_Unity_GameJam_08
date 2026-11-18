@@ -1,0 +1,588 @@
+fileFormatVersion: 2
+guid: 18bc66fe877ff4b42b0ceaaf5f845afa
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3269039262996931220
+    second: cannon-impact_0
+  - first:
+      213: -651204600460165290
+    second: cannon-impact_1
+  - first:
+      213: 1580073101857780725
+    second: cannon-impact_2
+  - first:
+      213: -4583046957454524690
+    second: cannon-impact_3
+  - first:
+      213: -6031188442612510680
+    second: cannon-impact_4
+  - first:
+      213: -3717148845366876692
+    second: cannon-impact_5
+  - first:
+      213: 9113090870286255047
+    second: cannon-impact_6
+  - first:
+      213: 5862627676613168482
+    second: cannon-impact_7
+  - first:
+      213: 2853660578651977234
+    second: cannon-impact_8
+  - first:
+      213: -4284466539199491450
+    second: cannon-impact_9
+  - first:
+      213: -5456322247088692184
+    second: cannon-impact_10
+  - first:
+      213: 1998542295640403729
+    second: cannon-impact_11
+  - first:
+      213: -5416988707262824144
+    second: cannon-impact_12
+  - first:
+      213: 8484556014865955703
+    second: cannon-impact_13
+  - first:
+      213: 8986089742861914906
+    second: cannon-impact_14
+  - first:
+      213: -1373979136147483528
+    second: cannon-impact_15
+  - first:
+      213: 5231957318664490464
+    second: cannon-impact_16
+  - first:
+      213: -4919825458164570347
+    second: cannon-impact_17
+  - first:
+      213: -2359470996647082299
+    second: cannon-impact_18
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0.225, y: 0.44244605}
+  spritePixelsToUnits: 200
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: cannon-impact_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2780
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 46ac269c14439c74a9c30112af23a98f
+      internalID: -907330891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_01
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 2780
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ae2e57c7eb15fa94a9ff362a12fee91a
+      internalID: -640418657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_02
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 2780
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e839747dd7ac118488bebf7ba107a2d8
+      internalID: -729895295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_03
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2224
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 33912ed48368f1f48b22b4522dac497b
+      internalID: -422438963
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_04
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 2224
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2eec10cfc16552946aa5c649ef616df7
+      internalID: 178838038
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_05
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 2224
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 268a079d5a134854e87e1af41a9757b2
+      internalID: 256734488
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_06
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1668
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7346ec4adcba8a246b967cec50a1f3d6
+      internalID: -700162019
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_07
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 1668
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 87bb6df35c57a3f43b5004d7ee68fea7
+      internalID: 248601708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_08
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 1668
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aa97bb98fd8c5bc41bcd8d8be9a6cb3e
+      internalID: 507509974
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_09
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1112
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c3b7d84c2cb57fc48811fa323cdf5c6e
+      internalID: 1132143909
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_10
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 1112
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1c19e94f4d2a2ec48a28b79657e2690f
+      internalID: -5456322247088692184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_11
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 1112
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bfe7955e285bae7438c5d3dfe66318f5
+      internalID: 1998542295640403729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 556
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fc37153f7107fe449a3c64167d6f954d
+      internalID: -5416988707262824144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_13
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 556
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ec6fd445296c55645a522f58852d836b
+      internalID: 8484556014865955703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_14
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 556
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 49bf4330c71781b4bb90c9d89c783c21
+      internalID: 8986089742861914906
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_15
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 74a98a81eee925f45a162c0cbaa24ac5
+      internalID: -1373979136147483528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_16
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 0
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9e5233482ffd9dc4e9f2191bd4cc80ff
+      internalID: 5231957318664490464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-impact_17
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 0
+        width: 640
+        height: 556
+      alignment: 9
+      pivot: {x: 0.225, y: 0.44244605}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ee937547cf6624b41bceaf5a07b373da
+      internalID: -4919825458164570347
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 906000a6b407b8140af5cc9c6509d07b
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      cannon-impact_00: -907330891
+      cannon-impact_01: -640418657
+      cannon-impact_02: -729895295
+      cannon-impact_03: -422438963
+      cannon-impact_04: 178838038
+      cannon-impact_05: 256734488
+      cannon-impact_06: -700162019
+      cannon-impact_07: 248601708
+      cannon-impact_08: 507509974
+      cannon-impact_09: 1132143909
+      cannon-impact_10: -5456322247088692184
+      cannon-impact_11: 1998542295640403729
+      cannon-impact_12: -5416988707262824144
+      cannon-impact_13: 8484556014865955703
+      cannon-impact_14: 8986089742861914906
+      cannon-impact_15: -1373979136147483528
+      cannon-impact_16: 5231957318664490464
+      cannon-impact_17: -4919825458164570347
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

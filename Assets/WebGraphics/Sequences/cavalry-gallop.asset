@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: cavalry-gallop
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: 648900417, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: -2090938680, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: -439254514, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 1498623308, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 1388309853, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 406524617, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 1736053921, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: -640243451, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 1554267627, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 937200762, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: 7101342717901592353, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  - {fileID: -36830296227875290, guid: 3c3b18b743e34044fab081a27a27b287, type: 3}
+  frameStarts:
+  - 0
+  - 0.02358553
+  - 0.04717106
+  - 0.07075659
+  - 0.09434212
+  - 0.117927656
+  - 0.14151318
+  - 0.16509871
+  - 0.18868424
+  - 0.21226978
+  - 0.23585531
+  - 0.25944084
+  duration: 0.28302637

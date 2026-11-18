@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: cannon-impact
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: -907330891, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -640418657, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -729895295, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -422438963, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 178838038, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 256734488, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -700162019, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 248601708, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 507509974, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 1132143909, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -5456322247088692184, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 1998542295640403729, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -5416988707262824144, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 8484556014865955703, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 8986089742861914906, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -1373979136147483528, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: 5231957318664490464, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -4919825458164570347, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  frameStarts:
+  - 0
+  - 0.16666667
+  - 0.33333334
+  - 0.5
+  - 0.6666667
+  - 0.8333333
+  - 1
+  - 1.1666666
+  - 1.3333334
+  - 1.5
+  - 1.6666666
+  - 1.8333334
+  - 2
+  - 2.1666667
+  - 2.3333333
+  - 2.5
+  - 2.6666667
+  - 2.8333333
+  duration: 3
