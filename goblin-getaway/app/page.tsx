@@ -1,25 +1,56 @@
 import GameRuntime from "./game-runtime";
-import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, Maximize, Move, Play, Settings, Shield, Sparkles, Users, Volume2, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, Play, Settings, Shield, Smile, Sparkles, TriangleAlert, Users, Volume2, X } from 'lucide-react';
 
-function JobPanel({slot}:{slot:string}){
- return <article className="job-panel" id={'job-'+slot} hidden>
-   <div className="work-dial" aria-label="원형 타이밍 게이지"><svg viewBox="0 0 100 100" aria-hidden="true">
-    <circle cx="50" cy="50" r="42" fill="none" stroke="#53605a" strokeWidth="8"/>
-    <circle className="work-arc" cx="50" cy="50" r="42" fill="none" stroke="var(--work)" strokeWidth="8" pathLength="100"/>
-    <g className="work-hand"><path d="m50 0 5 9-5 7-5-7z" stroke="#202923" fill="#fffbed" strokeWidth="1.4"/></g></svg>
-    <span className="dial-word">대기</span></div>
-   <div className="work-copy"><div className="work-meta"><b className="work-role"/><span className="work-zoom">4×</span></div><h3 className="work-title"/><div className="work-detail"/><small className="work-step"/></div>
-   <div className="work-input"><button type="button" className="work-do" data-work={slot}>행동</button><span className="work-help"/></div>
- </article>;
+function WorkHint({slot}:{slot:string}){
+ return <div className="work-hint hud-bubble" id={'work-hint-'+slot} hidden>
+  <span className="work-hint-text" aria-live="polite"/>
+  <small className="work-countdown" hidden/>
+  <div className="work-progress" hidden>
+   <span className="work-progress-name" hidden>조준률</span>
+   <progress className="work-progress-bar" aria-label="작업 진행도" max={1} value={0}/>
+   <strong className="work-progress-value" aria-hidden="true">0%</strong>
+  </div>
+ </div>;
+}
+function RoyalWatch({slot}:{slot:string}){
+ return <ul className="royal-watch" id={'royal-watch-'+slot} aria-label={slot.toUpperCase()+' 가까운 아이 상태'} hidden>
+  {['prince','princess'].map(id=><li key={id} data-royal={id} hidden><b/><span/><small/></li>)}
+ </ul>;
+}
+function TimingPrompt({slot}:{slot:string}){
+ const id='timing-'+slot;
+ return <section className="timing-prompt" id={id} role="group" aria-labelledby={id+'-label'} hidden>
+   <svg className="timing-ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <circle className="timing-track" cx="50" cy="50" r="43" fill="none"/>
+    <circle className="timing-band" cx="50" cy="50" r="43" fill="none" pathLength="100" strokeDasharray="0 100"/>
+    <g className="timing-needle"><path d="M50 1 56 8 50 18 44 8Z" strokeLinejoin="round"/></g>
+   </svg>
+   <strong className="timing-label hud-bubble" id={id+'-label'}/>
+   <small className="timing-feedback" hidden/>
+ </section>;
 }
 function CrewMember({id}:{id:string}){
  return <article className={'member '+id}><span className="member-id">{id.toUpperCase()}</span><div><strong id={id+'-crew-name'}>{id==='p1'?'내 졸개':'자동 동료'}</strong><p id={id+'-crew-job'}>출발 대기</p></div></article>;
 }
-function PadPair({id}:{id:string}){
- return <div className="pad-pair" id={'pads-'+id} hidden={id==='p2'}>
-   <div className="pad-wrap"><button className="stick move-stick" data-pad={id+'-move'} aria-label={id.toUpperCase()+' 이동 스틱'}><i><Move/></i></button><span>이동</span></div>
-   <div className="context"><div><b className="crew-id" id={id+'-ident'}>{id.toUpperCase()}</b><strong id={id+'-location'}>갑판</strong></div><small id={id+'-hint'}>고삐나 대포 작업대로 이동</small></div>
-   <div className="pad-wrap"><button id={id+'-ignite'} className="ignite" data-work={id} hidden>점화</button><span id={id+'-aim-label'}>방향 · 행동</span><button className="stick aim-stick" data-pad={id+'-aim'} aria-label={id.toUpperCase()+' 방향 스틱, 놓으면 행동'}><i><Crosshair/></i></button></div>
+function PlayerControls({id}:{id:string}){
+ return <div className="pad-pair" id={'pads-'+id} role="group" aria-label={id.toUpperCase()+' 조작'} hidden={id==='p2'}>
+   <div className="pad-wrap">
+    <button type="button" className="stick" id={id+'-stick'} data-mode="move" aria-label={id.toUpperCase()+' 이동 스틱'}>
+     <i aria-hidden="true"><Move className="move-glyph"/><Crosshair className="aim-glyph"/></i>
+    </button>
+    <span id={id+'-stick-label'} aria-hidden="true">이동</span>
+   </div>
+   <div className="context"><div><b className="crew-id" id={id+'-ident'}>{id.toUpperCase()}</b><strong id={id+'-location'}>갑판</strong></div><small id={id+'-hint'}>갑판 위 작업 원으로 이동</small></div>
+   <div className="station-buttons">
+    <button type="button" className="station-exit" id={id+'-exit'} data-exit={id} hidden><LogOut size={14} aria-hidden="true"/>이탈</button>
+    <div className="emote-controls">
+     <button type="button" className="emote-toggle" id={'emote-'+id} data-emote-toggle={id} aria-expanded="false" aria-controls={'emote-menu-'+id} aria-label="이모티콘">
+      <Smile size={19} aria-hidden="true"/>이모티콘
+     </button>
+     <div id={'emote-menu-'+id} className="emote-menu" role="group" aria-label="이모티콘 선택" hidden/>
+    </div>
+    <button type="button" className="station-action" id={id+'-action'} data-work={id} disabled>행동</button>
+   </div>
  </div>;
 }
 function SettingsMenu(){
@@ -32,6 +63,7 @@ function SettingsMenu(){
      <button data-view="status"><ChartNoAxesColumn/><span>작전 현황 · 탑승원 배치</span><ChevronRight/></button>
      <button data-view="guide"><BookOpen/><span>조작 가이드</span><ChevronRight/></button>
      <button data-view="traits"><Sparkles/><span>정비 카드 도감</span><ChevronRight/></button>
+     <button type="button" id="test-stop" hidden><LogOut aria-hidden="true"/><span>테스트 종료</span></button>
    </div>
  </section>;
 }
@@ -40,13 +72,13 @@ function StatusPanel(){
    <h2 className="modal-title">작전 현황</h2>
    <div className="stage-summary"><span id="chapter-no">챕터 1</span><strong id="chapter-name">왕국 국경 탈출</strong><span id="mode-label">1인 연습 모드</span></div>
    <div className="telemetry"><div className="metric-heading"><span id="stage-no">스테이지 1</span><strong id="stage-name">가시숲 고갯길</strong></div>
-   <div className="metric-heading"><span id="wave-no">웨이브 0 / 5</span><strong id="next-wave">다음 0:04</strong></div>
-   <div className="distance"><div className="metric-heading"><Flag/><span>남은 거리</span><strong id="dist">1,000 m</strong></div><div className="dist-line"><span id="bar"/></div><small id="stage-clock" className="stage-clock">주행 0 / 1,000 m · 0:00 경과</small></div>
+   <div className="metric-heading"><span id="wave-no">웨이브 0 / 5</span></div>
+   <div className="distance"><div className="metric-heading"><Flag/><span id="distance-label">남은 거리</span><strong id="dist">1,000 m</strong></div><div className="dist-line" id="status-distance-line"><span id="bar"/></div><small id="stage-clock" className="stage-clock">주행 0 / 1,000 m · 0:00 경과</small></div>
    <div className="metric-heading"><Shield/><span>마차 내구도</span><strong id="hp">100 / 100</strong></div>
    <div className="metric-heading"><Sparkles/><span>애정 포인트</span><strong id="affection-readout">0 AP</strong></div>
    <div className="metric-heading"><Gauge/><span>이동 속도</span><strong id="speed">0 m/s</strong></div></div>
    <h3>탑승원 배치</h3><div className="members">{['p1','p2','p3','p4'].map(id=><CrewMember id={id} key={id}/>)}</div>
-   <div className="cargo-readout"><span id="ammo-readout"/><span id="royal-readout"/><span id="wheel-readout"/></div>
+   <div className="cargo-readout"><span id="ammo-readout"/><span id="wheel-readout"/></div>
    <small className="game-version">그건 님이!!! · 프로토타입 0.7</small>
  </section>;
 }
@@ -55,18 +87,40 @@ export default function Home(){return <>
  <section className="monitor" id="monitor" aria-label="마차 탈출 작전 게임 화면">
   <div className="world"><canvas id="world" aria-label="왼쪽을 향해 달리는 마차와 뒤에서 쫓아오는 왕국군"/></div>
   <div className="play-tools">
-   <button id="start" className="primary"><Play size={17} fill="currentColor"/><span>작전 시작</span></button>
+   <button type="button" id="test-start" className="primary test-start">테스트 모드</button>
+   <button id="start" className="primary" data-mode="ready"><Play size={17} fill="currentColor"/><span>작전 시작</span></button>
    <button id="settings-button" className="gear" aria-label="환경설정" title="환경설정" aria-haspopup="dialog"><Settings size={20}/></button>
   </div>
-  <div className="play-info">
-   <div className="campaign-hud" id="campaign-hud" role="group" aria-label="작전 진행" hidden>
-    <div className="campaign-main"><span id="campaign-path"/><strong id="remaining-distance"/></div>
-    <div className="campaign-waves"><span id="campaign-wave"/><span id="campaign-next-wave"/></div>
+  <div className="campaign-hud" id="campaign-hud" role="group" aria-label="작전 진행" hidden>
+   <div className="campaign-summary"><span id="test-mode-label" className="test-mode-label" hidden>테스트 모드</span><strong id="remaining-distance"/><span id="campaign-wave"/></div>
+   <div className="campaign-route" id="campaign-route">
+    <progress className="campaign-progress" id="campaign-progress" max={100} value={0} aria-label="목적지까지 주행 진행도"/>
+    <svg className="campaign-wagon" viewBox="0 0 32 24" aria-hidden="true" focusable="false">
+     <path d="M4 8l4-5h13l4 5M22 15h5l3-3" fill="none" stroke="#4c3526" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+     <path d="M3 8h23l-3 10H6z" fill="#e8b473" stroke="#4c3526" strokeWidth="2" strokeLinejoin="round"/>
+     <path d="M8 12h13" stroke="#8e5c38" strokeWidth="1.5" strokeLinecap="round"/>
+     <circle cx="9" cy="19" r="3.4" fill="#6b503c" stroke="#3a2b26" strokeWidth="1.7"/>
+     <circle cx="21" cy="19" r="3.4" fill="#6b503c" stroke="#3a2b26" strokeWidth="1.7"/>
+    </svg>
    </div>
+  </div>
+  <div className="play-info">
    <div className="event" id="event" role="status"></div>
   </div>
-  <div className="controls" aria-label="트윈스틱 조작"><PadPair id="p1"/><PadPair id="p2"/></div>
-  <div className="work-panels" id="work-panels" hidden><JobPanel slot="p1"/><JobPanel slot="p2"/></div>
+  <div id="emote-notices" className="emote-notices" role="log" aria-label="팀원 소통" aria-live="polite" aria-relevant="additions"/>
+  <div className="timing-prompts">
+   <TimingPrompt slot="p1"/><TimingPrompt slot="p2"/>
+   <WorkHint slot="p1"/><WorkHint slot="p2"/>
+  </div>
+  <div className="catapult-alerts" aria-hidden="true">
+   {[0,1].map(pane=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
+  </div>
+  <div className="controls" role="group" aria-label="가상 조이스틱과 행동 버튼"><PlayerControls id="p1"/><PlayerControls id="p2"/></div>
+  <div className="work-panels" id="work-panels" hidden>
+   {['p1','p2'].map(slot=><div className="player-work" key={slot} id={'work-'+slot} hidden>
+    <RoyalWatch slot={slot}/>
+   </div>)}
+  </div>
  </section>
 </main>
 <dialog id="dialog" aria-label="게임 메뉴"><div className="dialog-head">

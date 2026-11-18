@@ -12,13 +12,15 @@ export const UPGRADE_CARDS = [
 ];
 
 export const REPORT_OPTIONS = [
-  {id:'care', label:'왕자와 공주의 상태 보고', description:'쌍둥이가 얼마나 편하게 이동했는지 보고합니다.'},
+  {id:'care', label:'왕자와 공주의 상태 보고', description:'쌍둥이의 착석, 관심, 울음 기록을 보고합니다.'},
   {id:'damage', label:'마차 피해 보고', description:'현재 내구도와 바퀴 상태를 보고합니다.'},
   {id:'supplies', label:'포탄 보급 보고', description:'남은 포탄과 손실량을 보고합니다.'},
 ];
 
 const cardById = id => UPGRADE_CARDS.find(card => card.id===id);
-const childCare = () => ({seatedTicks:0, attentionSum:0, reseats:0});
+const careTicksPerSecond = 30;
+const maxCryingPenalty = 4;
+const childCare = () => ({seatedTicks:0, attentionSum:0, reseats:0, cryingTicks:0, feeds:0});
 
 export function newCare(){
   return {ticks:0, prince:childCare(), princess:childCare()};
@@ -31,12 +33,18 @@ export function recordCare(s){
     const stats=care[child.id];
     if(child.state==='seated')stats.seatedTicks++;
     stats.attentionSum+=child.attention;
+    if(child.crying)stats.cryingTicks=(stats.cryingTicks??0)+1;
   }
 }
 
 export function recordReseat(s,id){
   const care=s.care??=newCare();
   if(id==='prince'||id==='princess')care[id].reseats++;
+}
+
+export function recordFeeding(s,id){
+  const care=s.care??=newCare();
+  if(id==='prince'||id==='princess')care[id].feeds=(care[id].feeds??0)+1;
 }
 
 export function finishCare(s){
@@ -47,8 +55,16 @@ export function finishCare(s){
     const measured=!!stats&&progress.ticks>0;
     const seatedPercent=measured?Math.round(stats.seatedTicks/progress.ticks*100):null;
     const attention=measured?Math.round(stats.attentionSum/progress.ticks):null;
-    const points=measured?Math.round((seatedPercent*.6+attention*.4)/10):0;
-    return {id:child.id,name:child.name,seatedPercent,attention,reseats:stats?.reseats??0,points};
+    const basePoints=measured?Math.round((seatedPercent*.6+attention*.4)/10):0;
+    const cryingTicks=stats?.cryingTicks??0;
+    const cryingSeconds=measured?cryingTicks/careTicksPerSecond:null;
+    const cryingShare=measured?cryingTicks/progress.ticks:0;
+    const cryingPercent=measured?Math.round(cryingShare*100):null;
+    const cryPenalty=cryingShare>0?Math.min(basePoints,maxCryingPenalty,Math.max(1,Math.round(cryingShare*maxCryingPenalty))):0;
+    return {
+      id:child.id,name:child.name,seatedPercent,attention,reseats:stats?.reseats??0,
+      feeds:stats?.feeds??0,cryingSeconds,cryingPercent,basePoints,cryPenalty,points:basePoints-cryPenalty,
+    };
   });
   const earned=care.reduce((sum,child)=>sum+child.points,0);
   s.affection=(s.affection??0)+earned;
@@ -68,7 +84,8 @@ function kingReply(s,id){
     const {care,earned}=s.intermission;
     if(care.every(child=>child.attention===null))return '이번 구간의 돌봄 기록이 없군. 다음 구간에서는 두 아이의 상태를 살펴라.';
     const summary=care.map(child=>child.name+' '+child.points+'점').join(', ');
-    const advice=earned>=14?'잘 돌봤군. 다음에도 두 아이를 살펴라.':'두 아이가 자리를 비우면 가까이 가서 좌석으로 데려다주어라.';
+    const advice=care.some(child=>child.cryPenalty>0)?'울었던 시간만큼 감점했다. 놀란 아이는 안고 걸어서 달래고, 배고픈 아이에게는 간식을 먹여라.':
+      earned>=14?'잘 돌봤군. 다음에도 두 아이를 살펴라.':'두 아이가 자리를 비우면 가까이 가서 좌석으로 데려다주어라.';
     return summary+'으로 확인했다. '+advice;
   }
   if(id==='damage'){

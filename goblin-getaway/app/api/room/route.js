@@ -1,8 +1,9 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, royalTarget, nextStage, restartStage, restartChapter, setHumanSlots, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, occupiedStation, leaveStation, stopCookingHold, royalTarget, feedTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
+import {addEmote,recentEmotes} from '../../../public/emotes.mjs';
 const respond=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const fail=(error,status=400)=>respond({error},status);
 
@@ -27,6 +28,8 @@ const seats=[
   {id:'p4',key:'guest4',seen:'seen4',empty:null}
 ];
 const disconnectAfter=60_000;
+const checkpointAfter=2_000;
+const tickBoundary=tick=>Math.ceil(tick*1000/HZ);
 const joined=row=>seats.filter(seat=>row[seat.key]);
 const byToken=(row,token)=>token?seats.find(seat=>row[seat.key]===token):null;
 function leader(row){
@@ -36,18 +39,26 @@ function leader(row){
 function snapshot(row,seat,now=Date.now()){
   const state=ensureDeck(JSON.parse(row.state)),members=joined(row).map(member=>member.id);
   setHumanSlots(state,members);
-  if(state.mode==='run')advance(state,Math.max(0,Math.floor((now-row.clock)*HZ/1000)));
-  return {code:row.code,player:seat.id,host:seat.id===leader(row),captain:leader(row),crew:members.length,state,rev:row.rev,stamp:now};
+  let clock=row.clock;
+  if(state.mode==='run'){
+    // Store the last completed tick boundary so a stream of short input intervals carries forward.
+    const before=tickBoundary(state.tick);
+    const due=Math.floor((now-row.clock+before)*HZ/1000)-state.tick;
+    advance(state,Math.max(0,due));
+    clock+=tickBoundary(state.tick)-before;
+  }
+  if(state.emotes)state.emotes=recentEmotes(state,now);
+  return {clock,data:{code:row.code,player:seat.id,host:seat.id===leader(row),captain:leader(row),crew:members.length,state,rev:row.rev,stamp:now}};
 }
 // Advance with the old controllers before handing an existing goblin to its new controller.
 async function changeSeat(db,row,seat,newToken,now,checkHeartbeat=false){
-  const snap=snapshot(row,seat,now);
-  const next={...row,[seat.key]:newToken??seat.empty,[seat.seen]:newToken?now:null,rev:row.rev+1,clock:now};
+  const {data:snap,clock}=snapshot(row,seat,now);
+  const next={...row,[seat.key]:newToken??seat.empty,[seat.seen]:newToken?now:null,rev:row.rev+1,clock};
   next.captain=leader(next);
   setHumanSlots(snap.state,joined(next).map(member=>member.id));
   next.state=JSON.stringify(snap.state);
   const guard=checkHeartbeat?' AND '+seat.seen+' IS ?':'';
-  const args=[next[seat.key],next[seat.seen],next.captain??null,next.state,now,expiry(),row.code,row.host,row.rev,row[seat.key]];
+  const args=[next[seat.key],next[seat.seen],next.captain??null,next.state,clock,expiry(),row.code,row.host,row.rev,row[seat.key]];
   if(checkHeartbeat)args.push(row[seat.seen]);
   const result=await db.prepare('UPDATE rooms SET '+seat.key+'=?, '+seat.seen+'=?, captain=?, state=?, clock=?, rev=rev+1, expires=? WHERE code=? AND host=? AND rev=? AND '+seat.key+' IS ?'+guard).bind(...args).run();
   return result.meta.changes?next:null;
@@ -66,7 +77,7 @@ export async function POST(req){
     ]);
     const code=inserted.results[0]?.code;
     if(!code)return fail('사용 가능한 방번호가 모두 사용 중입니다. 잠시 후 다시 시도해 주세요.',503);
-    return respond({...snapshot({code,host,state,clock:now,rev:0},seats[0],now),token:host});
+    return respond({...snapshot({code,host,state,clock:now,rev:0},seats[0],now).data,token:host});
   }
   const code=typeof b.code==='string'?b.code.trim().toUpperCase():'';
   if(!isRoomNumber(code)&&!isLegacyRoomCode(code))return fail('숫자 3자리 방번호를 입력해 주세요.');
@@ -92,15 +103,21 @@ export async function POST(req){
       continue;
     }
     if(joining){
-      if(seat)return respond({...snapshot(row,seat,now),token:attempt});
+      if(seat)return respond({...snapshot(row,seat,now).data,token:attempt});
       const open=seats.find(member=>!row[member.key]);
       if(!open)return fail('이미 플레이어 4명이 탑승한 방입니다.',409);
       const guest=attempt??crypto.randomUUID(),next=await changeSeat(db,row,open,guest,now);
-      if(next)return respond({...snapshot(next,open,now),token:guest});
+      if(next)return respond({...snapshot(next,open,now).data,token:guest});
       continue;
     }
-    const snap=snapshot(row,seat,now);let state=snap.state;
-    if(op==='sync'||op==='join')return respond(snap);
+    const {data:snap,clock:advancedClock}=snapshot(row,seat,now);let state=snap.state;
+    if(op==='sync'){
+      if(advancedClock===row.clock||(state.mode==='run'&&now-row.clock<checkpointAfter))return respond(snap);
+      const result=await db.prepare('UPDATE rooms SET state=?,clock=?,rev=rev+1 WHERE code=? AND host=? AND rev=?').bind(JSON.stringify(state),advancedClock,code,row.host,row.rev).run();
+      if(result.meta.changes)return respond({...snap,rev:row.rev+1});
+      continue;
+    }
+    if(op==='join')return respond(snap);
     if(op==='leave'){
       if(members.length===1){
         const result=await db.prepare('DELETE FROM rooms WHERE code=? AND host=? AND rev=?').bind(code,row.host,row.rev).run();
@@ -113,17 +130,32 @@ export async function POST(req){
     if(op==='start'){
       if(!snap.host||state.mode!=='ready')return fail('출발 대기 중에는 방장이 작전을 시작할 수 있습니다.');
       begin(state);
+    }else if(op==='emote'){
+      const error=addEmote(state,seat.id,b.key,now);
+      if(error)return fail(error);
+    }else if(op==='exit-station'){
+      if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
+      if(b.role!==occupiedStation(state.players[seat.id],state)||!leaveStation(state,seat.id,b.role))return respond(snap);
+    }else if(op==='add-rack-shell'){
+      if(b.stage!==state.stage||!sameCampaign||!addRackShell(state))return respond(snap);
     }else if(op==='act'||op==='input'){
       if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
       const tick=Number.isInteger(b.tick)?Math.max(state.tick-12,Math.min(state.tick,b.tick)):state.tick;
       setInput(state,seat.id,b.input);
       if(op==='act'){
         const player=state.players[seat.id];
-        const atRole=!b.role||stationAt(player,state)===b.role;
-        const sameChild=!b.royalId||royalTarget(state,player)?.id===b.royalId;
-        if(atRole&&sameChild)operate(state,seat.id,tick);
+        const role=stationAt(player,state),atRole=!b.role||role===b.role;
+        const child=role==='royal-feed'?feedTarget(state,player):royalTarget(state,player);
+        const sameChild=b.royalId?child?.id===b.royalId:role!=='royal-feed';
+        if(atRole&&sameChild){
+          if(role!=='cleaner')operate(state,seat.id,tick);
+          else if(b.role==='cleaner'&&b.cannonRound===(state.cannonRecoil?.tick??0))operate(state,seat.id,tick,b.taps);
+        }
       }
-    }else if(op==='pause'&&snap.host&&['run','paused'].includes(state.mode)){state.mode=state.mode==='run'?'paused':'run';}
+    }else if(op==='pause'&&snap.host&&['run','paused'].includes(state.mode)){
+      state.mode=state.mode==='run'?'paused':'run';
+      if(state.mode==='paused')stopCookingHold(state);
+    }
     else if(op==='report'&&snap.host&&state.mode==='clear'){
       const error=submitReport(state,b.id);
       if(error)return fail(error);
@@ -142,7 +174,11 @@ export async function POST(req){
     }else if(op==='restart-chapter'&&snap.host&&state.mode==='clear'&&!nextStagePosition(state.chapter,state.stage)){
       state=restartChapter(state);
     }else return fail('이 역할에서는 사용할 수 없는 조작입니다.');
-    const result=await db.prepare('UPDATE rooms SET state=?,clock=?,rev=rev+1,expires=? WHERE code=? AND host=? AND rev=?').bind(JSON.stringify(state),now,expiry(),code,row.host,row.rev).run();
+    // A chat signal must not reset the simulation clock between movement packets.
+    const persisted=op==='emote'?{...JSON.parse(row.state),emotes:state.emotes}:state;
+    const resetClock=op==='start'||op==='pause'||state!==snap.state;
+    const clock=op==='emote'?row.clock:resetClock?now:advancedClock;
+    const result=await db.prepare('UPDATE rooms SET state=?,clock=?,rev=rev+1,expires=? WHERE code=? AND host=? AND rev=?').bind(JSON.stringify(persisted),clock,expiry(),code,row.host,row.rev).run();
     if(result.meta.changes)return respond({...snap,state,rev:row.rev+1,stamp:now});
   }
   return fail('동시에 조작이 들어왔습니다. 다시 시도해 주세요.',409);
