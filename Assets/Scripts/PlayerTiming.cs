@@ -20,16 +20,23 @@ public sealed class PlayerTiming : MonoBehaviour
     private bool actionRequested;
     private bool wasHoldingShell;
     [Header("Scene UI")]
-    [SerializeField] private UnityEngine.UI.Text stationStatus;
+    [SerializeField] private TMPro.TMP_Text stationStatus;
+    [SerializeField] private TMPro.TMP_Text statusAlert;
+    [SerializeField] private GameObject statusPanel;
+    [SerializeField, Range(0f, 1f)] private float anxietyWarningLevel = 0.5f;
+    [SerializeField, Range(0f, 1f)] private float durabilityWarningLevel = 0.3f;
+    [SerializeField, Min(0f)] private float headingWarningDegrees = 8f;
+    [SerializeField, Min(0f)] private float horseDifferenceWarning = 0.5f;
     [SerializeField] private GameObject restartButton;
     [SerializeField] private GameObject upgradePanel;
     [SerializeField] private UnityEngine.UI.Button[] upgradeButtons;
-    [SerializeField] private UnityEngine.UI.Text[] upgradeLabels;
+    [SerializeField] private TMPro.TMP_Text[] upgradeLabels;
     [SerializeField] private RectTransform repairRect;
     [SerializeField] private UnityEngine.UI.Image healthFill;
     [SerializeField] private UnityEngine.UI.Image repairFill;
     [SerializeField] private GameObject repairProgress;
     [SerializeField] private RectTransform distanceMarker;
+    [SerializeField] private TMPro.TMP_Text distanceLabel;
     private float shakeRemaining;
     private float shakeDuration;
     private float shakeStrength;
@@ -82,6 +89,7 @@ public sealed class PlayerTiming : MonoBehaviour
         }
 
         UpdateStationStatus();
+        UpdateStatusAlert();
         if (stations != null && (stations.Failed || stations.ChoosingUpgrade)) { actionRequested = false; return; }
         bool holdingShell = stations != null && stations.IsHoldingShell;
         if (holdingShell != wasHoldingShell)
@@ -232,6 +240,7 @@ public sealed class PlayerTiming : MonoBehaviour
             float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
             distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(progress, 0.5f);
             distanceMarker.anchoredPosition = Vector2.zero;
+            if (distanceLabel != null) distanceLabel.text = $"{progress * 100f:0}%";
         }
     }
 
@@ -267,6 +276,51 @@ public sealed class PlayerTiming : MonoBehaviour
                 else stationStatus.text += $"     STORED SHELLS: {stations.DepositedShells}";
                 break;
         }
+    }
+
+    private void UpdateStatusAlert()
+    {
+        if (statusAlert == null || stations == null) return;
+        var message = new System.Text.StringBuilder();
+        if (stations.Failed)
+            message.Append(stations.FailureReason);
+        else if (!stations.ChoosingUpgrade)
+        {
+            if (stations.WheelDetached && stations.DetachedTire != null)
+            {
+                string number = stations.DetachedTire.name.Replace("Tire ", "");
+                message.Append(number).Append(stations.WheelRepairSteps == 0 ? "번 타이어 고장 - 수리 필요" : "번 타이어 축 핀 고정 필요");
+            }
+            if (stations.PrinceAnxiety >= anxietyWarningLevel)
+                AppendAlert(message, stations.PrinceEscaping ? "왕자 탈출 시도 - 달래기 필요" : "왕자 불안도 높음");
+            if (stations.PrincessAnxiety >= anxietyWarningLevel)
+                AppendAlert(message, stations.PrincessEscaping ? "공주 탈출 시도 - 달래기 필요" : "공주 불안도 높음");
+            if (stations.Durability <= durabilityWarningLevel * 100f)
+                AppendAlert(message, "마차 내구도 위험");
+            CartMotion cart = stations.Cart;
+            if (cart != null)
+            {
+                float difference = cart.RightHorseSpeed - cart.LeftHorseSpeed;
+                if (cart.Heading >= headingWarningDegrees)
+                    AppendAlert(message, difference < -horseDifferenceWarning ? "마차 방향 위쪽으로 조정 중" : "마차 아래쪽 치우침 - 왼말 재촉");
+                else if (cart.Heading <= -headingWarningDegrees)
+                    AppendAlert(message, difference > horseDifferenceWarning ? "마차 방향 아래쪽으로 조정 중" : "마차 위쪽 치우침 - 오른말 재촉");
+                else if (difference >= horseDifferenceWarning)
+                    AppendAlert(message, "오른말 빠름 - 왼말 재촉");
+                else if (difference <= -horseDifferenceWarning)
+                    AppendAlert(message, "왼말 빠름 - 오른말 재촉");
+            }
+        }
+        string next = message.ToString();
+        if (statusAlert.text != next) statusAlert.text = next;
+        if (statusPanel != null && statusPanel.activeSelf != (message.Length > 0))
+            statusPanel.SetActive(message.Length > 0);
+    }
+
+    private static void AppendAlert(System.Text.StringBuilder message, string text)
+    {
+        if (message.Length > 0) message.Append('\n');
+        message.Append(text);
     }
 
     public void SetWheelRepairActive(bool active)
