@@ -1,5 +1,5 @@
-import {stationAt,horseCondition,horseProgress,runawaySide,HORSE_NAMES,HORSE_RUNAWAY_HITS,royalTarget,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,WHEELS,DECK,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_AIM_MAX_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=zoom-speed61';
-import {horseWhipTarget} from './horse-targets.mjs?v=stations10';
+import {stationAt,horseCondition,horseProgress,runawaySide,HORSE_NAMES,HORSE_RUNAWAY_HITS,royalTarget,royalBoredHint,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,WHEELS,DECK,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_VIEW_RIGHT_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,isCannonRole,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=double-shell87';
+import {horseWhipTarget} from './horse-targets.mjs?v=whip-reach73';
 
 const isRoyalRole=role=>['royal-soothe','royal-pickup','royal-carry','royal-seat'].includes(role);
 const isSpareWheelRole=role=>['wheel-missing','wheel-pickup','wheel-carry','wheel-return'].includes(role);
@@ -7,33 +7,33 @@ const driverViewRange=1.5;
 const convoyCenterX=450,convoyScreenX=.55;
 const convoyMinimumWidth=760;
 const gunViewLeft=STATIONS.gunner.x-65;
-const gunViewRight=CANNON_AIM_MAX_X+286; // Scatter and the rear of the shockwave.
 const gunViewTop=ROAD_TOP-12,gunViewHeight=ROAD_BOTTOM-ROAD_TOP+24;
 const cameraTransitionMs=CAMERA_TRANSITION_SECONDS*1000;
 
-function overviewCamera(base,shared=false){
- const {span,height,role,screenWidth,start}=base;
+function overviewCamera(base){
+ const {span,height,role}=base;
  // Keep the horses and deck together, with more room ahead to the left.
- const width=shared?screenWidth:span;
- const overviewZoom=Math.min(1,height/(ROAD_BOTTOM-ROAD_TOP+12),width/convoyMinimumWidth);
+ const overviewZoom=Math.min(1,height/(ROAD_BOTTOM-ROAD_TOP+12),span/convoyMinimumWidth);
  // Keep the forward edge bounded even on unusually wide displays.
- const ahead=width*convoyScreenX;
+ const ahead=span*convoyScreenX;
  const zoom=Math.max(role==='driver'?overviewZoom/driverViewRange:overviewZoom,ahead/(convoyCenterX-ROAD_CAMERA_MIN_X));
- const left=convoyCenterX-(ahead-(shared?start:0))/zoom;
+ const left=convoyCenterX-ahead/zoom;
  return {...base,zoom,left,top:LANES[1]-height*.48/zoom};
 }
 function gunnerCamera(base){
  const {span,height}=base;
- const zoom=Math.min(2,span/(gunViewRight-gunViewLeft),height/gunViewHeight);
- return {...base,zoom,left:gunViewLeft,top:gunViewTop-(height/zoom-gunViewHeight)/2};
+ const zoom=Math.min(2,span/(CANNON_VIEW_RIGHT_X-gunViewLeft),height/gunViewHeight);
+ const left=CANNON_VIEW_RIGHT_X-span/zoom;
+ return {...base,zoom,left,top:gunViewTop-(height/zoom-gunViewHeight)/2};
 }
 function cameraCenter({left,top,span,height,zoom}){
  return {centerX:left+span/(2*zoom),centerY:top+height/(2*zoom)};
 }
-function blendCamera(target,from,time){
+function blendCamera(target,from,time,blendViewport=false){
  const eased=time*time*(3-2*time);
  const blend=(start,end)=>start+(end-start)*eased;
- const zoom=blend(from.zoom,target.zoom);
+ // Interpolating world extents keeps the cannon pad in view between two camera poses.
+ const zoom=blendViewport?1/blend(1/from.zoom,1/target.zoom):blend(from.zoom,target.zoom);
  const {centerX,centerY}=cameraCenter(target);
  const left=blend(from.centerX??centerX,centerX)-target.span/(2*zoom);
  return {...target,zoom,left:target.floor===CELLAR_FLOOR?left:Math.max(ROAD_CAMERA_MIN_X,left),
@@ -49,25 +49,15 @@ export function cameraViews(s,duo,player,pixelWidth=1200,pixelHeight=350,reduced
  const views=ids.map(id=>{
    const p=s.players[id],floor=playerFloor(p);
    const role=playing?stationAt(p,s):null;
-   const shot=role==='gunner'?cannonAfterShot(s,p):null;
-   const returnAge=shot?s.tick-shot.tick-CANNON_VIEW_HOLD_TICKS:-1;
-   const returning=returnAge>=0?Math.min(1,returnAge/CANNON_VIEW_RETURN_TICKS):null;
+   const shot=role==='cleaner'?cannonAfterShot(s,p):null;
+   const recoilReturn=shot?Math.max(0,Math.min(1,(s.tick-shot.tick-CANNON_VIEW_HOLD_TICKS)/CANNON_VIEW_RETURN_TICKS)):null;
    const overview=isRoyalRole(role)||isSpareWheelRole(role)||role==='royal-feed'||role==='food-carry'||(floor===CELLAR_FLOOR&&role==='carry');
-   return {id,p,floor,role:overview?null:role,returning};
+   return {id,p,floor,role:overview?null:role,recoilReturn};
  });
  const count=duo&&(views.some(view=>view.role)||views[0].floor!==views[1].floor)?2:1;
- const shotReturn=views.find(view=>view.returning!==null);
- const mergeAfterShot=!!shotReturn&&count===2&&views.every(view=>view.floor===shotReturn.floor&&(!view.role||view===shotReturn));
- return views.slice(0,count).map(({id,p,floor,role,returning},i)=>{
+ return views.slice(0,count).map(({id,p,floor,role,recoilReturn},i)=>{
    const span=screenWidth/count;
-   const base={id,localPlayers:count===1?ids:[id],role:returning===null?role:null,floor,span,height,screenWidth,start:i*span};
-   if(returning!==null||mergeAfterShot){
-     // Keep separate panes until exit, with each finishing on its part of the shared view.
-     const target=overviewCamera(base,mergeAfterShot);
-     const from=returning===null?overviewCamera(base):gunnerCamera(base);
-     const view=reducedMotion?target:blendCamera(target,{zoom:from.zoom,...cameraCenter(from)},shotReturn.returning);
-     return {...view,cannonReturning:true,mergeAfterShot};
-   }
+   const base={id,localPlayers:count===1?ids:[id],role,floor,span,height,screenWidth,start:i*span};
    if(floor===CELLAR_FLOOR){
      const zoom=role?Math.min(3.2,span/120,height/112):Math.min(3,span/(DECK.right-DECK.left+80),height/(DECK.bottom-DECK.top+72));
      const cx=role?p.x:(DECK.left+DECK.right)/2,cy=s.y+(role?p.y:0);
@@ -81,27 +71,34 @@ export function cameraViews(s,duo,player,pixelWidth=1200,pixelHeight=350,reduced
    const zoom=carrying?carryZoom:4;
    const cx=destination?(p.x+destination.x)/2:p.x;
    const cy=s.y+(destination?(p.y+destination.y)/2:p.y);
-   return {...base,zoom,left:cx-span/(2*zoom),top:cy-height*.48/zoom};
+   const target={...base,zoom,left:cx-span/(2*zoom),top:cy-height*.48/zoom};
+   if(reducedMotion||recoilReturn===null)return target;
+   // Keep the work controls on the cleaning step while the camera follows the shot.
+   const from=gunnerCamera(base);
+   return {...blendCamera(target,{zoom:from.zoom,...cameraCenter(from)},recoilReturn,true),cannonReturning:true};
  });
 }
 export function createCameraTransition(){
  let presented=[];
  return (targets,now,reducedMotion=false)=>{
+   const floorLayoutChanged=targets.length!==presented.length&&targets.some(target=>
+     presented.some(({view})=>view.floor!==target.floor&&
+       target.localPlayers.some(id=>view.localPlayers.includes(id))));
    presented=targets.map(target=>{
      const prior=presented.find(({view})=>view.localPlayers.includes(target.id));
      const previous=prior?.view;
-     if(reducedMotion||!previous||previous.screenWidth!==target.screenWidth||previous.height!==target.height)
+     if(reducedMotion||!previous||previous.floor!==target.floor||floorLayoutChanged||
+        previous.screenWidth!==target.screenWidth||previous.height!==target.height)
        return {view:target};
-     if(target.cannonReturning||(previous.mergeAfterShot&&target.localPlayers.length>1))return {view:target};
+     if(target.cannonReturning)return {view:target};
 
      let transition=prior.transition;
-     if(previous.role!==target.role||previous.floor!==target.floor||previous.span!==target.span){
-       transition={start:now,zoom:previous.zoom,
-         ...(previous.floor===target.floor?cameraCenter(previous):{})};
+     if(previous.role!==target.role||previous.span!==target.span){
+       transition={start:now,zoom:previous.zoom,...cameraCenter(previous),blendViewport:isCannonRole(previous.role)||isCannonRole(target.role)};
      }
      if(!transition||now-transition.start>=cameraTransitionMs)return {view:target};
 
-     return {view:blendCamera(target,transition,(now-transition.start)/cameraTransitionMs),transition};
+     return {view:blendCamera(target,transition,(now-transition.start)/cameraTransitionMs,transition.blendViewport),transition};
    });
    return presented.map(({view})=>view);
  };
@@ -139,7 +136,6 @@ export function workInfo(s,p,role){
    hint:'행동 버튼을 연타하세요',progress:s.ammo.cleaning/CANNON_CLEAN_TAPS,progressKind:'cannon-cleaning'};
  if(role==='gunner'){
    const info={mode:'fuse',color:'#f4b46d'};
-   if(cannonAfterShot(s,p))return {...info,action:'발사 완료',blocked:true};
    const accuracy={progress:cannonAim(s,p).accuracy,progressKind:'cannon-accuracy'};
    if(s.fuse.end>0)return {...info,...accuracy,action:'점화 중',hint:'착탄점을 조정하세요',seconds:(s.fuse.end-s.tick)/HZ,blocked:true};
    return {...info,...accuracy,action:'점화',hint:'왼쪽 스틱으로 착탄점을 맞추세요'};
@@ -173,9 +169,9 @@ export function workInfo(s,p,role){
    const child=royal.name+'를';
    if(role==='royal-soothe'){
      const progress=royalSootheProgress(royal);
-     if(royal.bored)return {...info,hint:'지루해요 · 마차 앞뒤나 지하층으로 가세요',
+     if(royal.bored)return {...info,hint:royalBoredHint(royal.name),
        progress,progressKind:'soothe-bored',blocked:true};
-     return {...info,hint:'안고 걸어서 달래 주세요',progress,blocked:true};
+     return {...info,hint:'안고 있으면 달래져요.\n걸으면 더 빨라요.',progress,blocked:true};
    }
    if(role==='royal-pickup')return {...info,hint:child+' 안아 올리세요',action:'안아 올리기'};
    if(role==='royal-seat')return {...info,hint:child+' 좌석에 앉히세요',action:'앉히기'};

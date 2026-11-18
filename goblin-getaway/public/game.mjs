@@ -1,10 +1,10 @@
 import {isRoomNumber,isLegacyRoomCode} from './room-number.mjs';
 import {chapterSpec,stageSpec,nextStagePosition} from './campaign.mjs';
-import {REPORT_OPTIONS,UPGRADE_CARDS,submitReport,voteForCard,voteThreshold,maxDurability,cardCost,canBuyCard} from './intermission.mjs?v=rocking-care33';
-import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalTarget,royalStatusNearby,feedTarget,cookingProgress,stopCookingHold,ROLES,WHEELS,HORSE_RUNAWAY_HITS,CANNON_CLEAN_TAPS,cannonStation,cannonAfterShot,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,addRackShell} from './sim.mjs?v=zoom-speed61';
-import {cameraViews,createCameraTransition,workInfo} from './workstation.mjs?v=zoom-speed61';
-import {render} from './scene.mjs?v=zoom-speed61';
-import {createControls} from './controls.mjs?v=zoom-speed61';
+import {REPORT_OPTIONS,UPGRADE_CARDS,submitReport,voteForCard,voteThreshold,maxDurability,cardCost,canBuyCard} from './intermission.mjs?v=wheel-axle83';
+import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalTarget,royalStatusNearby,feedTarget,cookingProgress,stopCookingHold,ROLES,WHEELS,hasBrokenAxle,HORSE_RUNAWAY_HITS,CANNON_CLEAN_TAPS,cannonStation,isCannonRole,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,addRackShell} from './sim.mjs?v=double-shell87';
+import {cameraViews,createCameraTransition,workInfo} from './workstation.mjs?v=double-shell87';
+import {render} from './scene.mjs?v=occupied-pad88';
+import {createControls} from './controls.mjs?v=double-shell87';
 import {EMOTES,EMOTE_BUBBLE_MS,EMOTE_COOLDOWN_MS,emoteByKey,addEmote,recentEmotes} from './emotes.mjs';
 const $=id=>document.getElementById(id), all=q=>Array.from(document.querySelectorAll(q));
 const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world');
@@ -106,7 +106,7 @@ $('sound').onclick=()=>{sound=!sound;try{localStorage.setItem('gg-sound',sound?'
 soundUI();
 let inputBusy=false,lastInputAt=0,lastInputKey='';
 const pendingActs=[];
-const inputKey=input=>[input.aimRole??'',Number(input.aimCursor===true),Number(input.cookHeld===true),...['mx','my','ax','ay'].map(key=>Math.round(input[key]*90))].join('/');
+const inputKey=input=>[input.aimRole??'',input.whipSequence??'',Number(input.aimCursor===true),Number(input.cookHeld===true),...['mx','my','ax','ay'].map(key=>Math.round(input[key]*90))].join('/');
 const position=state=>({chapter:state.chapter??1,stage:state.stage});
 const sameStage=(a,b)=>(a.chapter??1)===(b.chapter??1)&&a.stage===b.stage;
 const transitionCamera=createCameraTransition();
@@ -148,8 +148,8 @@ for(const toggle of emoteButtons){
    option.type='button';option.className='emote-option';option.dataset.emote=key;
    option.setAttribute('aria-keyshortcuts',number);
    shortcut.className='emote-shortcut';shortcut.setAttribute('aria-hidden','true');shortcut.textContent=number;
-   emoteContent(option,icon,name);
    option.append(shortcut);
+   emoteContent(option,icon,name);
    option.onclick=()=>chooseEmote(slot,key);
    menu.append(option);
  }
@@ -161,7 +161,12 @@ for(const toggle of emoteButtons){
    menu.querySelector('button')?.focus({preventScroll:true});
  };
 }
-document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('.emote-controls'))closeEmotes();});
+document.addEventListener('pointerdown',event=>{
+ if(!event.target.closest?.('.emote-controls,.station-buttons,.pad-wrap'))closeEmotes();
+},{capture:true});
+document.addEventListener('click',event=>{
+ if(event.target.closest?.('.station-action,.station-exit'))closeEmotes();
+});
 document.addEventListener('keydown',event=>{
  if(event.defaultPrevented||event.repeat||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||!canEmote())return;
  if(event.target.isContentEditable||event.target.closest?.('input,textarea,select'))return;
@@ -210,8 +215,11 @@ function updateEmoteDisplay(wall){
  for(const {id,player,key} of notices){
    if(displayed.has(id))continue;
    const {icon,message}=emoteByKey(key),notice=document.createElement('p');
-   notice.className='emote-notice hud-bubble';notice.dataset.event=id;
-   emoteContent(notice,icon,player.toUpperCase()+' 플레이어가 '+message);
+   const line=document.createElement('span');
+   notice.className='emote-notice hud-bubble hud-notice';notice.dataset.event=id;
+   line.className='hud-notice-line';
+   emoteContent(line,icon,player.toUpperCase()+' 플레이어가 '+message);
+   notice.append(line);
    emoteNotices.append(notice);
  }
  const firstNotice=emoteNotices.firstElementChild;
@@ -251,6 +259,11 @@ function option(id,tag,name,desc,tail='›'){return '<button class="option" data
 function row(h,p){return '<div class="guide-row"><b>'+h+'</b><p>'+p+'</p></div>';}
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const durability=()=>Math.round(s.hp)+' / '+maxDurability(s);
+function wheelCondition(){
+ if(s.wheel.broken<0)return '바퀴 4개 장착';
+ const count=1+(s.wheel.pending?.length??0);
+ return '바퀴 '+count+'개 수리 필요'+(hasBrokenAxle(s)?' · 차축 손상으로 급감속':'');
+}
 const resultError='<p id="error" class="error" role="alert"></p>';
 function upgradeGuide(){
  return UPGRADE_CARDS.map(card=>{
@@ -284,7 +297,7 @@ function reportPanel(progress,canLead){
  }
  const ammo=s.ammo;
  const details={
-   damage:'내구도 '+durability()+' · '+(s.wheel.broken>=0?'바퀴 수리 필요':'바퀴 4개 장착'),
+   damage:'내구도 '+durability()+' · '+wheelCondition(),
    supplies:'남은 포탄 '+(ammo.stock+ammo.rack+Number(ammo.loaded))+'발 · 손실 '+ammo.lost+'발',
  };
  const choices=REPORT_OPTIONS.map(option=>
@@ -386,12 +399,12 @@ function drawDialog(){
    row('포탄 운반','지하층 포탄 더미에서 한 발을 들고 계단으로 1층에 올라오세요. 마차 5시 방향의 파란 적재칸에 닿으면 자동으로 내려놓습니다. 포탄이 미끄러지면 원형 게이지의 색 구간에서 붙잡으세요.')+
    row('포신 청소 · 노란 원','발사 전에는 청소, 장전, 발사 순서로 하나씩 열립니다. 대포 옆 노란 원에서 행동 버튼을 연타해 청소를 끝내세요. 발사하면 청소부터 다시 시작합니다.')+
    row('장전 · 초록 원','청소를 마치고 적재칸에 포탄이 있으면 장전할 수 있습니다. 바늘이 초록 구간에 들어올 때 누르세요. 실패하면 포탄 한 발이 마차 밖으로 떨어집니다. 한 발을 시도하면 자동으로 장전대에서 이탈합니다.')+
-   row('포격 · 주황 원','왼쪽 스틱으로 착탄점을 옮기고 오른쪽 버튼으로 점화하세요. 심지가 타는 2.5초 동안에도 조준할 수 있습니다. 조준률이 낮으면 탄착 범위가 넓어집니다. 포탄은 직선으로 적을 관통하고 착탄점 오른쪽으로 충격파를 일으킵니다.')+
-   row('왕자와 공주','아이에게 가까이 가면 관심과 배고픔, 지금 상태를 확인할 수 있습니다. 관심이 떨어지면 돌아다니며 포탄, 대포, 고삐를 건드리거나 계단으로 지하층에 내려갈 수 있습니다. 아이를 안아 올리고 1층의 자기 좌석으로 데려오세요.')+
+   row('포격 · 주황 원','왼쪽 스틱으로 착탄점을 옮기고 오른쪽 버튼으로 점화하세요. 심지가 타는 2.5초 동안에도 조준할 수 있습니다. 멀리 조준할수록 조준률이 낮아지고 탄착 범위가 넓어집니다. 포탄은 직선으로 적을 관통하고 착탄점 오른쪽으로 충격파를 일으킵니다.')+
+   row('왕자와 공주','아이에게 가까이 가면 관심과 배고픔, 지금 상태를 확인할 수 있습니다. 왕자는 지하층 간식 제작대를 자주 찾고, 공주는 포탄 적재칸에서 포탄을 갖고 놀다 떨어뜨릴 수 있습니다. 아이를 안아 올리고 1층의 자기 좌석으로 데려오세요.')+
    row('아이들의 울음','우는 아이가 많을수록 졸개의 이동이 느려지고 간식 만들기와 달래기가 오래 걸립니다. 타이밍 바늘은 일정하게 돌고 초록색 성공 구간이 좁아집니다.')+
-   row('떨어진 아이 달래기','바닥에 떨어진 아이를 안고 걸으면 달래기가 진행됩니다. 지루해하면 마차 앞뒤의 다른 구역이나 지하층으로 가세요. 다시 달래서 울음을 그치면 1층의 자기 좌석에 앉힐 수 있습니다.')+
+   row('떨어진 아이 달래기','바닥에 떨어진 아이를 안고 있기만 해도 달래기가 진행됩니다. 걸으면 가만히 안고 있을 때보다 약 3배 빠릅니다. 지루해하면 마차 앞뒤의 다른 구역이나 지하층으로 가세요. 다시 달래서 울음을 그치면 1층의 자기 좌석에 앉힐 수 있습니다.')+
    row('간식 만들기와 먹이기','지하층 9시 반 방향 음식 제작대에서 행동 버튼을 길게 눌러 진행도를 채우세요. 충격이 클수록 진행도가 더 많이 줄어듭니다. 완성한 간식은 1층 좌석에 앉은 아이에게 먹일 수 있습니다.')+
-   row('바퀴 이탈과 수리','빠진 바퀴는 뒤로 굴러 추격대를 쳐내고 나무·통나무·바위에 튕깁니다. 수리하려면 지하층 12시 보관함에서 예비 바퀴를 가져와 초록색 수리 원에서 바퀴 끼우기와 차축 핀 고정을 차례로 맞추세요.')+
+   row('바퀴 이탈과 수리','추격대의 공격으로 내구도가 깎이면 바퀴가 빠질 수 있습니다. 같은 차축의 위아래 바퀴가 모두 빠지면 마차가 크게 느려집니다. 빠진 바퀴는 뒤로 굴러 추격대를 쳐냅니다. 지하층 12시 보관함에서 예비 바퀴를 가져와 초록색 수리 원에서 하나씩 끼우고 핀을 고정하세요.')+
    row('키보드와 마우스','작업대에서 Esc를 누르면 이탈합니다. P1은 WASD로 이동·조준, Space로 행동, Q로도 이탈할 수 있습니다. 한 화면 2인에서 P2는 방향키, Enter, 오른쪽 Shift를 사용합니다. 두 명 모두 작업 중이면 Esc로 P1부터 이탈합니다. 마부와 포수는 왼쪽 마우스 버튼을 누른 채 끌어서도 조준할 수 있습니다.')+
    row('게임패드','왼쪽 스틱으로 이동·조준하고 A 또는 R2로 행동, B로 이탈합니다.')+
    row('마차의 흔들림','충돌, 왕국군의 일격, 대포 반동은 마차와 대포 조준을 흔듭니다. 충격이 크면 간식 제작 진행도가 줄어듭니다.')+
@@ -570,7 +583,7 @@ function useStation(id,input){
 function exitWorkstation(id){
  if(s.mode!=='run'||dlg.open)return;
  const p=s.players[id],role=occupiedStation(p,s);
- if(!role||cannonAfterShot(s,p))return;
+ if(!role)return;
  if(mode!=='online'){leaveStation(s,id);return;}
  pendingActs.length=0;
  const now=performance.now();
@@ -587,9 +600,12 @@ async function pumpInput(now,input){
    const next=pendingActs[0];
    const exiting=next.op==='exit-station';
    const cleaning=next.role==='cleaner'&&!exiting;
+   const staleWhip=next.role==='driver'&&!exiting&&next.input?.whipSequence!==(player.whipSwing?.sequence??0);
    const currentRound=!cleaning||next.cannonRound===(s.cannonRecoil?.tick??0);
    const recent=cleaning||now-next.queuedAt<=600;
-   if(sameStage(next,s)&&currentRound&&next.role===(exiting?occupiedStation(player,s):currentRole)&&(exiting||recent))break;
+   const role=exiting?occupiedStation(player,s):currentRole;
+   const sameRole=next.role===role||(exiting&&isCannonRole(next.role)&&isCannonRole(role));
+   if(sameStage(next,s)&&currentRound&&!staleWhip&&sameRole&&(exiting||recent))break;
    pendingActs.shift();
  }
  const act=pendingActs.shift();
@@ -632,22 +648,28 @@ function clockText(seconds){
  return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
 }
 function campaignHud(playing){
+ const showRoute=!s.testMode&&(playing||s.mode==='clear');
+ const showTest=playing&&!!s.testMode;
+ const route=$('campaign-route');
+ updateProperty($('campaign-hud'),'hidden',!showRoute&&!showTest);
+ updateProperty($('test-mode-label'),'hidden',!showTest);
+ updateProperty(route,'hidden',!showRoute);
+ const left=Math.max(0,s.goal-s.distance);
+ const remaining=s.goal>0?Math.min(100,left/s.goal*100):0;
+ if(showRoute){
+   const bar=$('campaign-progress');
+   updateProperty(bar,'value',remaining);
+   updateAttribute(bar,'aria-valuetext',Math.ceil(left)+' m 남음');
+   updateStyle(route,'--route-remaining',remaining+'%');
+ }
+ if(screen!=='status')return;
+
  const {chapter,stage}=position(s),stageInfo=stageSpec(chapter,stage);
  const launched=s.wave??0,elapsed=s.tick/HZ;
  const wave='웨이브 '+launched+(s.testMode?'':'/'+stageInfo.waves.length);
  const traveled=Math.floor(s.distance);
- const shownDistance=s.testMode?traveled:Math.max(0,Math.ceil(s.goal-s.distance));
+ const shownDistance=s.testMode?traveled:Math.ceil(left);
  const distance=shownDistance.toLocaleString()+' m';
- const progress=s.testMode?0:Math.min(100,Math.max(0,s.distance/s.goal*100));
- updateProperty($('campaign-hud'),'hidden',!playing);
- updateProperty($('test-mode-label'),'hidden',!s.testMode);
- label($('remaining-distance'),(s.testMode?'주행 ':'남은 ')+distance);
- label($('campaign-wave'),wave);
- const route=$('campaign-route');
- updateProperty(route,'hidden',!!s.testMode);
- updateProperty($('campaign-progress'),'value',progress);
- updateStyle(route,'--route-progress',progress+'%');
- if(screen!=='status')return;
  const chapterInfo=chapterSpec(chapter);
  label($('chapter-no'),'챕터 '+chapter);label($('chapter-name'),chapterInfo.title);
  label($('stage-no'),'스테이지 '+stage+' / '+chapterInfo.stages.length);label($('stage-name'),stageInfo.title);
@@ -655,7 +677,7 @@ function campaignHud(playing){
  label($('distance-label'),s.testMode?'주행 거리':'남은 거리');
  updateProperty($('status-distance-line'),'hidden',!!s.testMode);
  label($('stage-clock'),'주행 '+traveled.toLocaleString()+(s.testMode?'':' / '+s.goal.toLocaleString())+' m · '+clockText(Math.floor(elapsed))+' 경과');
- updateProperty($('bar').style,'width',progress+'%');
+ updateProperty($('bar').style,'width',(s.testMode?0:100-remaining)+'%');
 }
 const floorName=floor=>floor===CELLAR_FLOOR?'지하층':'1층';
 let campaignHudBottom=0;
@@ -715,12 +737,20 @@ const workHints=Object.fromEntries(hudSlots.map(slot=>{
    progressName:bubble.querySelector('.work-progress-name'),percent:bubble.querySelector('.work-progress-value'),
  }];
 }));
+const workHintSizes=new WeakMap();
+const workHintSize=new ResizeObserver(entries=>{
+ for(const {target,borderBoxSize} of entries){
+   const size=borderBoxSize?.[0];
+   workHintSizes.set(target,{width:size?.inlineSize??target.offsetWidth,height:size?.blockSize??target.offsetHeight});
+ }
+});
+for(const {bubble} of Object.values(workHints))workHintSize.observe(bubble,{box:'border-box'});
 const workProgressLabels={
  cook:'간식 제작 진행도',soothe:'아이 달래기 진행도','soothe-bored':'아이 달래기 진행도 일시 정지',
  'horse-runaway':'말 폭주까지 진행도','horse-burst':'말 폭주 진행도','horse-recovery':'말 체력 회복 진행도',
  'cannon-accuracy':'조준률','cannon-cleaning':'포신 청소 진행도',
 };
-function showWorkHint(slot,job,anchors,view,canvasSize){
+function showWorkHint(slot,job,anchors,view,canvasSize,sharePane){
  const {bubble,text,countdown,progressRow,progress,progressName,percent}=workHints[slot];
  const info=job?.info;
  updateProperty(bubble,'hidden',!info?.hint);
@@ -732,19 +762,27 @@ function showWorkHint(slot,job,anchors,view,canvasSize){
    const left=view.start*ratio,right=(view.start+view.span)*ratio;
    anchor={x:(left+right)/2,y:canvasSize.height*.62,scale:1,left,right,top:0};
  }
- const {x,y,scale,left,right,top}=anchor;
- const inset=Math.min(142,(right-left)/2);
+ const {x,y,scale,top}=anchor;
+ const middle=(anchor.left+anchor.right)/2;
+ const left=sharePane&&slot==='p2'?middle:anchor.left;
+ const right=sharePane&&slot==='p1'?middle:anchor.right;
+ const maxWidth=Math.max(0,right-left-12);
+ const size=workHintSizes.get(bubble);
+ const width=Math.min(size?.width||1050,maxWidth);
+ const height=size?.height||96;
+ const inset=6+width/2;
  const bubbleX=Math.max(left+inset,Math.min(right-inset,x));
  const offset=Math.max(23,Math.min(75,scale*28));
  const cooking=info.mode==='cook';
  const value=cooking?cookingProgress(s,job.p):info.progress;
- const labelHeight=value===undefined?44:56;
- const below=y-offset-labelHeight<campaignHudBottom+4;
- const bubbleY=below?Math.max(campaignHudBottom+4,y+offset):Math.max(top+52,y-offset);
+ const topEdge=Math.max(top+6,campaignHudBottom+4);
+ const below=y-offset-height<topEdge;
+ const bubbleY=below?Math.max(topEdge,Math.min(y+offset,canvasSize.height-height-6)):y-offset;
  updateProperty(bubble.dataset,'below',String(below));
+ updateProperty(bubble.dataset,'compact',String(sharePane||view.span<view.screenWidth));
  updateStyle(bubble,'--hint-x',bubbleX+'px');
  updateStyle(bubble,'--hint-y',bubbleY+'px');
- updateStyle(bubble,'--hint-width',Math.max(0,right-left-12)+'px');
+ updateStyle(bubble,'--hint-width',maxWidth+'px');
  label(text,info.hint);
  updateProperty(countdown,'hidden',info.seconds===undefined);
  if(!countdown.hidden)label(countdown,' · '+info.seconds.toFixed(1)+'초');
@@ -782,7 +820,8 @@ function showRoyalWatch(slot,player,duo){
    if(row.hidden)continue;
    watching=true;
    const [name,meters,condition]=children;
-   const posture={fallen:'넘어짐',wandering:'돌아다니는 중',carried:'안겨 있음',seated:'착석 중'}[child.state];
+   const posture=child.shellPlayUntil?'포탄을 갖고 노는 중':child.snackPauseUntil?'간식을 기다리는 중':
+     {fallen:'넘어짐',wandering:'돌아다니는 중',carried:'안겨 있음',seated:'착석 중'}[child.state];
    const mood=child.bored?'지루해함':child.upset?(child.state==='carried'?'안겨서 우는 중':'놀라서 우는 중'):child.crying?'배고파서 우는 중':posture??'';
    updateProperty(row.dataset,'needsCare',String(child.crying||child.state==='fallen'));
    label(name,child.name);
@@ -825,11 +864,12 @@ function hud(cameras,{anchors,catapultAlerts},canvasSize){
  updateAttribute(canvas,'aria-label',sceneLabel+roadNotice+pursuitNotice+catapultNotice);
  $('desk').classList.toggle('focusing',focused);canvas.parentElement.classList.toggle('split',cameras.length===2);
  const panels=$('work-panels');panels.classList.toggle('duo',duo);
+ const shareHintPane=cameras.length===1&&jobs.length===2&&jobs.every(job=>job.info?.hint);
  let showPanels=false;
  for(const [i,slot] of hudSlots.entries()){
    const job=jobs[i];
    showTimingPrompt(slot,job,anchors,running);
-   showWorkHint(slot,job,anchors,cameras[i]??cameras[0],canvasSize);
+   showWorkHint(slot,job,anchors,cameras[i]??cameras[0],canvasSize,shareHintPane);
    const watching=showRoyalWatch(slot,playing?job?.p:null,duo);
    updateProperty(playerHud[slot].work,'hidden',!watching);
    showPanels||=watching;
@@ -850,20 +890,6 @@ function hud(cameras,{anchors,catapultAlerts},canvasSize){
    lastStatus=startLabel;
  }
  updateProperty(startButton,'disabled',mode==='online'&&!room.host&&!['clear','lost'].includes(s.mode));
- const broken=WHEELS[s.wheel.broken],ev=$('event'),recent=s.eventUntil>s.tick;
- const rock=outside?s.catapult:null,incoming=!!rock&&s.tick<rock.landAt;
- let warning='';
- if(incoming){
-   const offset=rock.y-s.y;
-   const side=Math.abs(offset)<10?'가운데':offset<0?'오른쪽(위)':'왼쪽(아래)';
-   warning=s.tick<rock.lockAt?'투석기 바위 접근 · '+side:'착탄까지 '+Math.ceil((rock.landAt-s.tick)/HZ)+'초 · '+side;
- }else if(typeof rock?.hit==='boolean')warning=rock.hit?'투석기 바위 명중':'투석기 바위 회피';
- ev.classList.toggle('show',!!(warning||recent||broken)&&s.mode==='run');
- ev.classList.toggle('catapult',!!warning);
- ev.classList.toggle('damage',!warning&&!!broken&&!recent);
- const wheelStep=broken?(s.wheel.progress?'차축 핀 고정':Object.values(s.players).some(player=>player.spareWheel)?
-   '예비 바퀴 운반 중':'지하층 12시 보관함에서 바퀴 가져오기'):'';
- label(ev,warning||(recent?s.event:broken?broken.name+' 수리 · '+wheelStep:''));
  if(screen==='status'){
    const modeLabel=s.testMode?'테스트 모드':mode==='online'?(netFailed>1?'재연결 중':room.code+' · '+myPlayer.toUpperCase()):mode==='local'?'한 화면 2인 협동':'1인 연습 모드';
    label($('mode-label'),modeLabel);
@@ -879,13 +905,16 @@ function hud(cameras,{anchors,catapultAlerts},canvasSize){
    }
    const cannonStatus={cleaner:'포신 청소 필요',loader:'장전 대기',gunner:'대포 장전됨'}[cannonStation(s)];
    label($('ammo-readout'),'지하층 포탄 더미 '+s.ammo.stock+'발 · 1층 적재칸 '+s.ammo.rack+'발 · '+cannonStatus+' · 손실 '+s.ammo.lost+'발');
-   label($('wheel-readout'),broken?broken.name+' 수리 · '+wheelStep:'바퀴 4개 장착');
+   const broken=WHEELS[s.wheel.broken];
+   const wheelStep=broken?(s.wheel.progress?'차축 핀 고정':Object.values(s.players).some(player=>player.spareWheel)?
+     '예비 바퀴 운반 중':'지하층 12시 보관함에서 바퀴 가져오기'):'';
+   label($('wheel-readout'),wheelCondition()+(broken?' · '+broken.name+' · '+wheelStep:''));
  }
  updateProperty(playerHud.p2.pads,'hidden',!duo);playerHud.p1.pads.parentElement.classList.toggle('duo',duo);
  for(const [i,{id,p,role,info,ready,floor}] of jobs.entries()){
    const {ident,stick,stickLabel,action,exit,location,context,hint}=playerHud[hudSlots[i]],playerName=id.toUpperCase();
-   const seat=playing?occupiedStation(p,s):null,afterShot=seat==='gunner'&&cannonAfterShot(s,p);
-   const atDriver=seat==='driver',atGun=seat==='gunner'&&!afterShot;
+   const seat=playing?occupiedStation(p,s):null;
+   const atDriver=seat==='driver',atGun=seat==='gunner';
    const aiming=atDriver||atGun;
    const idle=!!seat&&!aiming||role==='catch';
    updateProperty(stick,'disabled',!running||idle);
@@ -897,7 +926,7 @@ function hud(cameras,{anchors,catapultAlerts},canvasSize){
    updateStyle(action,'--action',info?.color??'');
    label(action,info?.action??'행동');
    updateProperty(exit,'hidden',!seat);
-   updateProperty(exit,'disabled',!running||Boolean(afterShot));
+   updateProperty(exit,'disabled',!running);
    label(ident,playerName);ident.classList.toggle('second',id==='p2');
    label(location,ROLES[role]||floorName(floor));
    const note=p.noteUntil>s.tick?p.note:'';

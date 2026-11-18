@@ -1,5 +1,5 @@
-import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, playerFloor, STATIONS, WHEELS, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, WHEEL_KNOCK_TICKS, BARREL, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonAfterShot, CANNON_IMPACT_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, ENEMY_RECOVERY_TICKS, CAVALRY_ART_X, ROYAL_SEATS, ROYAL_RETURN_REACH, royalStatusNearby, royalTarget, feedTarget, stationAt, horseCondition, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=zoom-speed61';
-import {DRAFT_HORSES,DRAFT_HORSE_SCALE,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseOrigin,horseBoardPoint,horseWhipTarget,whipAimPoint} from './horse-targets.mjs';
+import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, playerFloor, STATIONS, WHEELS, wheelNeedsRepair, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, WHEEL_KNOCK_TICKS, BARREL, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, isCannonRole, cannonAfterShot, CANNON_IMPACT_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, ENEMY_RECOVERY_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, ROYAL_RETURN_REACH, royalStatusNearby, royalTarget, feedTarget, stationAt, occupiedStation, horseCondition, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=double-shell87';
+import {DRAFT_HORSES,DRAFT_HORSE_SCALE,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseOrigin,horseBoardPoint,horseWhipTarget,whipAimPoint} from './horse-targets.mjs?v=whip-reach73';
 import {obstacleY, roadObstacleProfile, roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
 const ink='#393933';
 let c,view;
@@ -258,9 +258,11 @@ function drawRoadsideTree({x,y,r}){
 }
 const horseStrideRate=2;
 const rumpMarks=[[20,-8],[25,-5],[18,1],[30,0],[24,6],[32,-5],[17,7],[29,6]];
-function horse(x,y,z,palette,t,wounds=0){
+function horse(x,y,z,palette,t,wounds=0,showShadow=true){
   const [coat,light,mane]=palette;
-  at(x,y,z,()=>{oval(3,7,42,14,'#715f4850');const kick=Math.sin(t)*3.4;
+  at(x,y,z,()=>{
+    if(showShadow)oval(3,7,42,14,'#715f4850');
+    const kick=Math.sin(t)*3.4;
     for(let i=0;i<4;i++){
       const side=i<2?-1:1,front=i%2===0,x=front?-15:19;
       const gait=side*kick*(front?1:-1),hoof=x+(front?-12:8)+gait*1.7;
@@ -312,7 +314,9 @@ function royalStatusVisible(s,royal){
 }
 function royalSprite(s,royal,x,y,scale,t,tilt=0){
  const colors=royalClothes[royal.id],seated=royal.state==='seated';
- const gait=royal.state==='wandering'?Math.sin(t*1.25+(royal.id==='prince'?0:2))*2:0;
+ const playingShell=royal.state==='wandering'&&royal.shellPlayUntil>s.tick;
+ const wandering=royal.state==='wandering'&&!playingShell&&!(royal.snackPauseUntil>s.tick);
+ const gait=wandering?Math.sin(t*1.25+(royal.id==='prince'?0:2))*2:0;
  const showMood=(royal.bored||royal.crying)&&royalStatusVisible(s,royal);
  at(x,y,scale,()=>{
    if(royal.state!=='carried')oval(1,8,13,6,'#60473647');
@@ -339,6 +343,13 @@ function royalSprite(s,royal,x,y,scale,t,tilt=0){
    }
    poly([[-7,-11],[-8,-18],[-3,-15],[0,-20],[3,-15],[8,-18],[7,-11]],'#f0cf65','#645239',1.4);
    oval(0,-14,1.6,1.6,colors.trim);
+   if(playingShell){
+     const lift=reducedMotion?.matches?0:Math.abs(Math.sin((royal.shellPlayUntil-s.tick)*.23))*9;
+     const ballY=4-lift;
+     line([[5,2],[10,5]],'#efc6a2',2);
+     oval(12,ballY,7,7,'#454e5b',ink,1.8);
+     oval(10,ballY-3,2,1.5,'#a5b1b2');
+   }
    c.restore();
  });
 }
@@ -369,21 +380,27 @@ function looseRoyal(s,royal,t,reachable){
  }
  if(reachable)oval(x,y,16,14,'#fff1b858','#fff2a7',2.2);
  royalSprite(s,royal,x,y,1,t);
- if(royal.mischief&&royalStatusVisible(s,royal)){
+ const waitingForSnack=royal.snackPauseUntil>s.tick;
+ const mischievous=royal.mischief&&royal.mischief!=='cook'&&!(royal.shellPlayUntil>s.tick);
+ if(!(waitingForSnack||mischievous)||!royalStatusVisible(s,royal))return;
+ if(waitingForSnack)snackPlate(x+14,y-20,.65);
+ else{
    oval(x+12,y-20,6,6,'#b66545','#5c3929',1.3);
    line([[x+12,y-23],[x+12,y-20]],'#fff1be',1.4);
    oval(x+12,y-17,1,1,'#fff1be');
  }
 }
-function drawLooseRoyalsOnFloor(s,t,floor){
- for(const royal of s.royals){
-   if(playerFloor(royal)!==floor||(royal.state!=='wandering'&&royal.state!=='fallen'))continue;
-   const reachable=view.localPlayers.some(id=>{
-     const player=s.players[id];
-     return stationAt(player,s)==='royal-pickup'&&royalTarget(s,player)===royal;
-   });
-   looseRoyal(s,royal,t,reachable);
+function drawRoyal(s,royal,t){
+ if(royal.state==='seated'){
+   const {x,y}=ROYAL_SEATS[royal.id];
+   royalSprite(s,royal,x,y,.83,t);
+   return;
  }
+ const reachable=view.localPlayers.some(id=>{
+   const player=s.players[id];
+   return stationAt(player,s)==='royal-pickup'&&royalTarget(s,player)===royal;
+ });
+ looseRoyal(s,royal,t,reachable);
 }
 const stationArt={
  driver:['마부석','마','#bea5bd','#795d83'],
@@ -391,6 +408,11 @@ const stationArt={
  cook:['음식 제작대','','#c4a575','#765333'],
  'wheel-pickup':['바퀴 보관함','','#c0a16d','#705635']
 };
+const occupiedPadStyle={fill:'#999c9b',edge:'#565a59',ring:'#dedfdf'};
+function occupiedByAnother(role){
+ const owner=view.stationOwners.get(role);
+ return owner!==undefined&&!view.localPlayers.includes(owner);
+}
 function spareWheel(x,y,scale,angle){
  at(x,y,scale,()=>{
    if(angle!==undefined)c.rotate(angle);
@@ -408,13 +430,17 @@ const cellarLabelScale=()=>Math.max(1,.9/(view.zoom*view.cssX));
 function floorStation(s,role){
  const onRoute=(view.role==='carry'||view.role==='catch')&&role==='rack';
  const focused=view.role&&view.role!=='driver';
- if(focused&&view.role!==role&&!onRoute)return;
+ const cannonPad=role===cannonStation(s);
+ const cannonView=isCannonRole(view.role);
+ const occupied=occupiedByAnother(role);
+ if(focused&&view.role!==role&&!onRoute&&!occupied&&!(cannonPad&&cannonView))return;
  const spot=STATIONS[role],[name,mark,fill,edge]=stationArt[role],{x,y,r}=spot;
  const inactive=(role==='loader'&&!canLoad(s))||(role==='wheel-pickup'&&!canTakeSpareWheel(s));
- const border=inactive?'#897961':edge;
- oval(x,y,r,r,inactive?'#bda47e':fill,border,2.3);
- c.save();c.strokeStyle='#fff1d8';c.lineWidth=1.8;c.setLineDash([4,4]);c.beginPath();c.arc(x,y,r-4,0,Math.PI*2);c.stroke();c.restore();
- c.textAlign='center';c.textBaseline='middle';c.font='bold 16px system-ui';c.fillStyle=edge;c.fillText(mark,x,y);
+ const border=occupied?occupiedPadStyle.edge:inactive?'#897961':edge;
+ const padFill=occupied?occupiedPadStyle.fill:inactive?'#bda47e':fill;
+ oval(x,y,r,r,padFill,border,2.3);
+ c.save();c.strokeStyle=occupied?occupiedPadStyle.ring:'#fff1d8';c.lineWidth=1.8;c.setLineDash([4,4]);c.beginPath();c.arc(x,y,r-4,0,Math.PI*2);c.stroke();c.restore();
+ c.textAlign='center';c.textBaseline='middle';c.font='bold 16px system-ui';c.fillStyle=occupied?occupiedPadStyle.edge:edge;c.fillText(mark,x,y);
  if(role==='supply'||role==='rack'){
    box(x-15,y-8,30,18,'#907050',ink,3);
    for(let i=0;i<Math.min(role==='rack'?s.ammo.rack:s.ammo.stock,5);i++)oval(x-8+(i%3)*8+(i>2?3:0),y+3-Math.floor(i/3)*7,4.8,4.8,'#565b66',ink,1.3);
@@ -431,7 +457,7 @@ function floorStation(s,role){
    spareWheel(x+7,y,.66);
    line([[x-15,y+10],[x+15,y+10]],'#b38a58',2);
  }
- if(focused&&!onRoute)return;
+ if(focused&&!onRoute&&!cannonPad&&!occupied)return;
  if(role==='cook'){
    const scale=cellarLabelScale();
    at(x,y+r+15*scale,scale,()=>tag(0,0,name,false,border,true));
@@ -443,7 +469,7 @@ function floorStation(s,role){
    return;
  }
  const labelY=y-r-5;
- box(x-23,labelY-6,46,13,border,ink,3,1);c.fillStyle='#fff8e9';c.font='bold 9px system-ui';c.fillText(role==='rack'?'적재 '+s.ammo.rack+'발':inactive?'장전 대기':name,x,labelY+.5);
+ box(x-23,labelY-6,46,13,border,ink,3,1);c.fillStyle='#fff8e9';c.font='bold 9px system-ui';c.fillText(role==='rack'?'적재 '+s.ammo.rack+'발':inactive?'포탄 필요':name,x,labelY+.5);
 }
 function crewSprite(s,id,t,passenger,recordPosition){
  const p=s.players[id],color=({p1:'#aa7ed4',p2:'#dc9d5d',p3:'#7aa5c5',p4:'#88b995'})[id];
@@ -451,7 +477,7 @@ function crewSprite(s,id,t,passenger,recordPosition){
  const bounce=moving?Math.sin(t*1.3)*1.8:0;
  oval(p.x+2,p.y+7,17,7,'#4d3e454a');
  const currentRole=stationAt(p,s);
- const aim=currentRole==='driver'?whipAimPoint(p):{x:p.x+p.ax,y:p.y+p.ay};
+ const aim=currentRole==='driver'?whipAimPoint(s,p):{x:p.x+p.ax,y:p.y+p.ay};
  const a=Math.atan2(aim.y-p.y,aim.x-p.x);
  c.save();c.translate(p.x,p.y);c.rotate(a);poly([[22,-5],[31,0],[22,5]],color,ink,1.4);c.restore();
  at(p.x,p.y+bounce,1,()=>{
@@ -477,13 +503,41 @@ function crewSprite(s,id,t,passenger,recordPosition){
    c.fillStyle='#fff9e8';c.textAlign='center';c.textBaseline='middle';c.font='bold 10px monospace';c.fillText(id.toUpperCase(),0,27);
  });
 }
-function drawCrewOnFloor(s,t,floor,recordPosition,carriedRoyals){
+function actorsOnFloor(s,floor,localPlayers){
+ const actors=[];
+ if(floor===DECK_FLOOR){
+   for(const enemy of s.enemies)actors.push({y:enemy.y,enemy});
+ }
+ for(const royal of s.royals){
+   const {state}=royal;
+   if(playerFloor(royal)!==floor||(state!=='seated'&&state!=='wandering'&&state!=='fallen'))continue;
+   const y=state==='seated'?ROYAL_SEATS[royal.id].y:royal.y;
+   actors.push({y:s.y+y,royal});
+ }
+ for(const [id,player] of Object.entries(s.players)){
+   if(playerFloor(player)===floor)actors.push({y:s.y+player.y,id});
+ }
+ // Canvas draws later sprites in front. Use world positions before animation offsets.
+ return actors.sort((a,b)=>{
+   const depth=b.y-a.y;
+   if(depth)return depth;
+   if(a.enemy&&b.enemy)return b.enemy.x-a.enemy.x;
+   return Number(Boolean(b.enemy))-Number(Boolean(a.enemy))
+     ||Number(localPlayers.includes(a.id))-Number(localPlayers.includes(b.id));
+ });
+}
+function drawActors(s,t,floor,offset,recordPosition,carriedRoyals,cavalryFrame){
  const showCrew=!view.role||view.role==='driver';
- const visible=Object.keys(s.players).filter(id=>playerFloor(s.players[id])===floor
-   &&(showCrew||id===view.id||carriedRoyals.some(child=>child.carrier===id)));
- // Draw local characters above the others when crew crowd the same station.
- visible.sort((a,b)=>Number(view.localPlayers.includes(a))-Number(view.localPlayers.includes(b))||s.players[a].y-s.players[b].y);
- for(const id of visible)crewSprite(s,id,t,carriedRoyals.find(child=>child.carrier===id),recordPosition);
+ for(const {enemy,royal,id} of actorsOnFloor(s,floor,view.localPlayers)){
+   if(enemy){
+     drawEnemy(enemy,s.tick,t,cavalryFrame);
+   }else if(royal){
+     at(offset.x,offset.y,1,()=>drawRoyal(s,royal,t));
+   }else{
+     const passenger=carriedRoyals.find(child=>child.carrier===id);
+     if(showCrew||id===view.id||passenger)at(offset.x,offset.y,1,()=>crewSprite(s,id,t,passenger,recordPosition));
+   }
+ }
 }
 function drawStairs(floor){
  const {x,y,r}=STAIRS,below=floor===CELLAR_FLOOR,dir=below?-1:1;
@@ -507,7 +561,8 @@ function drawMountedWheel(x,y){
 function wheelMounts(s){
  for(let n=0;n<WHEELS.length;n++){
    const w=WHEELS[n],side=Math.sign(w.y),mount=side*WHEEL_MOUNT_OFFSET;
-   if(s.wheel.broken!==n||s.wheel.progress===1)drawMountedWheel(w.x,mount);
+   const attached=s.wheel.broken===n&&s.wheel.progress===1;
+   if(!wheelNeedsRepair(s,n)||attached)drawMountedWheel(w.x,mount);
    else box(w.x-19,mount-3,38,6,'#92897d',ink,2,2);
  }
 }
@@ -531,20 +586,32 @@ function drawLooseWheel(wheel,tick){
  oval(x+2,y+4,radius,radius*.4,'#67504468');
  spareWheel(x,y-lift,radius/12,angle);
 }
-function repairMark(s){
- const w=WHEELS[s.wheel.broken];if(!w)return;
- const pulse=.5+.5*Math.sin(s.tick*.19);
- oval(w.x,w.y,27,24,'#88b6a0','#355c52',2.4);
- c.save();c.setLineDash([6,4]);c.strokeStyle=pulse>.5?'#f6ffda':'#d2ead3';c.lineWidth=2.8;
- c.beginPath();c.ellipse(w.x,w.y,23,20,0,0,2*Math.PI);c.stroke();c.restore();
- at(w.x,w.y,1,()=>{line([[-7,8],[6,-5]],'#3c5e50',5);line([[2,-10],[1,-5],[6,-2],[12,-6]],'#3c5e50',4);});
+function wheelRepairLabel(w,label,fill,stroke){
  const scale=cellarLabelScale(),labelX=w.x<500?w.x+31:w.x-31-48*scale;
- const hasSpare=view.localPlayers.some(id=>s.players[id].spareWheel);
- const label=s.wheel.progress?'핀 고정':hasSpare?'수리  !':'바퀴 필요';
  at(labelX,w.y,scale,()=>{
-   box(0,-9,48,18,'#3f6c5a','#365346',4,1);
+   box(0,-9,48,18,fill,stroke,4,1);
    c.fillStyle='#fff9e9';c.font='bold 10px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(label,24,0);
  });
+}
+function repairMark(s){
+ if(!view.role)for(const n of s.wheel.pending??[]){
+   const queued=WHEELS[n];
+   if(!queued)continue;
+   oval(queued.x,queued.y,22,20,'#80746585','#a79884',1.6);
+   wheelRepairLabel(queued,'수리 대기','#65594b','#41392f');
+ }
+ const w=WHEELS[s.wheel.broken];if(!w)return;
+ const occupied=occupiedByAnother('repair');
+ const edge=occupied?occupiedPadStyle.edge:'#355c52';
+ const tool=occupied?occupiedPadStyle.edge:'#3c5e50';
+ const pulse=.5+.5*Math.sin(s.tick*.19);
+ oval(w.x,w.y,27,24,occupied?occupiedPadStyle.fill:'#88b6a0',edge,2.4);
+ c.save();c.setLineDash([6,4]);c.strokeStyle=occupied?occupiedPadStyle.ring:pulse>.5?'#f6ffda':'#d2ead3';c.lineWidth=2.8;
+ c.beginPath();c.ellipse(w.x,w.y,23,20,0,0,2*Math.PI);c.stroke();c.restore();
+ at(w.x,w.y,1,()=>{line([[-7,8],[6,-5]],tool,5);line([[2,-10],[1,-5],[6,-2],[12,-6]],tool,4);});
+ const hasSpare=view.localPlayers.some(id=>s.players[id].spareWheel);
+ const label=s.wheel.progress?'핀 고정':hasSpare?'수리  !':'바퀴 필요';
+ wheelRepairLabel(w,label,occupied?occupiedPadStyle.edge:'#3f6c5a',occupied?occupiedPadStyle.edge:'#365346');
 }
 const draftHorseColors={
  right:['#b17b4d','#cf9960','#795139'],
@@ -568,9 +635,15 @@ function drawWhip(spot,x,y,sinceHit){
 }
 
 function drawDriverAim(s,p,spot){
- const {x,y}=whipAimPoint(p),target=horseWhipTarget(s,p);
+ const {x,y}=whipAimPoint(s,p),target=horseWhipTarget(s,p);
  const ready=target?.zone==='rump'&&horseCondition(s,target.side)==='fresh';
  const color=ready?'#adffc2':target?'#ff9d86':'#fff2d2';
+ const swing=p.whipSwing,age=s.tick-(swing?.tick??-Infinity);
+ if(age>=0&&age<whipEffectTicks&&!reducedMotion?.matches){
+   c.save();c.globalAlpha=.75*(1-age/whipEffectTicks);
+   c.beginPath();c.moveTo(swing.x,swing.y);c.quadraticCurveTo(Math.max(swing.x,x)+26,(swing.y+y)/2,x,y);
+   c.strokeStyle='#fff2d2';c.lineWidth=2.3;c.stroke();c.restore();
+ }
  c.save();c.setLineDash([4,6]);
  line([[spot.x-14,spot.y],[x,y]],'#49382d',3.1);
  line([[spot.x-14,spot.y],[x,y]],color,1.4);
@@ -616,7 +689,7 @@ function drawDraftHorses(s,t){
  if(view.role==='driver')drawDriverAim(s,s.players[view.id],spot);
 }
 
-function wagon(s,t,offset,recordPosition,carriedRoyals){
+function wagon(s,offset){
  at(offset.x,offset.y,1,()=>{
    for(const q of [-42,42]){
      line([[238,q],[292,q*.84],[355,q*.77]],'#514438',6);
@@ -656,7 +729,6 @@ function wagon(s,t,offset,recordPosition,carriedRoyals){
    for(const royal of s.royals){
      const {x,y}=ROYAL_SEATS[royal.id],colors=royalClothes[royal.id];
      box(x-15,y-12,30,25,colors.seat,colors.trim,4,1.5);
-     if(royal.state==='seated')royalSprite(s,royal,x,y,.83,t);
    }
    line([[482,-57],[579,-57]],'#6f5345',4);
    line([[596,-82],[596,-124]],'#4e4038',4);
@@ -673,9 +745,6 @@ function wagon(s,t,offset,recordPosition,carriedRoyals){
      poly([[-14,-10],[27,-8],[31,-12],[BARREL.length,-12],[BARREL.length,12],[31,12],[27,8],[-14,10]],'#77818a',ink,3);
      line([[-7,-5],[24,-4]],'#b9c0be',2.8);line([[34,-8],[34,8]],'#465561',2.5);
    });
-   drawLooseRoyalsOnFloor(s,t,DECK_FLOOR);
-   drawCrewOnFloor(s,t,DECK_FLOOR,recordPosition,carriedRoyals);
-   drawDraftHorses(s,t);
  });
 }
 function cellarLantern(x,y,t){
@@ -700,7 +769,7 @@ function drawFallingAmmo(s,floor,y){
    oval(x,base-16*Math.sin(progress*Math.PI),6,6,'#4e5661',ink,1.4);
  }
 }
-function drawCellar(s,t,offset,recordPosition,carriedRoyals){
+function drawCellar(s,t,offset){
  c.fillStyle='#17191b';
  c.fillRect(view.left-1,view.top-1,view.span/view.zoom+2,view.height/view.zoom+2);
  at(offset.x,offset.y,1,()=>{
@@ -726,20 +795,41 @@ function drawCellar(s,t,offset,recordPosition,carriedRoyals){
      box(wheel.x-18,mount-4,36,8,'#686564','#30292a',2,2);
      for(const sign of [-1,1])oval(wheel.x+sign*12,mount,2.1,2.1,'#c1ad91','#473b36',1);
    }
-   if(!view.role||view.role==='repair')repairMark(s);
+   if(!view.role||view.role==='repair'||occupiedByAnother('repair'))repairMark(s);
    floorStation(s,'supply');
    floorStation(s,'cook');
    floorStation(s,'wheel-pickup');
    drawStairs(CELLAR_FLOOR);
    drawFallingAmmo(s,CELLAR_FLOOR,0);
-   drawLooseRoyalsOnFloor(s,t,CELLAR_FLOOR);
-   drawCrewOnFloor(s,t,CELLAR_FLOOR,recordPosition,carriedRoyals);
  });
 }
-function knight(x,y,kind,t,jab,tilt=0){
-  at(x,y,DRAFT_HORSE_SCALE,()=>{
+const cavalryFrameWidth=200,cavalryFrameHeight=184,cavalryRunCount=8,cavalryRunFps=16;
+function loadCavalrySheet(filename){
+ if(typeof Image!=='function')return null;
+ const sprite=new Image();
+ sprite.src=new URL(filename,import.meta.url).href;
+ return sprite;
+}
+const cavalryRunSprite=loadCavalrySheet('./cavalry-run.png');
+const cavalryHitSprite=loadCavalrySheet('./cavalry-death-hit.png');
+const cavalryBlastSprite=loadCavalrySheet('./cavalry-death-blast.png');
+
+function drawCavalryFrame(sprite,x,y,frame,tilt=0){
+ if(!sprite?.complete||!sprite.naturalWidth)return false;
+ // Align the horse's body with the existing collision shape.
+ at(x,y,.88*CAVALRY_SIZE_FACTOR,()=>{
+   if(tilt)c.rotate(tilt);
+   c.imageSmoothingEnabled=false;
+   c.drawImage(sprite,frame*cavalryFrameWidth,0,cavalryFrameWidth,cavalryFrameHeight,
+     -106,-114,cavalryFrameWidth,cavalryFrameHeight);
+ });
+ return true;
+}
+function drawKnight(x,y,kind,t,jab,frame,tilt=0){
+  if(drawCavalryFrame(cavalryRunSprite,x-jab*.45*CAVALRY_SIZE_FACTOR,y,frame,tilt))return;
+  at(x,y,DRAFT_HORSE_SCALE*CAVALRY_SIZE_FACTOR,()=>{
     c.rotate(tilt);
-    horse(0,4,1,kind===1?['#b5825f','#ddac7e','#6c5144']:['#b8ab92','#d9ccaf','#86745b'],t*horseStrideRate+kind);
+    horse(0,4,1,kind===1?['#b5825f','#ddac7e','#6c5144']:['#b8ab92','#d9ccaf','#86745b'],t*horseStrideRate+kind,0,false);
     poly([[-15,3],[-8,-11],[9,-11],[18,4],[11,12],[-9,11]],'#528ca0',ink,2.2);
     line([[-39-jab,-10],[24-jab,-15]],'#554b3c',3.5);
     poly([[-48-jab,-10],[-37-jab,-14],[-31-jab,-12],[-38-jab,-7]],'#c6d5ce',ink,1.7);
@@ -748,17 +838,58 @@ function knight(x,y,kind,t,jab,tilt=0){
     poly([[1,3],[11,1],[17,5],[15,13],[9,17],[2,13]],'#689eb1',ink,2);line([[8,4],[9,12]],'#d0d9c4',2.2);
   });
 }
+function drawCavalryShadow(x,y){
+ const size=CAVALRY_SIZE_FACTOR,groundX=x-6*size,groundY=y+52*size;
+ oval(groundX,groundY,76*size,16*size,'#55402b29');
+ oval(groundX,groundY,63*size,10*size,'#55402b24');
+}
 function drawThrownKnight(enemy,knockback,tick){
  const {x,y,kind}=enemy;
  const age=Math.max(0,tick-knockback.tick);
  const progress=Math.min(1,age/WHEEL_KNOCK_TICKS);
  const lift=32*Math.sin(progress*Math.PI);
  const tilt=age/HZ*knockback.spin;
- oval(x+CAVALRY_ART_X+4,y+10,43,12,'#68574654');
  c.save();
  c.globalAlpha=1-Math.max(0,progress-.7)/.3;
- knight(x+CAVALRY_ART_X,y-lift,kind,0,0,tilt);
+ drawCavalryShadow(x+CAVALRY_ART_X,y);
+ drawKnight(x+CAVALRY_ART_X,y-lift,kind,0,0,0,tilt);
  c.restore();
+}
+function drawCannonDefeat(enemy,knockback,tick){
+ const age=Math.max(0,tick-knockback.tick);
+ if(age>=CAVALRY_DEATH_TICKS)return;
+ const frame=Math.min(CAVALRY_DEATH_FRAME_COUNT-1,Math.floor(age/CAVALRY_DEATH_FRAME_TICKS));
+ const fadeTicks=8;
+ const x=enemy.x+CAVALRY_ART_X,y=enemy.y;
+ const sprite=knockback.kind==='direct'?cavalryHitSprite:cavalryBlastSprite;
+ c.save();
+ c.globalAlpha=Math.min(1,(CAVALRY_DEATH_TICKS-age)/fadeTicks);
+ drawCavalryShadow(x,y);
+ if(!drawCavalryFrame(sprite,x,y,frame))drawKnight(x,y,enemy.kind,0,0,0);
+ c.restore();
+}
+function drawEnemy(enemy,tick,t,cavalryFrame){
+ const {y,kind,id}=enemy,x=enemy.x+CAVALRY_ART_X;
+ const knockback=enemyKnockback(enemy);
+ if(knockback){
+   if(inView(x,y,150,182,150)){
+     if(enemy.cannonKnock)drawCannonDefeat(enemy,knockback,tick);
+     else drawThrownKnight(enemy,knockback,tick);
+   }
+   return;
+ }
+ if(!inView(x,y,124,108,65))return;
+ const sinceStrike=tick-(enemy.lastStrike??-Infinity);
+ const dustSide=sinceStrike<=ENEMY_RETREAT_TICKS?-1:1;
+ const dustCount=sinceStrike<=ENEMY_RETREAT_TICKS+ENEMY_RECOVERY_TICKS?2:4;
+ const size=CAVALRY_SIZE_FACTOR;
+ for(let i=0;i<dustCount;i++){
+   const q=mod(i*11+t*1.4,45);
+   oval(x+dustSide*(59+q)*size,y+(20+Math.sin(i*4)*7)*size,(4+q*.09)*size,3.2*size,'#f6dfb4');
+ }
+ const jab=16*Math.max(0,1-sinceStrike/7);
+ drawCavalryShadow(x-jab*.45*size,y);
+ drawKnight(x,y,kind,t,jab,mod(cavalryFrame+id,cavalryRunCount));
 }
 function tag(x,y,title,dot=false,fill='#383c38',pointUp=false){
   c.font='bold 10px system-ui, sans-serif';let w=c.measureText(title).width+19+(dot?9:0);
@@ -769,6 +900,8 @@ function tag(x,y,title,dot=false,fill='#383c38',pointUp=false){
 }
 const boulderOutline=[[-37,10],[-32,-15],[-16,-33],[12,-32],[31,-18],[39,7],[29,24],[-5,31],[-30,24]];
 const boulderScale=2;
+const boulderDropHeight=364,boulderDropTicks=HZ*.4;
+const boulderLandingAngle=-.24,boulderDropTurn=.32;
 const landingMarkerScale=2;
 const impactDust=['#b58a60','#d2ab7b','#e8c495'];
 const dustColumnColors=['#9d754f','#c2976a','#ddb587'];
@@ -813,7 +946,7 @@ function drawShot(shot){
    line([[shot.x-15*Math.cos(angle),shot.y-15*Math.sin(angle)],[shot.x,shot.y]],'#70554b',3);
    return;
  }
- const radius=cannonShotRadius(shot),trail=radius*7;
+ const radius=cannonShotRadius(shot),trail=98*(shot.caliber??1);
  if(!inView(shot.x,shot.y,trail+4))return;
  const angle=Math.atan2(shot.vy,shot.vx);
  at(shot.x,shot.y,1,()=>{
@@ -954,9 +1087,9 @@ function drawParticles(particles){
    }
  }
 }
-function drawBoulder(x,y,fall){
+function drawBoulder(x,y,angle){
  at(x,y-31*(boulderScale-1),boulderScale,()=>{
-   c.rotate((1-fall)*.46);
+   c.rotate(angle);
    poly(boulderOutline,'#787a70','#49483f',3);
    poly([[-32,-15],[-16,-33],[12,-32],[24,-19],[7,-12],[-16,-9]],'#a9aa95',null);
    poly([[7,-12],[24,-19],[31,-18],[39,7],[29,24],[7,27],[15,10]],'#5f625b',null);
@@ -1025,10 +1158,11 @@ function drawCatapult(s,impactAge){
      c.setLineDash([5,4]);
      oval(x,rock.y,rx,ry,'#00000000',dangerous?'#ed3845':'#ffcf8c',3.2);
      c.setLineDash([]);
-     const fall=1-untilLanding/(HZ*.6);
-     if(fall>0){
+     if(untilLanding<=boulderDropTicks){
+       const fall=1-untilLanding/boulderDropTicks;
        c.globalAlpha=Math.min(1,fall*4);
-       drawBoulder(x,rock.y-182*(1-fall*fall),fall);
+       const angle=boulderLandingAngle+boulderDropTurn*(1-fall);
+       drawBoulder(x,rock.y-boulderDropHeight*(1-fall*fall),angle);
      }
    }
  }else if(impactAge>=0){
@@ -1041,7 +1175,7 @@ function drawCatapult(s,impactAge){
      oval(x,rock.y+17,46+110*wave,21+49*wave,'#00000000','#f9e2b9',5-3*wave);
    }
    c.globalAlpha=Math.min(1,(1-age)*3);
-   drawBoulder(x,rock.y,1);
+   drawBoulder(x,rock.y,boulderLandingAngle);
    drawImpactDust(x,rock.y+19,age,rock.launchedAt);
  }
  c.restore();
@@ -1100,18 +1234,24 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  const cssX=rect.width/cw,cssY=rect.height/ch;
  const viewCssX=rect.width/views[0].screenWidth,viewCssY=rect.height/views[0].height;
  const t=s.mode==='ready'?wall/470:s.tick*.37;
+ const cavalryFrame=Math.floor(s.tick*cavalryRunFps/HZ);
  const rock=s.catapult;
  const impactAge=rock?.hit===undefined?-1:s.tick-rock.landAt;
  const recoil=s.cannonRecoil,recoilAge=recoil?s.tick-recoil.tick:-1;
  const kick=cannonKick(recoil,recoilAge);
  const carriage={x:kick.x,y:s.y+s.shake*Math.sin(t*3)*3+kick.y};
  const carriedRoyals=s.royals.filter(royal=>royal.state==='carried');
+ const stationOwners=new Map();
+ for(const [id,p] of Object.entries(s.players)){
+   const role=occupiedStation(p,s);
+   if(role)stationOwners.set(role,id);
+ }
  const blasts=s.cannonImpacts?.length?s.cannonImpacts.map(impact=>({
    impact,x:impact.x+s.road-(impact.road??s.road),age:s.tick-impact.tick,
  })):null;
- let roadside,enemyOrder;
+ let roadside;
  for(const camera of views){
- view={...impactCamera(camera,impactAge),cssX:viewCssX};
+ view={...impactCamera(camera,impactAge),cssX:viewCssX,stationOwners};
  if(kick.x||kick.y)view={...view,left:view.left-kick.x*.56/view.zoom,top:view.top-kick.y*.7/view.zoom};
  if(view.floor!==CELLAR_FLOOR)view.left=Math.max(view.left,ROAD_CAMERA_MIN_X);
  view.right=view.left+view.span/view.zoom;
@@ -1141,7 +1281,8 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  }
  c.translate(view.start,0);c.scale(view.zoom,view.zoom);c.translate(-view.left,-view.top);
  if(view.floor===CELLAR_FLOOR){
-   drawCellar(s,t,carriage,recordPosition,carriedRoyals);
+   drawCellar(s,t,carriage);
+   drawActors(s,t,CELLAR_FLOOR,carriage,recordPosition,carriedRoyals,cavalryFrame);
    drawEmoteBubbles(bubbles,left,right,bottom,cssX,cssY);
    c.restore();
    continue;
@@ -1153,25 +1294,6 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  if(blasts)for(const {impact,x,age} of blasts){
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonScorch(impact,x,age);
  }
- enemyOrder??=[...s.enemies].sort((a,b)=>b.x-a.x);
- for(const e of enemyOrder){
-   const x=e.x+CAVALRY_ART_X;
-   const knockback=enemyKnockback(e);
-   if(knockback){
-     if(inView(x,e.y,125,154,125))drawThrownKnight(e,knockback,s.tick);
-     continue;
-   }
-   if(!inView(x,e.y,120,46))continue;
-   const sinceStrike=s.tick-(e.lastStrike??-Infinity);
-   const dustSide=sinceStrike<=ENEMY_RETREAT_TICKS?-1:1;
-   const dustCount=sinceStrike<=ENEMY_RETREAT_TICKS+ENEMY_RECOVERY_TICKS?2:4;
-   for(let i=0;i<dustCount;i++){
-     const q=mod(i*11+t*1.4,45);
-     oval(x+dustSide*(59+q),e.y+20+Math.sin(i*4)*7,4+q*.09,3.2,'#f6dfb4');
-   }
-   const jab=16*Math.max(0,1-sinceStrike/7);
-   knight(x,e.y,e.kind,t,jab);
- }
  for(const wheel of s.looseWheels??[])drawLooseWheel(wheel,s.tick);
  if(inView(777,s.y+19,54,20)){
    for(let i=0;i<8;i++){
@@ -1179,7 +1301,9 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
      oval(735+q,s.y+19+Math.sin(i*7)*12,3.5+q*.053,2.7+q*.02,'#f7e1b6');
    }
  }
- wagon(s,t,carriage,recordPosition,carriedRoyals);
+ wagon(s,carriage);
+ drawActors(s,t,DECK_FLOOR,carriage,recordPosition,carriedRoyals,cavalryFrame);
+ at(carriage.x,carriage.y,1,()=>drawDraftHorses(s,t));
 
  // Lower roadside plants overlap the wagon, with gameplay effects above them.
  woodland(s.road,lowerVerge);

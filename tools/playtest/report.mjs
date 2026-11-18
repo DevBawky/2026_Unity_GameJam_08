@@ -21,12 +21,14 @@ const lossLabels = {
   catch_timing_miss: '붙잡기 타이밍 실패',
   catch_timeout: '붙잡기 시간 초과',
   loading_timing_miss: '장전 타이밍 실패',
+  royal_shell_drop: '마차 밖으로 떨어뜨림',
   unattributed: '원인 미확인',
 };
 const catchLosses = new Set(['catch_timing_miss', 'catch_timeout']);
 
 function actorLabel(actor, controller, driver) {
   if (!actor) return '작업자 미확인';
+  if (controller === 'royal') return actor === 'princess' ? '공주' : '왕자';
   if (controller === 'openai' || actor === 'p1') {
     return driver === 'mock' ? `검증용 플레이어 ${actor}` : `OpenAI ${actor}`;
   }
@@ -96,9 +98,11 @@ function catchFinding(attempt, driver, decisions) {
   const startRef = eventRef(start);
   if (!result) return `${actor}에게 발사 반동으로 붙잡기 작업이 생겼고, 실행 기록은 결과 확인 전까지입니다 (${startRef}).`;
   const elapsed = (result.seconds - start.seconds).toFixed(2);
-  const press = result.controller === 'openai' && decisions.find(decision => (
-    decision.before?.tick === result.tick && decision.before.role === 'catch' && decision.action.kind === 'press' && decision.accepted
-  ));
+  const press = result.controller === 'openai'
+    ? decisions.find(decision => (
+      decision.before?.tick === result.tick && decision.before.role === 'catch' && decision.action.kind === 'press' && decision.accepted
+    ))
+    : undefined;
   const cue = Number.isFinite(press?.before.timing?.needleDegrees)
     ? ` 버튼을 눌렀을 때 게이지 바늘은 성공 구간 중심에서 ${Math.abs(press.before.timing.needleDegrees)}도 떨어져 있었습니다.`
     : '';

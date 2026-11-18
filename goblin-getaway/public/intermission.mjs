@@ -1,7 +1,7 @@
 import {nextStagePosition} from './campaign.mjs';
 
 export const UPGRADE_CARDS = [
-  {id:'repair', name:'마차 수리', desc:'내구도 35를 회복하고 이탈한 바퀴를 수리합니다.', cost:3, icon:'+'},
+  {id:'repair', name:'마차 수리', desc:'내구도 35를 회복하고 빠진 바퀴를 모두 수리합니다.', cost:3, icon:'+'},
   {id:'sight', name:'정밀 도구', desc:'타이밍 작업의 성공 판정 구간을 넓힙니다.', cost:4, maxLevel:3, icon:'◎'},
   {id:'steady', name:'대포 고정대', desc:'조준 중 대포가 덜 흔들립니다.', cost:4, maxLevel:3, icon:'≈'},
   {id:'barrel', name:'대구경 포신', desc:'포신과 포탄이 커지고 포탄의 명중 범위가 넓어집니다.', cost:6, maxLevel:3, icon:'◉'},
@@ -84,13 +84,16 @@ function kingReply(s,id){
     const {care,earned}=s.intermission;
     if(care.every(child=>child.attention===null))return '이번 구간의 돌봄 기록이 없군. 다음 구간에서는 두 아이의 상태를 살펴라.';
     const summary=care.map(child=>child.name+' '+child.points+'점').join(', ');
-    const advice=care.some(child=>child.cryPenalty>0)?'울었던 시간만큼 감점했다. 놀란 아이는 안고 걸어서 달래고, 배고픈 아이에게는 간식을 먹여라.':
+    const advice=care.some(child=>child.cryPenalty>0)?'울었던 시간만큼 감점했다. 놀란 아이는 안아서 달래고, 배고픈 아이에게는 간식을 먹여라.':
       earned>=14?'잘 돌봤군. 다음에도 두 아이를 살펴라.':'두 아이가 자리를 비우면 가까이 가서 좌석으로 데려다주어라.';
     return summary+'으로 확인했다. '+advice;
   }
   if(id==='damage'){
     const durability=Math.round(s.hp)+' / '+maxDurability(s);
-    if(s.wheel?.broken>=0)return '내구도 '+durability+'. 바퀴가 빠졌군. 출발 전에 수리할지 상의해라.';
+    if(s.wheel?.broken>=0){
+      const damaged=1+(s.wheel.pending?.length??0);
+      return '내구도 '+durability+'. 수리가 필요한 바퀴는 '+damaged+'개로군. 출발 전에 수리할지 상의해라.';
+    }
     return '내구도 '+durability+'로 확인했다. 다음 구간에 대비해 수리와 보강 중 무엇이 필요한지 상의해라.';
   }
   const {stock=0,rack=0,loaded=false,lost=0}=s.ammo??{};
@@ -125,8 +128,11 @@ export function canBuyCard(s,id){
 function applyCard(s,card){
   if(card.id==='repair'){
     s.hp=Math.min(maxDurability(s),s.hp+35);
-    if(s.wheel?.broken>=0){
-      Object.assign(s.wheel,{broken:-1,progress:0,since:0,first:false,eligible:s.distance+240});
+    const wheel=s.wheel;
+    if(!wheel)return;
+    wheel.cavalryDamage=0;
+    if(wheel.broken>=0){
+      Object.assign(wheel,{broken:-1,pending:[],progress:0,since:0,first:false,eligible:s.distance+240});
     }
     return;
   }

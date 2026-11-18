@@ -1,7 +1,7 @@
 import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES} from './campaign.mjs';
 import {ROAD_OBSTACLE_TYPES,obstacleY,roadObstacleProfile,roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
-import {finishCare,maxDurability,newCare,pruneVotes,recordCare,recordFeeding,recordReseat,UPGRADE_CARDS} from './intermission.mjs';
-import {DRAFT_HORSE_SCALE,horseRumpAim,horseWhipTarget,HORSE_ZONE_NAMES,spookHorse,horseRebellion} from './horse-targets.mjs';
+import {finishCare,maxDurability,newCare,pruneVotes,recordCare,recordFeeding,recordReseat,UPGRADE_CARDS} from './intermission.mjs?v=wheel-axle83';
+import {DRAFT_HORSE_SCALE,horseRumpAim,horseWhipTarget,whipFollowThrough,HORSE_ZONE_NAMES,spookHorse,horseRebellion} from './horse-targets.mjs?v=whip-reach73';
 export {obstacleY} from './road-obstacles.mjs?v=loose-wheels34';
 
 export const HZ = 30;
@@ -16,13 +16,17 @@ export const DECK = {left:363,right:694,top:-81,bottom:81};
 export const DECK_FLOOR='deck', CELLAR_FLOOR='cellar';
 export const STAIRS={x:502,y:65,r:18};
 export const playerFloor=p=>p?.floor===CELLAR_FLOOR?CELLAR_FLOOR:DECK_FLOOR;
+const cannonPad={x:641,y:0,r:26};
 export const STATIONS = {
- driver:{x:385,y:0,r:26},gunner:{x:658,y:3,r:26},
- rack:{x:674,y:62,r:19},loader:{x:622,y:-39,r:21},cleaner:{x:674,y:-41,r:20},
+ driver:{x:385,y:0,r:26},rack:{x:674,y:62,r:19},
+ cleaner:cannonPad,loader:cannonPad,gunner:cannonPad,
  supply:{x:665,y:0,r:23},cook:{x:383,y:-21,r:24},'wheel-pickup':{x:528,y:-62,r:24}
 };
 const CANNON_ROLES=['cleaner','loader','gunner'];
-const WORK_ROLES=['repair','driver',...CANNON_ROLES,'supply','cook','wheel-pickup'];
+export const isCannonRole=role=>CANNON_ROLES.includes(role);
+const formerCannonPads={cleaner:{x:674,y:-41,r:20},loader:{x:622,y:-39,r:21},gunner:{x:658,y:3,r:26}};
+const DECK_WORK_ROLES=['driver',...CANNON_ROLES];
+const WORK_ROLES=['repair',...DECK_WORK_ROLES,'supply','cook','wheel-pickup'];
 export const ROYAL_SEATS={
  prince:{x:510,y:-74,dropY:-34},
  princess:{x:549,y:-74,dropY:-34}
@@ -45,11 +49,14 @@ const ENEMY_RETURN_TICKS=HZ;
 export const CATAPULT_RADIUS={x:35,y:24};
 const CATAPULT_FIRST=6*HZ, CATAPULT_APPROACH=33, CATAPULT_FLIGHT=144, CATAPULT_LINGER=21;
 const CART_HULL={left:340,right:715,halfHeight:100};
-const CATAPULT_TARGET_X=718, ROAD_UNITS_PER_METER=4;
-const ROAD_SCROLL_UNITS_PER_METER=ROAD_UNITS_PER_METER*2;
+// World X 180 projects to about 30% of the standard 16:9 overview.
+const CATAPULT_TARGET_X=718, CATAPULT_FORWARD_X=180;
+const ROAD_UNITS_PER_METER=4;
+const ROAD_SCROLL_UNITS_PER_METER=ROAD_UNITS_PER_METER*8;
 const ROAD_FIRST_WARNING_METERS=42, ROAD_WARNING_TICKS=4*HZ, ROAD_OBSTACLE_ENTRY_X=ROAD_CAMERA_MIN_X-100;
 const ROAD_OBSTACLE_HIT_START=287, ROAD_OBSTACLE_HIT_END=344, ROAD_STRIKE_MARGIN=HZ;
 const WALK_SPEED=165, CARRY_SPEED=50, WHEEL_CARRY_SPEED=110, STEERING_RATE=4.2;
+const PORTER_SPEED_PER_LEVEL=10;
 const ENEMY_RETREAT_SPEED=54, ENEMY_RECOVERY_SPEED=.4;
 const ENEMY_TRACK_X=1040, ENEMY_TRACK_SPEED=30, ENEMY_STRIKE_REACH=26;
 const PURSUIT_GAP=118;
@@ -60,11 +67,11 @@ const PURSUIT_SLOTS=[
   {y:-43,strikeX:783,hitX:715},
   {y:43,strikeX:783,hitX:715},
 ];
-// The sprite center is offset to keep the lance near the wagon during a strike.
-export const CAVALRY_ART_X=40;
+export const CAVALRY_ART_X=40, CAVALRY_SIZE_FACTOR=.5;
+const cavalryBodyScale=DRAFT_HORSE_SCALE*CAVALRY_SIZE_FACTOR;
 const CAVALRY_BODY={
-  x:CAVALRY_ART_X-9*DRAFT_HORSE_SCALE,y:3*DRAFT_HORSE_SCALE,
-  rx:43*DRAFT_HORSE_SCALE,ry:23*DRAFT_HORSE_SCALE,
+  x:CAVALRY_ART_X-9*cavalryBodyScale,y:3*cavalryBodyScale,
+  rx:43*cavalryBodyScale,ry:23*cavalryBodyScale,
 };
 export const WAVE_ENTRY_X=1280;
 const WAVE_SPACING=56;
@@ -76,7 +83,11 @@ const HORSE_RUNAWAY_STEER=176, HORSE_RUNAWAY_PACE=.18, HORSE_TIRED_PACE=.78;
 const HORSE_SIDES=['right','left'];
 const ROYAL_BODY=22, ROYAL_WALK=56, ROYAL_CARRY=125, ROYAL_ATTENTION_LOW=20;
 const ROYAL_REST=7*HZ, ROYAL_BOT_GRACE=9*HZ;
-const ROYAL_STAIRS_CHANCE=.25;
+const ROYAL_PREFERENCES={
+ prince:{stairs:.72,snacks:.7,shells:.1},
+ princess:{stairs:.1,snacks:.08,shells:.8},
+};
+const ROYAL_SNACK_PAUSE=2*HZ, ROYAL_SHELL_PLAY_TICKS=Math.round(1.2*HZ);
 const ROYAL_SOOTHE_DISTANCE=ROYAL_CARRY*2.5;
 const ROYAL_BOREDOM_CHANCE=.30, ROYAL_BOREDOM_DISTANCE=ROYAL_SOOTHE_DISTANCE/3;
 const ROYAL_EXCURSION_DISTANCE=82, ROYAL_DECK_END=80;
@@ -105,11 +116,17 @@ const freshHorseWear=()=>({wounds:0,lastHit:-9999,angryUntil:0});
 function horseWear(){return Object.fromEntries(HORSE_SIDES.map(side=>[side,freshHorseWear()]));}
 
 export const BARREL = {x:704,y:0,length:44};
-const CANNON_SHOT_SPEED=1750, CANNON_SHOT_RADIUS=14, LEGACY_CANNON_RADIUS=6;
-export const CANNON_AIM_MIN_X=866, CANNON_AIM_MAX_X=1080, CANNON_AIM_Y=154;
+const CANNON_SHOT_SPEED=1750, CANNON_SHOT_RADIUS=28, LEGACY_CANNON_RADIUS=6;
+// Leave room beyond the farthest aim point for scatter and the full shockwave.
+export const CANNON_VIEW_RIGHT_X=1660;
+export const CANNON_AIM_MIN_X=866, CANNON_AIM_MAX_X=BARREL.x+.70*(CANNON_VIEW_RIGHT_X-BARREL.x), CANNON_AIM_Y=154;
 export const CANNON_IMPACT_TICKS=90;
-const CANNON_AIM_CENTER=(CANNON_AIM_MIN_X+CANNON_AIM_MAX_X)/2;
-const CANNON_AIM_SPAN=(CANNON_AIM_MAX_X-CANNON_AIM_MIN_X)/2;
+export const CAVALRY_DEATH_FRAME_TICKS=2, CAVALRY_DEATH_FRAME_COUNT=8, CAVALRY_DEATH_TICKS=HZ;
+const CAVALRY_DEATH_BACKSTEP=8;
+const CANNON_AIM_CENTER=973;
+const CANNON_FULL_ACCURACY_RANGE=310, CANNON_MAX_RANGE_PENALTY=.72;
+const cannonAimSpan=offset=>offset<0?CANNON_AIM_CENTER-CANNON_AIM_MIN_X:CANNON_AIM_MAX_X-CANNON_AIM_CENTER;
+const cannonAimX=ax=>CANNON_AIM_CENTER+ax*cannonAimSpan(ax);
 export const cannonScale=s=>1+.17*(s.traits?.barrel??0);
 export const cannonShotRadius=shot=>shot.radius??LEGACY_CANNON_RADIUS*(shot.caliber??1);
 export const WHEELS = [
@@ -118,8 +135,19 @@ export const WHEELS = [
 ];
 export const WHEEL_MOUNT_OFFSET=103, LOOSE_WHEEL_RADIUS=20, WHEEL_KNOCK_TICKS=24;
 const LOOSE_WHEEL_EXIT_X=WAVE_ENTRY_X+100;
+const CAVALRY_WHEEL_DAMAGE=25, DAMAGED_WHEEL_PACE=.57, BROKEN_AXLE_PACE=.18;
 export const repairLabels=['바퀴 끼우기','차축 핀 고정'];
-function wheelState(){return {broken:-1,progress:0,since:0,first:true,eligible:110};}
+function wheelState(){return {broken:-1,pending:[],progress:0,since:0,first:true,eligible:110,cavalryDamage:0};}
+export function wheelNeedsRepair(s,index){
+ return s.wheel?.broken===index||s.wheel?.pending?.includes(index)===true;
+}
+export function hasBrokenAxle(s){
+ return (wheelNeedsRepair(s,0)&&wheelNeedsRepair(s,2))||
+   (wheelNeedsRepair(s,1)&&wheelNeedsRepair(s,3));
+}
+function wheelPace(s){
+ return hasBrokenAxle(s)?BROKEN_AXLE_PACE:s.wheel.broken>=0?DAMAGED_WHEEL_PACE:1;
+}
 export function feedbackKey(role){return role==='gunner'?'gun':role==='repair'?'fix':role==='driver'?'drive':role;}
 
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -142,7 +170,7 @@ export function setHumanSlots(s,slots){
    const p=s.players[id];p.mx=0;p.my=0;p.until=0;p.job=null;resetCooking(p);
  }
  s.humanSlots=[...slots];s.humans=slots.length;
- if(s.cannonExit&&!slots.includes(s.cannonExit.id))finishCannonExit(s);
+ if(s.cannonExit&&!slots.includes(s.cannonExit.id))s.cannonExit=null;
  pruneVotes(s,slots);
 }
 export function ensureDeck(s){
@@ -203,6 +231,8 @@ export function ensureDeck(s){
  }
  s.horses??={right:0,left:0};s.ammo??=supplies();s.humans??=1;
  if(!s.wheel){s.wheel=wheelState();s.fixCd=0;s.fixMsg='';s.fixUntil=0;}
+ if(!Array.isArray(s.wheel.pending))s.wheel.pending=[];
+ s.wheel.cavalryDamage??=0;
  if(!Array.isArray(s.looseWheels))s.looseWheels=[];
  if(!Array.isArray(s.obstacles))s.obstacles=[];
  if(!Number.isFinite(s.nextRock))s.nextRock=s.distance+ROAD_FIRST_WARNING_METERS;
@@ -220,6 +250,16 @@ export function ensureDeck(s){
  if(s.mode==='ready'&&s.ammo.rack===2)s.ammo.rack=STARTING_RACK_SHELLS;
  s.fuse??={end:0,owner:null};s.falling??=[];s.cannonRecoil??=null;
  if(s.ammo.cleaning===undefined)s.ammo.cleaning=s.ammo.loaded?null:0;
+ for(const p of Object.values(s.players)){
+   if(!isCannonRole(p.station)||playerFloor(p)!==DECK_FLOOR)continue;
+   if(!onSpot(p,cannonPad)&&onSpot(p,formerCannonPads[p.station])){
+     p.x=cannonPad.x;p.y=cannonPad.y;
+   }
+ }
+ const previousGunner=s.players[s.cannonExit?.id];
+ if(previousGunner?.station==='gunner'&&cannonStation(s)==='cleaner'&&reachesSpot(previousGunner,cannonPad,'cleaner')){
+   advanceCannonWork(s,previousGunner);
+ }
  s.catapult??=null;
  s.nextCatapult??=Math.max(CATAPULT_FIRST,s.tick+2*HZ);
  s.traits??={};
@@ -254,8 +294,7 @@ function workSpot(s,role){
  }
  if(role==='supply'&&s.ammo.stock===0)return null;
  if(role==='wheel-pickup'&&!canTakeSpareWheel(s))return null;
- if(role==='gunner'&&s.cannonExit)return STATIONS.gunner;
- if(CANNON_ROLES.includes(role)&&role!==cannonStation(s))return null;
+ if(isCannonRole(role)&&role!==cannonStation(s))return null;
  return WORK_ROLES.includes(role)?STATIONS[role]:null;
 }
 function canWork(p,s,role){
@@ -277,19 +316,26 @@ function releaseStation(p,blockEntry=false){
  p.station=null;p.mx=0;p.my=0;
  resetCooking(p);
 }
+function enterStation(s,p,role){
+ p.station=role;p.mx=0;p.my=0;
+ if(role==='driver')Object.assign(p,horseRumpAim(s,'right'));
+ if(role==='gunner'){
+   Object.assign(p,cannonAimCursor(s));
+   p.cannonCursor=true;
+ }
+}
+function advanceCannonWork(s,p){
+ const role=cannonStation(s);
+ if(isCannonRole(p.job))p.job=role;
+ enterStation(s,p,role);
+}
 export function leaveStation(s,id,expectedRole){
  const p=s.players[id],role=occupiedStation(p,s);
- if(s.mode!=='run'||!role||(expectedRole&&role!==expectedRole)||cannonAfterShot(s,p))return false;
+ if(s.mode!=='run'||!role)return false;
+ if(expectedRole&&role!==expectedRole&&!(isCannonRole(expectedRole)&&isCannonRole(role)))return false;
+ if(cannonAfterShot(s,p))s.cannonExit=null;
  releaseStation(p,true);
  return true;
-}
-function finishCannonExit(s){
- if(!s.cannonExit)return;
- const p=s.players[s.cannonExit.id];
- s.cannonExit=null;
- if(p.station!=='gunner')return;
- releaseStation(p,true);
- message(p,s,'포탄 발사 · 포신을 청소하세요');
 }
 function claimStations(s,humans){
  const owners=new Map();
@@ -299,7 +345,7 @@ function claimStations(s,humans){
    if(role&&!owners.has(role)&&(humans.has(id)||p.job===role))owners.set(role,id);
    else if(p.station)releaseStation(p);
    if(p.exitedStation){
-     const spot=p.exitedStation==='gunner'?STATIONS.gunner:workSpot(s,p.exitedStation);
+     const spot=isCannonRole(p.exitedStation)?cannonPad:workSpot(s,p.exitedStation);
      if(!reachesSpot(p,spot,p.exitedStation))p.exitedStation=null;
    }
  }
@@ -308,22 +354,20 @@ function claimStations(s,humans){
    if(p.station||p.exitedStation||p.ball||p.food||p.royal)continue;
    for(const role of human?WORK_ROLES:[p.job]){
      const spot=workSpot(s,role),owner=owners.get(role);
-     if(!canWork(p,s,role)||!reachesSpot(p,spot,role)||(owner&&(!human||humans.has(owner))))continue;
+     if(!canWork(p,s,role)||!reachesSpot(p,spot,role)||
+        (owner&&(!human||humans.has(owner)||DECK_WORK_ROLES.includes(role))))continue;
      if(owner){
        const bot=s.players[owner];
        releaseStation(bot);bot.job=null;
      }
-     p.station=role;p.mx=0;p.my=0;owners.set(role,id);
-     if(role==='driver')Object.assign(p,horseRumpAim(s,'right'));
-     if(role==='gunner'){
-       Object.assign(p,cannonAimCursor(s));
-       p.cannonCursor=true;
-     }
+     enterStation(s,p,role);
+     owners.set(role,id);
      break;
    }
  }
 }
 const offSeat=royal=>royal.state==='wandering'||royal.state==='fallen';
+export const royalBoredHint=name=>name+'님이 지루해해요.\n다른 곳으로 이동해봐요.';
 export function royalSootheProgress(royal){
  const distance=royal?.sootheDistance;
  return Number.isFinite(distance)?clamp(distance/ROYAL_SOOTHE_DISTANCE,0,1):0;
@@ -400,8 +444,10 @@ export function setInput(s,id,input){
    p.mx=0;p.my=0;
    if((input.aimRole!==undefined&&input.aimRole!==role)||(input.aimRole===undefined&&move>0))return;
    if(role==='driver'){
+     // A packet sampled before the swing must not reset the follow-through position.
+     if(input.whipSequence!==undefined&&input.whipSequence!==(p.whipSwing?.sequence??0))return;
      p.ax=input.ax/Math.max(1,aim);p.ay=input.ay/Math.max(1,aim);
-   }else if(role==='gunner'&&!cannonAfterShot(s,p)){
+   }else if(role==='gunner'){
      if(input.aimCursor===true){
        p.ax=clamp(input.ax,-1,1);p.ay=clamp(input.ay,-1,1);
        p.cannonCursor=true;
@@ -438,13 +484,14 @@ export function operate(s,id,atTick=s.tick,taps=1){
    s.ammo.cleaning+=taps;
    if(s.ammo.cleaning>=CANNON_CLEAN_TAPS){
      s.ammo.cleaning=null;
-     releaseStation(p);
-     message(p,s,'포신 청소 완료 · 장전대가 열렸습니다');
+     if(cannonAfterShot(s,p))s.cannonExit=null;
+     advanceCannonWork(s,p);
+     message(p,s,'포신 청소 완료 · 장전하세요');
    }
    return true;
  }
  if(role==='gunner'){
-   if(s.fuse.end||cannonAfterShot(s,p))return false;
+   if(s.fuse.end)return false;
    s.fuse={end:s.tick+FUSE_TICKS,owner:id};saveCannonAim(s,p);
    feedback(s,'gunner','점화! 왼쪽 스틱으로 조준');return true;
  }
@@ -472,14 +519,15 @@ function cannonMotion(s){
    roll+=buildUp*(.23*Math.sin(litTicks*.31+shotPhase)+.085*Math.sin(litTicks*.67-shotPhase));
  }
  const motion=roll+s.shake*.18*Math.sin(s.tick*.53+s.shakeSign);
- return motion*.9*Math.pow(.78,s.traits?.steady??0);
+ return motion*.3*Math.pow(.78,s.traits?.steady??0);
 }
 export function firingAngle(s,base=s.gunAngle,motion=cannonMotion(s)){
  return clamp(base+motion,-1.1,1.1);
 }
 export function cannonAimInput(s,x,y){
+ const offset=x-CANNON_AIM_CENTER;
  return {
-   ax:clamp((x-CANNON_AIM_CENTER)/CANNON_AIM_SPAN,-1,1),
+   ax:clamp(offset/cannonAimSpan(offset),-1,1),
    ay:clamp((y-s.y-BARREL.y)/CANNON_AIM_Y,-1,1),
  };
 }
@@ -491,24 +539,28 @@ export function cannonAimCursor(s,p){
 }
 function saveCannonAim(s,p){
  s.gunAim=cannonAimCursor(s,p);
- s.gunAngle=Math.atan2(s.gunAim.ay*CANNON_AIM_Y,CANNON_AIM_CENTER+s.gunAim.ax*CANNON_AIM_SPAN-BARREL.x);
+ s.gunAngle=Math.atan2(s.gunAim.ay*CANNON_AIM_Y,cannonAimX(s.gunAim.ax)-BARREL.x);
 }
 function cannonOriginY(s){
  return s.y+BARREL.y+s.shake*Math.sin(s.tick*.37*3)*3;
 }
 export function cannonAim(s,p){
  const {ax,ay}=cannonAimCursor(s,p);
- const x=CANNON_AIM_CENTER+ax*CANNON_AIM_SPAN;
+ const x=cannonAimX(ax);
  const originY=cannonOriginY(s);
- const base=Math.atan2(s.y+BARREL.y+ay*CANNON_AIM_Y-originY,x-BARREL.x);
+ const forward=x-BARREL.x,targetY=ay*CANNON_AIM_Y;
+ const base=Math.atan2(s.y+BARREL.y+targetY-originY,forward);
  const motion=cannonMotion(s);
  const wave=.105*Math.sin(s.tick*.105)+.045*Math.sin(s.tick*.21+.9);
- const accuracy=clamp(.86+wave-Math.abs(motion)*.60-s.shake*.20,.32,.98);
+ const baseAccuracy=clamp(.86+wave-Math.abs(motion)*.60-s.shake*.20,.32,.98);
+ const falloff=clamp((Math.hypot(forward,targetY)-CANNON_FULL_ACCURACY_RANGE)/
+   (CANNON_AIM_MAX_X-BARREL.x-CANNON_FULL_ACCURACY_RANGE),0,1);
+ const accuracy=baseAccuracy*(1-CANNON_MAX_RANGE_PENALTY*falloff**1.5);
  const miss=(1-accuracy)/.68;
  const spreadX=12+38*miss,spreadY=9+34*miss;
- const y=clamp(originY+Math.tan(firingAngle(s,base,motion))*(x-BARREL.x),
+ const y=clamp(originY+Math.tan(firingAngle(s,base,motion))*forward,
    ROAD_TOP+spreadY+6,ROAD_BOTTOM-spreadY-6);
- return {x,y,spreadX,spreadY,angle:Math.atan2(y-originY,x-BARREL.x),accuracy};
+ return {x,y,spreadX,spreadY,angle:Math.atan2(y-originY,forward),accuracy};
 }
 export function cannonBlastWidth(impact,forward){
  if(forward<0||forward>impact.length)return 0;
@@ -555,6 +607,10 @@ function whipHorse(s,p,side=null,power=3.3){
  }
  wear.lastHit=s.tick;
  wear.lastWhip=target?.local??null;
+ if(p&&target){
+   p.whipSwing={sequence:(p.whipSwing?.sequence??0)+1,tick:s.tick,x:target.x,y:target.y};
+   Object.assign(p,whipFollowThrough(s,target));
+ }
  if(!rump){
    wear.angryUntil=s.tick+HORSE_REST_TICKS;
    s.horses[side]=0;
@@ -618,15 +674,21 @@ function fireCannon(s,p=null){
  s.shots.push({x,y,vx:CANNON_SHOT_SPEED*dx,vy:CANNON_SHOT_SPEED*dy,caliber,radius:CANNON_SHOT_RADIUS*caliber,landing});
  s.cannonRecoil={tick:s.tick,x,y,angle,caliber};
  s.ammo.loaded=false;s.ammo.cleaning=0;s.fuse={end:0,owner:null};
- if(viewer)s.cannonExit={id:viewer,tick:s.tick};
- else if(gunner){
-   releaseStation(gunner);
+ s.cannonExit=viewer?{id:viewer,tick:s.tick}:null;
+ if(gunner){
+   advanceCannonWork(s,gunner);
    message(gunner,s,'포탄 발사 · 포신을 청소하세요');
  }
  feedback(s,'gunner','포탄 자동 발사!');impact(s,1.45,'대포 반동',ROYAL_FALL_CHANCE.cannon);
 }
 export const enemyKnockback=enemy=>enemy.cannonKnock??enemy.wheelKnock;
 const activeEnemy=enemy=>!enemy.spent&&!enemyKnockback(enemy);
+function defeatWithCannon(s,enemy,motion,x,y){
+ enemy.cannonKnock={tick:s.tick,...motion};
+ enemy.x+=CAVALRY_DEATH_BACKSTEP;
+ s.kill++;
+ burst(s,x,y,'hit');
+}
 const pursuitSlot=enemy=>enemy.attackSlot??(enemy.id??0)%PURSUIT_SLOTS.length;
 function pursuitPace(s,profile,base){
  if(profile)return (profile.speed-s.speed)*ROAD_UNITS_PER_METER;
@@ -655,9 +717,8 @@ function landCannonShot(s,shot){
    const across=enemy.y+CAVALRY_BODY.y-impact.y;
    if(forward<0||forward>impact.length||Math.abs(across)>cannonBlastWidth(impact,forward))continue;
    const side=Math.sign(across)||1;
-   enemy.cannonKnock={tick:s.tick,vx:205-64*forward/impact.length,vy:side*(72+Math.abs(across)*.9),spin:side*8.5};
-   s.kill++;
-   burst(s,enemy.x+CAVALRY_BODY.x,enemy.y+CAVALRY_BODY.y,'hit');
+   defeatWithCannon(s,enemy,{kind:'blast',vx:205-64*forward/impact.length,vy:side*(72+Math.abs(across)*.9),spin:side*8.5},
+     enemy.x+CAVALRY_BODY.x,enemy.y+CAVALRY_BODY.y);
  }
 }
 function advanceShots(s){
@@ -679,14 +740,15 @@ function advanceShots(s){
      if(!activeEnemy(enemy))continue;
      const at=ellipseEntry(x-enemy.x-CAVALRY_BODY.x,y-enemy.y-CAVALRY_BODY.y,dx,dy,hitX,hitY);
      if(at===null)continue;
-     enemy.spent=true;s.kill++;burst(s,x+dx*at,y+dy*at,'hit');
+     const vy=clamp(shot.vy*.18,-70,70);
+     defeatWithCannon(s,enemy,{kind:'direct',vx:116,vy,spin:(Math.sign(vy)||1)*8.5},x+dx*at,y+dy*at);
    }
    if(lands){
      landCannonShot(s,shot);
      shot.spent=true;
    }
  }
- s.shots=s.shots.filter(shot=>!shot.spent&&shot.x<1280&&shot.y>ROAD_TOP-32&&shot.y<ROAD_BOTTOM+32);
+ s.shots=s.shots.filter(shot=>!shot.spent&&(shot.landing||shot.x<1280)&&shot.y>ROAD_TOP-32&&shot.y<ROAD_BOTTOM+32);
  s.enemies=s.enemies.filter(enemy=>!enemy.spent);
  if(s.cannonImpacts?.length)s.cannonImpacts=s.cannonImpacts.filter(impact=>s.tick-impact.tick<CANNON_IMPACT_TICKS);
 }
@@ -747,22 +809,23 @@ function royalExcursion(p,royal){
  const atDeckEnd=p.x<=DECK.left+ROYAL_DECK_END||p.x>=DECK.right-ROYAL_DECK_END;
  return atDeckEnd&&Math.hypot(p.x-royal.boredFrom.x,p.y-royal.boredFrom.y)>=ROYAL_EXCURSION_DISTANCE;
 }
-function rockRoyal(s,p,distance){
+function rockRoyal(s,p,distance,stride){
  const royal=royalTarget(s,p);
  if(!royal?.upset)return;
  if(royal.bored){
    if(!royalExcursion(p,royal))return;
    royal.bored=false;delete royal.boredFrom;
-   message(p,s,royal.name+' 기분 전환 · 계속 걸어서 달래 주세요');
+   message(p,s,royal.name+' 기분 전환 · 다시 달랠 수 있어요');
    return;
  }
- if(distance<=0)return;
- royal.sootheDistance=(royal.sootheDistance??0)+distance;
+ // Store progress in the same units as walking, with a third of a full stride from holding alone.
+ const gain=(stride+2*distance)/3;
+ royal.sootheDistance=(royal.sootheDistance??0)+gain;
  if(royal.boredomPending&&royal.sootheDistance>=ROYAL_BOREDOM_DISTANCE){
    royal.boredomPending=false;
    if(playerFloor(p)===DECK_FLOOR){
      royal.bored=true;royal.boredFrom={x:p.x,y:p.y};
-     message(p,s,royal.name+' 지루해요 · 마차 앞뒤나 지하층으로 가세요');
+     message(p,s,royalBoredHint(royal.name));
      return;
    }
  }
@@ -776,6 +839,11 @@ function handleRoyal(s,p,id,role){
  const royal=royalTarget(s,p);
  const seat=ROYAL_SEATS[royal.id];
  if(role==='royal-pickup'){
+   if(royal.shellPlayUntil){
+     s.ammo.rack++;
+     delete royal.shellPlayUntil;
+   }
+   delete royal.snackPauseUntil;
    royal.state='carried';royal.carrier=id;royal.x=p.x;royal.y=p.y;royal.floor=playerFloor(p);
    royal.bored=false;royal.boredomPending=royal.upset&&rollsRoyalBoredom(s,royal);
    royal.mischief=null;royal.destination=null;p.royal=royal.id;
@@ -804,7 +872,8 @@ function setRoyalDestination(s,royal,destination,mischief=null){
 function royalMischief(s,royal){
  if(s.royalMischiefUntil>s.tick)return;
  if(royal.mischief==='rack'&&s.ammo.rack>0){
-   s.ammo.rack--;fallBall(s,royal);
+   s.ammo.rack--;
+   royal.shellPlayUntil=s.tick+ROYAL_SHELL_PLAY_TICKS;
  }else if(royal.mischief==='gunner'&&cannonStation(s)==='gunner'&&!s.fuse.end&&!s.cannonExit){
    const side=rand(s)<.5?-1:1,offset=rand(s);
    saveCannonAim(s,{ax:-.55+offset*1.5,ay:side*(.68+offset*.32),cannonCursor:true});
@@ -819,10 +888,21 @@ function royalMischief(s,royal){
 }
 function wanderRoyal(s,royal){
  const floor=playerFloor(royal),onDeck=floor===DECK_FLOOR;
+ const preference=ROYAL_PREFERENCES[royal.id];
+ if(royal.shellPlayUntil){
+   if(s.tick<royal.shellPlayUntil)return;
+   delete royal.shellPlayUntil;
+   fallBall(s,{x:royal.x+12,y:royal.y+4,floor});
+   return;
+ }
+ if(royal.snackPauseUntil){
+   if(s.tick<royal.snackPauseUntil)return;
+   delete royal.snackPauseUntil;
+ }
  if(onDeck&&onSpot(royal,STAIRS)){
    royal.floor=CELLAR_FLOOR;
-   // Keep the stair exit clear and give each child a different direction downstairs.
-   setRoyalDestination(s,royal,{x:STAIRS.x+(royal.id==='prince'?-42:42),y:STAIRS.y-30});
+   if(royal.id==='prince')setRoyalDestination(s,royal,STATIONS.cook,'cook');
+   else setRoyalDestination(s,royal,{x:STAIRS.x+42,y:STAIRS.y-30});
    return;
  }
  if(royal.destination&&s.tick>=royal.moveUntil){
@@ -830,17 +910,19 @@ function wanderRoyal(s,royal){
  }
  if(!royal.destination){
    if(onDeck&&s.tick>=royal.nextMischief&&!(s.royalMischiefUntil>s.tick)){
-     const choices=['driver'];
-     if(s.ammo.rack>0)choices.push('rack');
-     if(cannonStation(s)==='gunner'&&!s.fuse.end)choices.push('gunner');
-     const kind=choices[Math.floor(rand(s)*choices.length)];
+     const roll=rand(s),shellChance=s.ammo.rack>0?preference.shells:0;
+     const canFire=cannonStation(s)==='gunner'&&!s.fuse.end&&!s.cannonExit;
+     const kind=roll<shellChance?'rack':canFire&&roll>=(1+shellChance)/2?'gunner':'driver';
      setRoyalDestination(s,royal,STATIONS[kind],kind);
      royal.nextMischief=s.tick+(9+rand(s)*4)*HZ;
    }else{
      const xRoll=rand(s),yRoll=rand(s);
-     if(onDeck&&xRoll<ROYAL_STAIRS_CHANCE)setRoyalDestination(s,royal,STAIRS);
+     if(onDeck&&xRoll<preference.stairs)setRoyalDestination(s,royal,STAIRS);
+     else if(!onDeck&&xRoll<preference.snacks&&!onSpot(royal,STATIONS.cook))
+       setRoyalDestination(s,royal,STATIONS.cook,'cook');
      else{
-       const x=DECK.left+22+xRoll*(DECK.right-DECK.left-44);
+       const walkRoll=onDeck?(xRoll-preference.stairs)/(1-preference.stairs):xRoll;
+       const x=DECK.left+22+walkRoll*(DECK.right-DECK.left-44);
        const top=onDeck?-34:DECK.top+14;
        const y=top+yRoll*(62-top);
        setRoyalDestination(s,royal,{x,y});
@@ -849,8 +931,10 @@ function wanderRoyal(s,royal){
  }
  const {x,y}=royal.mischief==='rack'?STATIONS.rack:royal.destination;
  const dx=x-royal.x,dy=y-royal.y,length=Math.hypot(dx,dy);
- if(length<=5){
-   if(royal.mischief)royalMischief(s,royal);
+ const lookingForSnacks=royal.mischief==='cook';
+ if(length<=(lookingForSnacks?STATIONS.cook.r:5)){
+   if(lookingForSnacks)royal.snackPauseUntil=s.tick+ROYAL_SNACK_PAUSE;
+   else if(royal.mischief)royalMischief(s,royal);
    royal.destination=null;royal.mischief=null;
    return;
  }
@@ -881,7 +965,8 @@ function advanceRoyals(s){
    if(royal.attention>ROYAL_ATTENTION_LOW)continue;
    const seat=ROYAL_SEATS[royal.id];
    royal.state='wandering';royal.wanderedAt=s.tick;royal.nextMischief=s.tick+(4+rand(s)*2)*HZ;
-   setRoyalDestination(s,royal,{x:seat.x,y:seat.dropY});
+   // Leave the prince room to pass the crew beside his bench on the way to the stairs.
+   setRoyalDestination(s,royal,{x:seat.x+(royal.id==='prince'?26:0),y:seat.dropY});
  }
 }
 export function catapultX(s){
@@ -923,8 +1008,8 @@ function beginStage(s,chapter,stage,traits,affection=0,entry=null){
  next.affection=affection;
  if(entry){
    next.hp=entry.hp;
-   next.wheel={...entry.wheel};
-   if(next.wheel.broken>=0)next.speed*=.57;
+   next.wheel={...wheelState(),...entry.wheel};
+   next.speed*=wheelPace(next);
    next.stageEntry={hp:next.hp,wheel:{...next.wheel}};
  }
  setHumanSlots(next,humanIds(s));
@@ -963,17 +1048,27 @@ function impact(s,power,msg,royalFallChance=0){
  }
 }
 function feedback(s,role,msg){const key=feedbackKey(role);s[key+'Msg']=msg;s[key+'Until']=s.tick+26;s[key+'Cd']=s.tick+8;}
-function loseWheel(s){
- if(s.wheel.broken!==-1||s.distance<s.wheel.eligible)return;
- const id=Math.floor(rand(s)*WHEELS.length);
+function loseWheel(s,fromCavalry=false){
+ if(!fromCavalry&&(s.wheel.broken>=0||s.distance<s.wheel.eligible))return;
+ const mounted=[];
+ for(let index=0;index<WHEELS.length;index++){
+   if(!wheelNeedsRepair(s,index))mounted.push(index);
+ }
+ if(!mounted.length)return;
+ const wasAxleBroken=hasBrokenAxle(s);
+ const id=mounted[Math.floor(rand(s)*mounted.length)];
  const mount=WHEELS[id],side=Math.sign(mount.y),rear=id%2===1;
  const shake=s.shake*Math.sin(s.tick*.37*3)*3;
  (s.looseWheels??=[]).push({
    id:s.nextId++,mount:id,x:mount.x,y:s.y+shake+side*WHEEL_MOUNT_OFFSET,
    vx:(rear?126:134)+s.speed*2,vy:side*(rear?-46:84),angle:0,launchTick:s.tick,
  });
- Object.assign(s.wheel,{broken:id,progress:0,since:s.tick,first:false});
- impact(s,1.2,mount.name+' 이탈');
+ if(s.wheel.broken<0)Object.assign(s.wheel,{broken:id,progress:0,since:s.tick});
+ else s.wheel.pending=[...(s.wheel.pending??[]),id];
+ s.wheel.first=false;
+ const axleJustBroke=!wasAxleBroken&&hasBrokenAxle(s);
+ if(axleJustBroke)s.speed*=BROKEN_AXLE_PACE/DAMAGED_WHEEL_PACE;
+ impact(s,1.2,mount.name+' 이탈'+(axleJustBroke?' · 차축 손상으로 급감속':''));
 }
 function burst(s,x,y,kind){s.particles.push({x,y,kind,life:18,id:s.nextId++});}
 function ellipseEntry(x,y,dx,dy,rx,ry){
@@ -1060,8 +1155,10 @@ function advanceLooseWheels(s,travel,pursuerStarts){
   s.looseWheels=s.looseWheels.filter(wheel=>wheel.x<LOOSE_WHEEL_EXIT_X);
 }
 function damageWagon(s,damage){
+  const previousHp=s.hp;
   s.hp-=damage;
   if(s.testMode)s.hp=Math.max(1,s.hp);
+  return Math.max(0,previousHp-Math.max(0,s.hp));
 }
 const roadObstacleAhead=obstacle=>!obstacle.passed&&obstacle.x<ROAD_OBSTACLE_HIT_END;
 export function roadApproachWarning(s,view){
@@ -1111,8 +1208,9 @@ function scheduleRoadObstacle(s){
 }
 function advanceObstacles(s,travel){
   for(const obstacle of s.obstacles){
+    const previousX=obstacle.x;
     obstacle.x+=travel;
-    if(obstacle.passed||obstacle.x<ROAD_OBSTACLE_HIT_START||obstacle.x>=ROAD_OBSTACLE_HIT_END)continue;
+    if(obstacle.passed||obstacle.x<ROAD_OBSTACLE_HIT_START||previousX>=ROAD_OBSTACLE_HIT_END)continue;
     const profile=roadObstacleProfile(obstacle.type);
     if(Math.abs(s.y-obstacleY(obstacle))>=profile.halfWidth)continue;
     obstacle.passed=true;
@@ -1155,9 +1253,14 @@ function advanceCatapult(s){
       }
     }
     s.seed=rolls.seed;
+    const flight=CATAPULT_FLIGHT*STEP,pace=baseSpeed(s);
+    const forwardRange=(CATAPULT_TARGET_X-CATAPULT_FORWARD_X)/ROAD_UNITS_PER_METER;
+    // Account for existing slowdowns at the forward end of the range.
+    const forward=Math.max(0,forwardRange-Math.max(0,pace-s.speed)*flight);
+    const landingDistance=s.distance+pace*flight+forward*rand({seed:s.seed});
     s.catapult={
       launchedAt:s.tick,lockAt:s.tick+CATAPULT_APPROACH,landAt:s.tick+CATAPULT_FLIGHT,
-      distance:s.distance+baseSpeed(s)*CATAPULT_FLIGHT*STEP,
+      distance:landingDistance,
       y:s.y+offset*(side==='right'?-1:1),side
     };
     s.nextCatapult=s.tick+Math.max(9*HZ,13*HZ-(s.stage-1)*15);
@@ -1225,7 +1328,7 @@ function advanceWaves(s){
     }
   }
 }
-function advancePursuers(s,base){
+function advancePursuers(s,base,roadTravel){
   if(!s.enemies.length)return;
   const ahead=[];
   // Run the nearest enemy in each lane first so reinforcements can keep their spacing.
@@ -1233,8 +1336,12 @@ function advancePursuers(s,base){
     if(enemy.spent)continue;
     const knocked=enemyKnockback(enemy);
     if(knocked){
-      if(s.tick-knocked.tick>=WHEEL_KNOCK_TICKS)enemy.spent=true;
-      else{
+      const age=s.tick-knocked.tick;
+      const duration=enemy.cannonKnock?CAVALRY_DEATH_TICKS:WHEEL_KNOCK_TICKS;
+      if(age>=duration){enemy.spent=true;continue;}
+      // Cannon casualties fall behind at road speed, even after the impact slide ends.
+      if(enemy.cannonKnock)enemy.x+=roadTravel;
+      if(!enemy.cannonKnock||age<=CAVALRY_DEATH_FRAME_TICKS*CAVALRY_DEATH_FRAME_COUNT){
         enemy.x+=knocked.vx*STEP;enemy.y+=knocked.vy*STEP;
         knocked.vx*=.965;knocked.vy*=.965;
       }
@@ -1268,10 +1375,14 @@ function advancePursuers(s,base){
     if(leaderX!==undefined||recovering||nextX>=slot.strikeX||Math.abs(targetY-enemy.y)>ENEMY_STRIKE_REACH)continue;
     enemy.lastStrike=s.tick;
     if(s.testMode)enemy.testLeavesAt??=s.tick+TEST_ENEMY_ENGAGEMENT;
-    damageWagon(s,profile?.damage??14);
+    const damage=damageWagon(s,profile?.damage??14);
     impact(s,1.32,'추격대의 일격');
     burst(s,slot.hitX,targetY,'hit');
-    loseWheel(s);
+    s.wheel.cavalryDamage=(s.wheel.cavalryDamage??0)+damage;
+    if(s.wheel.cavalryDamage>=CAVALRY_WHEEL_DAMAGE){
+      s.wheel.cavalryDamage-=CAVALRY_WHEEL_DAMAGE;
+      loseWheel(s,true);
+    }
     const vx=-430,vy=(targetY-enemy.y)*(-vx)/(enemy.x-slot.hitX);
     s.shots.push({x:enemy.x,y:enemy.y,vx,vy,enemy:true,hitX:slot.hitX});
   }
@@ -1283,9 +1394,11 @@ function action(s,role,p,operator){
   if(role==='loader'){
     if(!canLoad(s))return;
     s.ammo.rack--;
-    if(hit(s,role,p)){s.ammo.loaded=true;tell('장전 완료 · 포수 점화 가능');}
-    else {dropBall(s,operator,false);feedback(s,role,operator.note);}
-    releaseStation(operator,true);
+    if(hit(s,role,p)){
+      s.ammo.loaded=true;
+      advanceCannonWork(s,operator);
+      tell('장전 완료 · 조준하고 점화하세요');
+    }else {dropBall(s,operator,false);feedback(s,role,operator.note);}
     return;
   }
   if(!hit(s,role,p)){tell('타이밍 실패');return;}
@@ -1300,8 +1413,13 @@ function action(s,role,p,operator){
       }
       tell('바퀴 장착 완료');
     }
-    else{s.wheel.broken=-1;s.wheel.progress=0;s.wheel.eligible=s.distance+240;
-      s.event='바퀴 수리 완료';s.eventUntil=s.tick+60;tell('수리 완료 · 속도 회복');}
+    else{
+      const [next=-1,...pending]=s.wheel.pending??[];
+      Object.assign(s.wheel,{broken:next,pending,progress:0,since:next>=0?s.tick:0});
+      if(next<0)s.wheel.eligible=s.distance+240;
+      s.event='바퀴 수리 완료';s.eventUntil=s.tick+60;
+      tell(next>=0?'바퀴 수리 완료 · 다음 바퀴를 수리하세요':'수리 완료 · 속도 회복');
+    }
     return;
   }
   if(role==='supply'){
@@ -1312,7 +1430,7 @@ export function step(s){
   if(s.mode!=='run')return;
   s.tick++;
   const afterShot=s.cannonExit;
-  if(afterShot&&s.tick>=afterShot.tick+CANNON_VIEW_HOLD_TICKS+CANNON_VIEW_RETURN_TICKS)finishCannonExit(s);
+  if(afterShot&&s.tick>=afterShot.tick+CANNON_VIEW_HOLD_TICKS+CANNON_VIEW_RETURN_TICKS)s.cannonExit=null;
   if(s.testMode&&s.ammo.stock<=0)s.ammo.stock=AMMO_STOCK;
   // A single collision can also knock off a wheel in this tick.
   s.cookShake=0;
@@ -1344,7 +1462,7 @@ export function step(s){
     if(p.until<s.tick){p.mx=0;p.my=0;}
     const floor=playerFloor(p);
     const pace=p.slipUntil?0
-      :p.ball?CARRY_SPEED*(1+.2*s.traits.porter)
+      :p.ball?CARRY_SPEED+PORTER_SPEED_PER_LEVEL*s.traits.porter
       :p.royal?ROYAL_CARRY
       :p.spareWheel?WHEEL_CARRY_SPEED:WALK_SPEED;
     const stride=pace*walkRate*STEP;
@@ -1354,14 +1472,16 @@ export function step(s){
     slide(p,x,y,(nextX,nextY)=>(floor===DECK_FLOOR&&bench(nextX,nextY))
       ||s.royals.some(r=>offSeat(r)&&playerFloor(r)===floor&&blocksStep(p,r,nextX,nextY,ROYAL_BODY))
       ||PLAYER_IDS.some(otherId=>{
-        if(id===otherId||(humans.has(id)&&!humans.has(otherId)))return false;
+        if(id===otherId)return false;
         const other=s.players[otherId];
         if(playerFloor(other)!==floor)return false;
-        const role=occupiedStation(other,s),spot=role&&workSpot(s,role);
+        const role=occupiedStation(other,s);
+        if(!role||(humans.has(id)&&!humans.has(otherId)&&!DECK_WORK_ROLES.includes(role)))return false;
+        const spot=workSpot(s,role);
         return spot&&blocksStep(p,spot,nextX,nextY,spot.r);
       }));
     advanceStairs(s,p,humans.has(id));
-    if(p.royal)rockRoyal(s,p,Math.hypot(p.x-startX,p.y-startY));
+    if(p.royal)rockRoyal(s,p,Math.hypot(p.x-startX,p.y-startY),stride);
     finishCarry(s,p);
   }
   claimStations(s,humans);
@@ -1373,7 +1493,7 @@ export function step(s){
   const base=baseSpeed(s);
   const rebellion=horseRebellion(s);
   const horsePace=base+(s.horses.right+s.horses.left)/2+(runaway?base*HORSE_RUNAWAY_PACE:0);
-  const speedTarget=horsePace*(s.wheel.broken>=0?.57:1)*(s.obstacleSlow?.factor??1)*fatiguePace*(runaway?1:rebellion.pace);
+  const speedTarget=horsePace*wheelPace(s)*(s.obstacleSlow?.factor??1)*fatiguePace*(runaway?1:rebellion.pace);
   s.speed+=(speedTarget-s.speed)*.07;
   if(s.wheel.first&&s.distance>=155)loseWheel(s);
   const travel=s.speed*STEP;
@@ -1386,7 +1506,7 @@ export function step(s){
   advanceObstacles(s,roadTravel);
   advanceCatapult(s);
   const pursuerStarts=s.looseWheels?.length?new Map(s.enemies.map(({id,x,y})=>[id,{x,y}])):null;
-  advancePursuers(s,base);
+  advancePursuers(s,base,roadTravel);
   advanceLooseWheels(s,roadTravel,pursuerStarts);
   advanceCooking(s);
   advanceShots(s);
@@ -1395,15 +1515,15 @@ export function step(s){
   if(s.testMode)return;
   if(s.hp<=0){s.hp=0;s.mode='lost';}
   else if(s.distance>=s.goal-1e-8){s.distance=s.goal;s.mode='clear';finishCare(s);}
-  if(s.mode!=='run')finishCannonExit(s);
+  if(s.mode!=='run')s.cannonExit=null;
 }
 export function advance(s,ticks){for(let i=0;i<Math.min(7200,ticks)&&s.mode==='run';i++)step(s);}
 
 const royalCarryJob=(s,p)=>royalTarget(s,p)?.upset?'royal-soothe':'royal-seat';
 function spotFor(s,job,p){
- if(job==='loader'&&p?.exitedStation==='loader'){
-   const {x,y,r}=STATIONS.loader;
-   return {x,y:y+r+8};
+ if(isCannonRole(job)&&isCannonRole(p?.exitedStation)){
+   const {x,y,r}=cannonPad;
+   return {x:x-r-8,y};
  }
  if(job==='royal-pickup'){
    const humans=humanIds(s).map(id=>s.players[id]);
@@ -1431,9 +1551,15 @@ function roadThreat(s){
  return s.obstacles.find(obstacle=>roadObstacleAhead(obstacle)&&!roadLaneClear(s.y,obstacle))||
    (s.roadWarning&&!roadLaneClear(s.y,s.roadWarning)?s.roadWarning:null);
 }
-function neededRein(s,threat){
+function catapultThreat(s){
  const rock=s.catapult;
- if(rock&&s.tick<rock.landAt){
+ if(!rock||s.tick>=rock.landAt)return null;
+ const travel=Math.max(baseSpeed(s),s.speed)*(rock.landAt-s.tick)*STEP;
+ const landingX=catapultX(s)+travel*ROAD_UNITS_PER_METER;
+ return landingX>=CART_HULL.left-CATAPULT_RADIUS.x?rock:null;
+}
+function neededRein(s,threat,rock){
+ if(rock){
    if(Math.abs(s.y-rock.y)>=CART_HULL.halfHeight+CATAPULT_RADIUS.y+8)return null;
    return s.y>=rock.y?'left':'right';
  }
@@ -1509,7 +1635,8 @@ function runBots(s){
    const dy=targetY-p.y,len=Math.hypot(dx,dy);
    let ax=1,ay=0;
    const threat=job==='driver'?roadThreat(s):null;
-   const horse=job==='driver'?neededRein(s,threat):null;
+   const rock=job==='driver'?catapultThreat(s):null;
+   const horse=job==='driver'?neededRein(s,threat,rock):null;
    if(horse)({ax,ay}=horseRumpAim(s,horse));
    if(job==='gunner'){
      const e=s.enemies.reduce((a,b)=>activeEnemy(b)&&(!a||b.x<a.x)?b:a,null);
@@ -1535,7 +1662,7 @@ function runBots(s){
    }else if(job==='driver'){
      if(!horse)continue;
      const wear=s.horseWear[horse];
-     const evading=threat||s.catapult&&s.tick<s.catapult.landAt;
+     const evading=threat||rock;
      const maxWounds=evading?HORSE_RUNAWAY_HITS-1:3;
      if(horseCondition(s,horse)!=='fresh')continue;
      if(s.horses[horse]>(evading?9:6)||wear.wounds>=maxWounds||s.tick-wear.lastHit<(evading?9:HZ))continue;

@@ -25,13 +25,27 @@ export function whipAimInput(x,y){
  return {ax:ax/scale,ay:ay/scale};
 }
 
-export function whipAimPoint(aim){
- return {x:aimCenterX+(aim?.ax??0)*aimRangeX,y:(aim?.ay??0)*aimRangeY};
+function whipSway(s){
+ const power=s.shake??0;
+ if(!power)return {x:0,y:0};
+ const phase=s.tick*.46+(s.shakeSign??0);
+ return {x:Math.sin(phase)*power*7,y:Math.cos(phase)*power*10};
+}
+
+export function whipAimPoint(s,aim){
+ const sway=whipSway(s);
+ return {x:aimCenterX+(aim?.ax??0)*aimRangeX+sway.x,y:(aim?.ay??0)*aimRangeY+sway.y};
+}
+
+export function whipFollowThrough(s,target){
+ const sway=whipSway(s);
+ const inward=target.side==='right'?36:-36;
+ return whipAimInput(target.x+24-sway.x,target.y+inward-sway.y);
 }
 
 export function horseRumpAim(s,side){
- const {x,y}=horseBoardPoint(s,side);
- return whipAimInput(x,y);
+ const {x,y}=horseBoardPoint(s,side),sway=whipSway(s);
+ return whipAimInput(x-sway.x,y-sway.y);
 }
 
 function containsPoint(polygon,x,y){
@@ -44,7 +58,7 @@ function containsPoint(polygon,x,y){
 }
 
 export function horseWhipTarget(s,aim){
- const {x,y}=whipAimPoint(aim),side=y<0?'right':'left';
+ const {x,y}=whipAimPoint(s,aim),side=y<0?'right':'left';
  const mount=draftHorseOrigin(s,side);
  const local={x:(x-mount.x)/DRAFT_HORSE_SCALE,y:(y-mount.y)/DRAFT_HORSE_SCALE};
  if(!containsPoint(HORSE_BODY,local.x,local.y)&&!containsPoint(HORSE_NECK_AND_HEAD,local.x,local.y))return null;

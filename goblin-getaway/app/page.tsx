@@ -2,9 +2,11 @@ import GameRuntime from "./game-runtime";
 import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, Play, Settings, Shield, Smile, Sparkles, TriangleAlert, Users, Volume2, X } from 'lucide-react';
 
 function WorkHint({slot}:{slot:string}){
- return <div className="work-hint hud-bubble" id={'work-hint-'+slot} hidden>
-  <span className="work-hint-text" aria-live="polite"/>
-  <small className="work-countdown" hidden/>
+ return <div className="work-hint hud-bubble hud-notice" id={'work-hint-'+slot} hidden>
+  <span className="hud-notice-line"><span>
+   <span className="work-hint-text" aria-live="polite"/>
+   <small className="work-countdown" hidden/>
+  </span></span>
   <div className="work-progress" hidden>
    <span className="work-progress-name" hidden>조준률</span>
    <progress className="work-progress-bar" aria-label="작업 진행도" max={1} value={0}/>
@@ -42,13 +44,13 @@ function PlayerControls({id}:{id:string}){
    </div>
    <div className="context"><div><b className="crew-id" id={id+'-ident'}>{id.toUpperCase()}</b><strong id={id+'-location'}>갑판</strong></div><small id={id+'-hint'}>갑판 위 작업 원으로 이동</small></div>
    <div className="station-buttons">
-    <button type="button" className="station-exit" id={id+'-exit'} data-exit={id} hidden><LogOut size={14} aria-hidden="true"/>이탈</button>
     <div className="emote-controls">
      <button type="button" className="emote-toggle" id={'emote-'+id} data-emote-toggle={id} aria-expanded="false" aria-controls={'emote-menu-'+id} aria-label="이모티콘">
       <Smile size={19} aria-hidden="true"/>이모티콘
      </button>
      <div id={'emote-menu-'+id} className="emote-menu" role="group" aria-label="이모티콘 선택" hidden/>
     </div>
+    <button type="button" className="station-exit" id={id+'-exit'} data-exit={id} hidden><LogOut size={14} aria-hidden="true"/>이탈</button>
     <button type="button" className="station-action" id={id+'-action'} data-work={id} disabled>행동</button>
    </div>
  </div>;
@@ -92,9 +94,10 @@ export default function Home(){return <>
    <button id="settings-button" className="gear" aria-label="환경설정" title="환경설정" aria-haspopup="dialog"><Settings size={20}/></button>
   </div>
   <div className="campaign-hud" id="campaign-hud" role="group" aria-label="작전 진행" hidden>
-   <div className="campaign-summary"><span id="test-mode-label" className="test-mode-label" hidden>테스트 모드</span><strong id="remaining-distance"/><span id="campaign-wave"/></div>
+   <span id="test-mode-label" className="test-mode-label" hidden>테스트 모드</span>
    <div className="campaign-route" id="campaign-route">
-    <progress className="campaign-progress" id="campaign-progress" max={100} value={0} aria-label="목적지까지 주행 진행도"/>
+    <Flag className="campaign-goal" aria-hidden="true" focusable="false"/>
+    <progress className="campaign-progress" id="campaign-progress" max={100} value={100} aria-label="목적지까지 남은 거리"/>
     <svg className="campaign-wagon" viewBox="0 0 32 24" aria-hidden="true" focusable="false">
      <path d="M4 8l4-5h13l4 5M22 15h5l3-3" fill="none" stroke="#4c3526" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
      <path d="M3 8h23l-3 10H6z" fill="#e8b473" stroke="#4c3526" strokeWidth="2" strokeLinejoin="round"/>
@@ -103,9 +106,6 @@ export default function Home(){return <>
      <circle cx="21" cy="19" r="3.4" fill="#6b503c" stroke="#3a2b26" strokeWidth="1.7"/>
     </svg>
    </div>
-  </div>
-  <div className="play-info">
-   <div className="event" id="event" role="status"></div>
   </div>
   <div id="emote-notices" className="emote-notices" role="log" aria-label="팀원 소통" aria-live="polite" aria-relevant="additions"/>
   <div className="timing-prompts">

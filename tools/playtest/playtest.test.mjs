@@ -4,13 +4,16 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import test from 'node:test';
 import {main} from './cli.mjs';
+import {begin, CANNON_CLEAN_TAPS, hit, initial, leaveStation, operate, setHumanSlots,
+  stationAt, STATIONS, step} from '../../goblin-getaway/public/sim.mjs';
 
 const wait = {kind: 'wait', x: 0, y: 0, ticks: 30, target: null};
 const longWait = {...wait, ticks: 90};
 const press = {...wait, kind: 'press', ticks: 1};
 const approach = target => ({...longWait, kind: 'approach', target});
+// Wait on deck with the shell still in hand when the cannon fires.
 const untilCatch = [approach('stairs'), approach('supply'), longWait, press,
-  approach('stairs'), approach('rack'), longWait];
+  approach('stairs'), longWait, longWait];
 
 function apiAction(action) {
   return Response.json({
@@ -30,6 +33,38 @@ async function testWorkspace(t) {
     JSON.parse(await readFile(join(directory, id, 'run.json'), 'utf8'))));
   return {run, output, savedRuns, directory};
 }
+
+test('one cannon pad switches steps without releasing its operator', () => {
+  const state = initial();
+  setHumanSlots(state, ['p1', 'p2', 'p3', 'p4']);
+  begin(state);
+  const {p1, p2} = state.players;
+  const {x, y} = STATIONS.cleaner;
+  assert.deepEqual(STATIONS.loader, STATIONS.cleaner);
+  assert.deepEqual(STATIONS.gunner, STATIONS.cleaner);
+  Object.assign(p1, {x, y});
+  Object.assign(p2, {x: x - 12, y});
+  step(state);
+  assert.equal(stationAt(p1, state), 'cleaner');
+  assert.equal(operate(state, 'p1', state.tick, CANNON_CLEAN_TAPS), true);
+  assert.equal(stationAt(p1, state), 'loader');
+  assert.equal(hit(state, 'loader'), false);
+  assert.equal(operate(state, 'p1'), true);
+  assert.equal(stationAt(p1, state), 'loader');
+  assert.equal(state.ammo.lost, 1);
+  for (let i = 0; i < 60 && !hit(state, 'loader'); i++) step(state);
+  assert.equal(hit(state, 'loader'), true);
+  assert.equal(operate(state, 'p1'), true);
+  assert.equal(stationAt(p1, state), 'gunner');
+  assert.equal(operate(state, 'p1'), true);
+  while (state.fuse.end > state.tick) step(state);
+  assert.equal(stationAt(p1, state), 'cleaner');
+  assert.equal(stationAt(p2, state), null);
+  assert.deepEqual({x: p1.x, y: p1.y}, {x, y});
+  assert.equal(leaveStation(state, 'p1', 'gunner'), true);
+  step(state);
+  assert.equal(stationAt(p2, state), 'cleaner');
+});
 
 test('runs with Responses input, reads the evidence, replays without API, and reruns with saved settings', async t => {
   const {run, output, savedRuns, directory} = await testWorkspace(t);
@@ -87,7 +122,8 @@ test('records a partial result when OpenAI stops returning playable inputs', asy
 
 test('replays a shell recovered from cannon recoil through delivery, loading, and its next shot', async t => {
   const {run, savedRuns, output} = await testWorkspace(t);
-  const inputs = [...untilCatch, press, approach('rack')];
+  // Catch the shell again when the wheel comes off during the slower trip to the rack.
+  const inputs = [...untilCatch, press, approach('rack'), longWait, press, approach('rack')];
   let next = 0;
   const request = async () => apiAction(inputs[next++] ?? longWait);
 

@@ -1,5 +1,5 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, occupiedStation, leaveStation, stopCookingHold, royalTarget, feedTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopCookingHold, royalTarget, feedTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
@@ -135,7 +135,7 @@ export async function POST(req){
       if(error)return fail(error);
     }else if(op==='exit-station'){
       if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
-      if(b.role!==occupiedStation(state.players[seat.id],state)||!leaveStation(state,seat.id,b.role))return respond(snap);
+      if(!b.role||!leaveStation(state,seat.id,b.role))return respond(snap);
     }else if(op==='add-rack-shell'){
       if(b.stage!==state.stage||!sameCampaign||!addRackShell(state))return respond(snap);
     }else if(op==='act'||op==='input'){
@@ -147,7 +147,8 @@ export async function POST(req){
         const role=stationAt(player,state),atRole=!b.role||role===b.role;
         const child=role==='royal-feed'?feedTarget(state,player):royalTarget(state,player);
         const sameChild=b.royalId?child?.id===b.royalId:role!=='royal-feed';
-        if(atRole&&sameChild){
+        const staleWhip=role==='driver'&&b.input?.whipSequence!==undefined&&b.input.whipSequence!==(player.whipSwing?.sequence??0);
+        if(atRole&&sameChild&&!staleWhip){
           if(role!=='cleaner')operate(state,seat.id,tick);
           else if(b.role==='cleaner'&&b.cannonRound===(state.cannonRecoil?.tick??0))operate(state,seat.id,tick,b.taps);
         }

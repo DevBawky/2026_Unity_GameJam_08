@@ -1,6 +1,6 @@
 import {
   BARREL, CELLAR_FLOOR, DECK_FLOOR, HZ, PLAYER_IDS, ROLES, STAIRS, STATIONS,
-  aimAngle, begin, cannonStation, catchPhase, feedbackKey, firingAngle, hit, initial, leaveStation, occupiedStation,
+  aimAngle, begin, cannonStation, catchPhase, enemyKnockback, feedbackKey, firingAngle, hit, initial, leaveStation, occupiedStation,
   operate, phase, playerFloor, setInput, stationAt, step, target, width,
 } from '../../goblin-getaway/public/sim.mjs';
 import { cameraViews, workInfo } from '../../goblin-getaway/public/workstation.mjs';
@@ -69,7 +69,7 @@ function visibleScene(s, p) {
       : [];
   });
   const targets = camera.role !== 'gunner' ? [] : s.enemies
-    .filter(enemy => visible(enemy.x, enemy.y))
+    .filter(enemy => !enemyKnockback(enemy) && visible(enemy.x, enemy.y))
     .map(enemy => ({ dxFromCannon: round(enemy.x - BARREL.x), dyFromCannon: round(enemy.y - s.y) }));
   const team = camera.role ? [] : PLAYER_IDS.filter(id => id !== PLAYER).flatMap(id => {
     const mate = s.players[id];
@@ -87,6 +87,7 @@ function capture(s) {
     loaded: s.ammo.loaded,
     cleaning: s.ammo.cleaning,
     lost: s.ammo.lost,
+    royalShells: new Set(s.royals.filter(royal => royal.shellPlayUntil).map(royal => royal.id)),
     hp: s.hp,
     kill: s.kill,
     serial: s.serial,
@@ -115,6 +116,7 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
   const events = [];
   const initialAmmo = { ...s.ammo };
   const rack = Array.from({length: initialAmmo.rack}, () => ({ ammoSource: 'starting_rack' }));
+  const royalShells = new Map();
   const pendingCatch = new Map();
   const recoveredCarry = new Map();
   let rackOrderUncertain = false;
@@ -140,6 +142,17 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
     };
     events.push(result);
     return result;
+  }
+
+  function takeRackShell() {
+    const unambiguous = rack.length === 1 && !rackOrderUncertain;
+    const shell = { ...(rack.shift() ?? { ammoSource: 'unknown' }), provenance: unambiguous ? 'unambiguous' : 'fifo_assumed' };
+    if (!unambiguous && shell.deliveryEventId) {
+      shell.assumedDeliveryEventId = shell.deliveryEventId;
+      delete shell.deliveryEventId;
+    }
+    rackOrderUncertain = rack.length > 0;
+    return shell;
   }
 
   function track(before) {
@@ -197,21 +210,37 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
       if (newNote === '타이밍 실패') event('timing_missed', id, { role: old.role, note: newNote });
     }
 
-    // Bot loading happens before automatic deliveries in a game tick. The rack has no shell IDs.
-    const rackSpent = before.rack + delivered.length - s.ammo.rack;
+    const reservations = [];
+    let returned = 0;
+    for (const royal of s.royals) {
+      const wasPlaying = before.royalShells.has(royal.id);
+      if (royal.shellPlayUntil) {
+        if (!wasPlaying) reservations.push(royal.id);
+      } else if (wasPlaying) {
+        const held = royalShells.get(royal.id);
+        royalShells.delete(royal.id);
+        if (royal.state === 'carried') {
+          returned++;
+          rack.push(held?.shell ?? { ammoSource: 'unknown' });
+          rackOrderUncertain ||= held?.shell.provenance !== 'unambiguous';
+          if (held?.playerRound) possiblePlayerRounds++;
+          if (held?.recoveredRound) possibleRecoveredRounds++;
+        } else {
+          event('ammo_lost', royal.id, { ...held?.shell, controller: 'royal', reason: 'royal_shell_drop' });
+          accountedLoss++;
+        }
+      }
+    }
+
+    // Bot loading happens before automatic deliveries and royal reservations.
+    const rackSpent = before.rack + delivered.length + returned - reservations.length - s.ammo.rack;
     if (rackSpent > 0) {
       const loaded = s.ammo.loaded && !before.loaded;
       const loader = PLAYER_IDS.find(id => {
         const p = s.players[id];
         return p.noteUntil !== before.players[id].noteUntil && p.note?.startsWith(loaded ? '장전 완료' : '장전 실패');
       }) ?? null;
-      const unambiguous = rack.length === 1 && !rackOrderUncertain;
-      const spent = { ...(rack.shift() ?? { ammoSource: 'unknown' }), provenance: unambiguous ? 'unambiguous' : 'fifo_assumed' };
-      if (!unambiguous && spent.deliveryEventId) {
-        spent.assumedDeliveryEventId = spent.deliveryEventId;
-        delete spent.deliveryEventId;
-      }
-      rackOrderUncertain = rack.length > 0;
+      const spent = takeRackShell();
       // Keep the maximum possible player stock in the rack and attribute failed loads to it first.
       // A successful load that cannot fit that maximum in the remaining rack proves cumulative use.
       const playerDeliveryConfirmed = loaded && possiblePlayerRounds > rack.length;
@@ -235,6 +264,13 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
         possiblePlayerRounds++;
         if (recoveryEventId) possibleRecoveredRounds++;
       }
+    }
+    for (const id of reservations) {
+      const playerRound = rack.length > 0 && possiblePlayerRounds === rack.length;
+      const recoveredRound = rack.length > 0 && possibleRecoveredRounds === rack.length;
+      royalShells.set(id, { shell: takeRackShell(), playerRound, recoveredRound });
+      possiblePlayerRounds = Math.max(0, possiblePlayerRounds - 1);
+      possibleRecoveredRounds = Math.max(0, possibleRecoveredRounds - 1);
     }
     if (s.ammo.lost - before.lost > accountedLoss) event('ammo_lost', null, { reason: 'unattributed', count: s.ammo.lost - before.lost - accountedLoss });
     if (s.hp < before.hp) event('damage', null, { amount: before.hp - s.hp, note: impacts ? impactNote : null });
