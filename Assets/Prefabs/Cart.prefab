@@ -930,8 +930,13 @@ MonoBehaviour:
   acceleration: 3
   speedGain: 1
   maximumHorseSpeed: 10
-  turnRate: 3
+  turnRate: 0.75
   maxHeading: 25
+  leftHorseVisual: {fileID: 7825500536871029672}
+  rightHorseVisual: {fileID: 4813575460516833142}
+  horseAdvancePerSpeed: 0.18
+  maximumHorseAdvance: 1
+  horseVisualMoveSpeed: 3
 --- !u!1 &5632297902906293167
 GameObject:
   m_ObjectHideFlags: 0

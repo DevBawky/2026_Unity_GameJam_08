@@ -69,6 +69,7 @@ public sealed class CartStations : MonoBehaviour
     public float TimingBonusDegrees => precisionLevel * 360f * 0.027f;
     public SpriteRenderer DetachedTire => detachedTire;
     private PlayerTiming playerTiming;
+    public CartMotion Cart => cart;
     public float Durability => durability;
     public bool Failed => failed;
     public string FailureReason { get; private set; } = "CART DESTROYED";
