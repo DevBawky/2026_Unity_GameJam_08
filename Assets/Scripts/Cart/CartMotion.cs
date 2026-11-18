@@ -61,7 +61,9 @@ public sealed class CartMotion : NetworkBehaviour
 
     public void ResetForStage(int horseLevel)
     {
-        baseSpeed = cruiseSpeed + Mathf.Max(0, horseLevel) * SpeedPerHorseLevel;
+        var stations = CartStations.Instance;
+        float wheels = stations != null && stations.Owns(ShopPerk.LightWheels) ? CartStations.LightWheelsSpeedBonus : 0f;
+        baseSpeed = cruiseSpeed + Mathf.Max(0, horseLevel) * SpeedPerHorseLevel + wheels;
         maximumHorseSpeed = Mathf.Min(baseSpeed + maxBoostAboveBase, 19f);
         LeftHorseSpeed = RightHorseSpeed = baseSpeed;
         TargetSpeed = baseSpeed;
@@ -101,6 +103,9 @@ public sealed class CartMotion : NetworkBehaviour
         else LeftHorseSpeed = Mathf.Min(maximumHorseSpeed, LeftHorseSpeed + speedGain*strength);
     }
 
+    // 출발용 당근 묶음: 기본 속도의 일정 비율로 출발한다.
+    public void Kickstart(float fraction) => Speed = Mathf.Max(Speed, baseSpeed * fraction);
+
     public void ResetHorsePace(bool right)
     {
         if (right) RightHorseSpeed = baseSpeed; else LeftHorseSpeed = baseSpeed;
@@ -139,7 +144,10 @@ public sealed class CartMotion : NetworkBehaviour
     }
 
     internal float PredictSteeringY(float y, float targetY, float seconds) =>
-        Mathf.Lerp(y, targetY, 1f - Mathf.Exp(-steeringResponse * seconds));
+        Mathf.Lerp(y, targetY, 1f - Mathf.Exp(-SteeringResponse * seconds));
+
+    private float SteeringResponse => CartStations.Instance != null && CartStations.Instance.Owns(ShopPerk.SteeringReins)
+        ? steeringResponse * CartStations.SteeringReinsResponse : steeringResponse;
 
     private void UpdateHorseVisual(Transform visual, Vector3 start, int step, float dt)
     {

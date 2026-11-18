@@ -40,6 +40,9 @@ internal readonly struct WorkGuide
             if (care == CareAction.Feed) return new WorkGuide(name + " 먹이기", name + "에게 간식을 주세요", Sand);
             if (care == CareAction.PickUp) return new WorkGuide("안아 올리기", name + "를 안아 올리세요", Pink);
         }
+        if (player.CanUseStairShelf())
+            return new WorkGuide(player.InCellar ? "선반에 올리기" : "선반에서 받기",
+                player.InCellar ? "계단 선반에 포탄을 올려 두세요" : "계단 선반의 포탄을 받아 가세요", Blue);
         if (player.Carrying.Value)
             return new WorkGuide(hint: player.InCellar ? "계단으로 1층에 올라가세요" : "5시 방향 파란 적재칸으로 옮기세요", color: Blue);
         if (player.Snack.Value)
@@ -85,7 +88,10 @@ internal readonly struct WorkGuide
                 return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
         }
         if (timing.NearbyStation == StationAction.WheelRepair && game.WheelDetached && game.WheelRepairSteps == 0)
-            return new WorkGuide(hint: "12시 방향에서 예비 바퀴를 가져오세요", color: Sand);
+            return new WorkGuide(hint: game.SpareKitReady.Value ? "비상 바퀴 꾸러미로 바로 수리하세요" : "12시 방향에서 예비 바퀴를 가져오세요", color: Sand);
+        // 정비 안내등: 어느 층에서든 빠진 바퀴와 남은 수리 단계를 알려 준다.
+        if (game.WheelDetached && game.Owns(ShopPerk.MaintenanceLamp))
+            return new WorkGuide(hint: LocalizationTable.F("{0}번 바퀴 고장 · 수리 {1}/{2}단계", game.DetachedTireNumber, game.WheelRepairSteps, CartStations.WheelRepairStepsNeeded), color: Sand);
         return default;
     }
 
@@ -95,7 +101,7 @@ internal readonly struct WorkGuide
         string name = prince ? "왕자" : "공주";
         if (child.Upset)
         {
-            float soothe = child.Soothing / CartStations.SootheDistance;
+            float soothe = child.Soothing / game.SootheTarget;
             return child.Bored
                 ? new WorkGuide(hint: "지루해요 · 마차 앞뒤나 지하층으로 가세요", color: new Color32(230, 186, 130, 255), progress: soothe)
                 : new WorkGuide(hint: "안고 걸어서 달래 주세요", color: Pink, progress: soothe);

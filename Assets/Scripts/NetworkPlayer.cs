@@ -256,6 +256,44 @@ public sealed class NetworkPlayer : NetworkBehaviour
     private void WorkResultRpc(bool loaded) { if (Local) timing.ShowResult(loaded); }
     public void ShowWorkResult(bool loaded) => WorkResultRpc(loaded);
 
+    // 장전에 실패했지만 상점 효과로 포탄이 적재함에 남았을 때.
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShellReturnedRpc() { if (Local) timing.ShowShellReturned(); }
+    public void ShowShellReturned() => ShellReturnedRpc();
+
+    private PlayerMovement movement;
+    private PlayerMovement Movement => movement != null ? movement : movement = GetComponent<PlayerMovement>();
+
+    // 조준점이 같은 자리에 머문 시간(정밀 조준경). Aim이 바뀔 때마다 모든 피어에서 다시 센다.
+    private Vector2 steadyAim;
+    private double steadySince;
+    public float AimSteadySeconds
+    {
+        get
+        {
+            double now = NetworkManager.ServerTime.Time;
+            if ((Aim.Value - steadyAim).sqrMagnitude > .0004f) { steadyAim = Aim.Value; steadySince = now; }
+            return (float)(now - steadySince);
+        }
+    }
+
+    public void PullBrake() { if (Local) BrakeRpc(); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void BrakeRpc() => CartStations.Instance?.PullBrake(this);
+
+    public bool CanUseStairShelf()
+    {
+        var stations = CartStations.Instance;
+        return stations != null && Movement != null && stations.CanUseStairShelf(this, Movement.StairPoint(false), Movement.StairPoint(true));
+    }
+    public void RequestStairShelf() { if (Local) StairShelfRpc(); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void StairShelfRpc()
+    {
+        var stations = CartStations.Instance;
+        if (stations != null && Movement != null) stations.UseStairShelf(this, Movement.StairPoint(false), Movement.StairPoint(true));
+    }
+
     [Rpc(SendTo.Owner)]
     private void CookingImpactRpc(int percentLost)
     {
@@ -307,7 +345,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         else if (action == StationAction.Driver) stations.StrikeHorse(whipAim);
         else if (action != StationAction.ShellPile && action != StationAction.Reload && action != StationAction.WheelRepair
             || timing.TimingSuccess(action, false, inputTime)) stations.Succeed(action,this);
-        else stations.Fail(action, this);
+        else stations.Fail(action, this, timing.NearMiss(action, inputTime));
     }
     // TeamEmotes가 아이콘을 골라 호출한다.
     public void ShowEmoteBubble(Sprite icon)

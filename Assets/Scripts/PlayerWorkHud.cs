@@ -176,10 +176,15 @@ public sealed class PlayerWorkHud : MonoBehaviour
 
         Rect LayoutRoyalRow(TMP_Text label, string name, string color, RiderState child, int index)
         {
-            if (widthLimit < 36f || (!IsRoyalNearby(viewer, game, child) && !IsRoyalNearby(sharedViewer, game, child)))
+            bool nearby = IsRoyalNearby(viewer, game, child) || IsRoyalNearby(sharedViewer, game, child);
+            // 쌍둥이 상태판: 지하층에서는 아이가 멀리 있어도 내 머리 위에 상태를 띄운다.
+            bool board = !nearby && viewer != null && viewer.InCellar && !child.InCellar && game.Owns(ShopPerk.TwinStatusBoard);
+            if (widthLimit < 36f || (!nearby && !board))
                 return default;
 
-            Vector3 feet = view.WorldToScreenPoint(game.RoyalStatusAnchor(child, index));
+            Vector3 anchor = board ? viewer.transform.position + Vector3.up * ((70f + 24f * index) * game.WorldPerWebUnit)
+                : game.RoyalStatusAnchor(child, index);
+            Vector3 feet = view.WorldToScreenPoint(anchor);
             if (feet.z <= 0f || !viewport.Contains(feet)) return default;
 
             Vector2 size = MeasureRoyalRow(label, name, color, child, font, widthLimit);

@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 public sealed class DevPanel : MonoBehaviour
 {
     private static readonly float[] Speeds = { 1f, 2f, 4f };
+    private const int PointsPerClick = 10;
 
     [SerializeField] private GameObject panel;
     [SerializeField] private TMP_Text status;
@@ -33,6 +34,8 @@ public sealed class DevPanel : MonoBehaviour
     public void Calm() { stations.DevCalm(); Show(); }
     public void RefillShells() { stations.DevRefillShells(); Show(); }
     public void ClearStage() { stations.DevClearStage(); Show(); }
+    public void OpenShop() { stations.DevOpenShop(); panel.SetActive(false); }
+    public void AddPoints() { stations.DevAddPoints(PointsPerClick); Show(); }
     public void Fail() { stations.DevFail(); Show(); }
     public void ToggleInvincible() { stations.DevInvincible = !stations.DevInvincible; Show(); }
     public void ClearEnemies() { if (stations.IsServer) spawner.ClearEnemies(); Show(); }
@@ -56,6 +59,6 @@ public sealed class DevPanel : MonoBehaviour
     {
         if (!panel.activeSelf) return;
         string host = stations.IsServer ? "" : "호스트 전용\n";
-        status.text = $"{host}속도 x{Speeds[speedIndex]}\n적 스폰 {(spawner.enabled ? "켜짐" : "꺼짐")}\n무적 {(stations.DevInvincible ? "켜짐" : "꺼짐")}";
+        status.text = $"{host}속도 x{Speeds[speedIndex]}\n적 스폰 {(spawner.enabled ? "켜짐" : "꺼짐")}\n무적 {(stations.DevInvincible ? "켜짐" : "꺼짐")}\nAP {stations.ShopPoints}";
     }
 }

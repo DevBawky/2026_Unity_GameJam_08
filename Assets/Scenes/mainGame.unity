@@ -23183,6 +23183,15 @@ MonoBehaviour:
         byte0507: 0
         byte0508: 0
         byte0509: 0
+  shopCatalog: {fileID: 11400000, guid: 8ddfbf4b99eabbc4abaf1cb69e35c7a8, type: 2}
+  ShopOffer:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+  PurchasedItems:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   impactDust: {fileID: 1279328010}
   impactAudio: {fileID: 1279328008}
   cannonSound: {fileID: 8300000, guid: fd1f776759935b949a8e663483f6ff2f, type: 3}

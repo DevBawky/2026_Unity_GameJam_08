@@ -219,6 +219,7 @@ public sealed partial class CartStations : NetworkBehaviour
         cart.Advance(Step);
         if (obstacles != null) obstacles.Advance(Step);
         if (!Running) return;
+        RingCallBell();
         if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
         AdvanceFuse();
         waveSpawner.Advance(Step);
@@ -250,6 +251,7 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         FinishCare();
         flow = stageNumber == 3 ? StageFlow.Complete : StageFlow.ChoosingUpgrade;
+        if (flow == StageFlow.ChoosingUpgrade) RollShopOffer();
         Publish();
     }
 
@@ -276,9 +278,10 @@ public sealed partial class CartStations : NetworkBehaviour
         stageNumber++;
         stageStartDistance = cart.Distance;
         cart.ResetForStage(horseLevel);
-        if (wheelDetached) cart.SpeedMultiplier = wheelLossSpeedMultiplier;
+        if (wheelDetached) cart.SpeedMultiplier = WheelLossSpeed;
         ResetCare();
         ResetStageState();
+        ApplyStageItems();
         obstacles.ResetForStage();
         flow = StageFlow.Running;
         waveSpawner.RestartWaves();

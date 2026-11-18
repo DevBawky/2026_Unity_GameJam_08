@@ -59,7 +59,7 @@ public sealed partial class CartStations
     private void StartFuse(float initial = -1f)
     {
         fuseLit = true;
-        fuseRemaining = initial < 0f ? CartRules.Active.fuseSeconds : initial;
+        fuseRemaining = initial < 0f ? CartRules.Active.fuseSeconds * (Owns(ShopPerk.LongFuse) ? LongFuseRate : 1f) : initial;
         FuseDeadline.Value = NetworkManager.ServerTime.Time + fuseRemaining;
     }
 
@@ -85,9 +85,10 @@ public sealed partial class CartStations
         cleaningTaps = 0;
         fuseLit = false;
         FuseDeadline.Value = 0d;
-        if (gunner != null && !gunner.Bot.Value && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(PostShotTicks);
+        if (gunner != null && !gunner.Bot.Value && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(Owns(ShopPerk.ReleaseLever) ? ReleaseLeverTicks : PostShotTicks);
         else EndPostShot();
-        AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength, CannonShock, .25f, cannon: true);
+        float recoil = Owns(ShopPerk.RecoilMount) ? RecoilMountRate : 1f;
+        AddImpactEffects(recoilAnxietyIncrease * recoil, recoilShakeStrength * recoil, CannonShock * recoil, .25f * recoil, cannon: true);
         var rotation = Quaternion.Euler(0f, 0f, angleDegrees);
         GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position + (Vector3)direction * CannonBarrelLength, rotation);
         shot.GetComponent<Projectile>().SetCaliber(Barrel.Value);
