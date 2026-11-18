@@ -13,6 +13,8 @@ public sealed class LobbyUI : MonoBehaviour
     [SerializeField] private TMP_Text loadingLabel;
     [SerializeField] private Button createButton, joinButton, backButton, leaveButton, startButton;
     [SerializeField] private GameObject practicePanel;
+    [SerializeField] private ConfirmPopup confirmPopup;
+    [SerializeField] private LocalizationTable table;
     private int pendingSeats;
     private bool joining;
     private float copiedUntil;
@@ -33,21 +35,21 @@ public sealed class LobbyUI : MonoBehaviour
         if (busy)
         {
             loadingPanel.transform.SetAsLastSibling();
-            loadingLabel.text = session.Status;
+            loadingLabel.text = table.Translate(session.Status);
         }
         nickname.interactable = roomCode.interactable = !busy;
         createButton.interactable = joinButton.interactable = backButton.interactable = !busy;
         leaveButton.interactable = !busy && connected && !session.Roster.Starting.Value;
         startButton.gameObject.SetActive(session.IsHost);
         startButton.interactable = session.IsHost && !busy && !session.Roster.Starting.Value;
-        statusLabel.text = Time.unscaledTime < copiedUntil ? "방 코드를 복사했습니다." : session.Status;
+        statusLabel.text = table.Translate(Time.unscaledTime < copiedUntil ? "방 코드를 복사했습니다." : session.Status);
         if (!connected) return;
-        codeLabel.text = "방 코드: " + session.Roster.Code.Value;
+        codeLabel.text = table.Translate("방 코드: ") + session.Roster.Code.Value;
         for (int i = 0; i < playerLabels.Length; i++)
         {
-            playerLabels[i].text = $"P{i + 1}\n대기 중";
+            playerLabels[i].text = $"P{i + 1}\n{table.Translate("대기 중")}";
             foreach (LobbyPlayerInfo p in session.Roster.Players)
-                if (p.Slot == i) playerLabels[i].text = $"P{i + 1}\n{p.Nickname}" + (p.ClientId == 0 ? " (방장)" : "");
+                if (p.Slot == i) playerLabels[i].text = $"P{i + 1}\n{p.Nickname}" + (p.ClientId == 0 ? table.Translate(" (방장)") : "");
         }
     }
     public void ShowJoin() { joining = true; }
@@ -55,6 +57,8 @@ public sealed class LobbyUI : MonoBehaviour
     public void OpenSettings() { settingsPanel.SetActive(true); settingsPanel.transform.SetAsLastSibling(); }
     public void CloseSettings() { settingsPanel.SetActive(false); }
     public void Quit() { Application.Quit(); }
+    public void AskQuit() => confirmPopup.Show("정말 게임을 종료할까요?", Quit);
+    public void AskLeaveRoom() => confirmPopup.Show("정말 방에서 나갈까요?", LeaveRoom);
     private void SaveNickname() { PlayerPrefs.SetString("Lobby.Nickname", nickname.text.Trim()); PlayerPrefs.Save(); }
     public async void CreateRoom() { SaveNickname(); await session.CreateRoomAsync(nickname.text); }
     public async void JoinRoom() { SaveNickname(); await session.JoinRoomAsync(nickname.text, roomCode.text); }
