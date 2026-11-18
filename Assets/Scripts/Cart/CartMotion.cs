@@ -12,9 +12,20 @@ public class CartMotion : MonoBehaviour
     public float TargetSpeed { get; private set; }
     public float Distance { get; private set; }
     public float Heading { get; private set; }
+    public float SpeedMultiplier { get; set; } = 1f;
     public float LeftHorseSpeed { get; private set; }
     public float RightHorseSpeed { get; private set; }
-    private void Awake() { LeftHorseSpeed = RightHorseSpeed = cruiseSpeed; TargetSpeed = cruiseSpeed; }
+    private void Awake() { cruiseSpeed = 13f; maximumHorseSpeed = Mathf.Max(maximumHorseSpeed, 18f); LeftHorseSpeed = RightHorseSpeed = cruiseSpeed; TargetSpeed = cruiseSpeed; }
+    public void ResetForStage(int horseLevel)
+    {
+        float baseSpeed = 13f + Mathf.Max(0, horseLevel) * 3f;
+        maximumHorseSpeed = Mathf.Max(maximumHorseSpeed, baseSpeed + 5f);
+        LeftHorseSpeed = RightHorseSpeed = baseSpeed;
+        TargetSpeed = baseSpeed;
+        Speed = 0f;
+        Heading = 0f;
+        SpeedMultiplier = 1f;
+    }
     public void SetTargetSpeed(float speed) { LeftHorseSpeed = RightHorseSpeed = Mathf.Max(0f, speed); }
     public void BoostHorse(bool right)
     {
@@ -23,7 +34,7 @@ public class CartMotion : MonoBehaviour
     }
     private void Update()
     {
-        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f;
+        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier;
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * Time.deltaTime);
         Heading = Mathf.Clamp(Heading + (RightHorseSpeed - LeftHorseSpeed) * turnRate * Time.deltaTime, -maxHeading, maxHeading);
         Distance += Speed * Time.deltaTime;

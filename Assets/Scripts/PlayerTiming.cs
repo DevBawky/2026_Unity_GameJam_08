@@ -11,14 +11,30 @@ public sealed class PlayerTiming : MonoBehaviour
     [SerializeField] private CircularTimingGraphic circularGraphic;
     [SerializeField] private Camera gameCamera;
     [SerializeField, Min(0.01f)] private float pinSpeed = 3f;
-    [SerializeField, Min(0.1f)] private float zoomSize = 2f;
     [SerializeField, Min(0.1f)] private float cameraSmoothness = 8f;
 
     private CartStations stations;
     private CannonAim cannonAim;
     public bool IsCannonFocus => (inside && currentSettings != null && currentSettings.Action == StationAction.Cannon) || (stations != null && stations.IsFiring);
-    public bool CanInteract => inside && currentSettings != null && currentSettings.Action != StationAction.ShellDeposit;
+    public bool CanInteract => (stations != null && stations.IsHoldingShell) || (inside && currentSettings != null && currentSettings.Action != StationAction.ShellDeposit && (stations == null || stations.CanUse(currentSettings.Action)));
     private bool actionRequested;
+    private bool wasHoldingShell;
+    [Header("Scene UI")]
+    [SerializeField] private UnityEngine.UI.Text stationStatus;
+    [SerializeField] private GameObject restartButton;
+    [SerializeField] private GameObject upgradePanel;
+    [SerializeField] private UnityEngine.UI.Button[] upgradeButtons;
+    [SerializeField] private UnityEngine.UI.Text[] upgradeLabels;
+    [SerializeField] private RectTransform repairRect;
+    [SerializeField] private UnityEngine.UI.Image healthFill;
+    [SerializeField] private UnityEngine.UI.Image repairFill;
+    [SerializeField] private GameObject repairProgress;
+    [SerializeField] private RectTransform distanceMarker;
+    private float shakeRemaining;
+    private float shakeDuration;
+    private float shakeStrength;
+    [SerializeField, Min(0f)] private float timingJitterDegrees = 10f;
+    private Vector3 lastShakeOffset;
     private bool inside;
     private RectTransform currentArea;
     private TimingArea currentSettings;
@@ -41,12 +57,20 @@ public sealed class PlayerTiming : MonoBehaviour
             originalFieldOfView = gameCamera.fieldOfView;
         }
         if (timingPanel != null) timingPanel.SetActive(false);
+        if (restartButton != null && restartButton.TryGetComponent(out UnityEngine.UI.Button retry))
+            retry.onClick.AddListener(RestartGame);
+        if (upgradeButtons != null)
+            for (int i = 0; i < upgradeButtons.Length; i++)
+            {
+                int choice = i;
+                if (upgradeButtons[i] != null) upgradeButtons[i].onClick.AddListener(() => ChooseUpgrade(choice));
+            }
     }
 
     private void Update()
     {
         RectTransform area = FindArea();
-        if (area != currentArea)
+        if (area != currentArea || (inside && area == null))
         {
             currentArea = area;
             currentSettings = area != null ? area.GetComponent<TimingArea>() : null;
@@ -57,21 +81,50 @@ public sealed class PlayerTiming : MonoBehaviour
             if (usesTiming) ResetTiming();
         }
 
-        bool pressed = actionRequested || (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame);
+        UpdateStationStatus();
+        if (stations != null && (stations.Failed || stations.ChoosingUpgrade)) { actionRequested = false; return; }
+        bool holdingShell = stations != null && stations.IsHoldingShell;
+        if (holdingShell != wasHoldingShell)
+        {
+            wasHoldingShell = holdingShell;
+            if (timingPanel != null) timingPanel.SetActive(holdingShell || (inside && currentSettings != null && currentSettings.UsesTiming));
+            if (holdingShell) ResetHoldTiming();
+            else if (inside && currentSettings != null && currentSettings.UsesTiming) ResetTiming();
+        }
+        if (!holdingShell && inside && currentSettings != null && stations != null && currentSettings.Action == StationAction.ShellDeposit)
+            stations.Enter(StationAction.ShellDeposit);
+        if (timingPanel != null && !holdingShell)
+            timingPanel.SetActive(inside && currentSettings != null && currentSettings.UsesTiming && (stations == null || stations.CanUse(currentSettings.Action)));
+        Gamepad pad = Gamepad.current;
+        bool pressed = actionRequested || (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            || (pad != null && (pad.buttonSouth.wasPressedThisFrame || pad.rightTrigger.wasPressedThisFrame));
         actionRequested = false;
+        if (holdingShell)
+        {
+            if (circularGraphic == null) return;
+            circularPinAngle = Mathf.Repeat(circularPinAngle - 180f * Time.deltaTime, 360f);
+            float visiblePin = ShakenPinAngle();
+            float holdAngle = Mathf.Min(360f, 60f + stations.TimingBonusDegrees);
+            circularGraphic.SetAngles(circularTargetCenter, holdAngle, visiblePin);
+            if (pressed) stations.ResolveShellHold(Mathf.Abs(Mathf.DeltaAngle(visiblePin, circularTargetCenter)) <= holdAngle * 0.5f);
+            return;
+        }
         if (!inside) return;
+        if (currentSettings != null && stations != null && !stations.CanUse(currentSettings.Action)) return;
         if (currentSettings != null && !currentSettings.UsesTiming)
         {
             if (currentSettings.Action == StationAction.Cannon && pressed && stations != null) stations.Ignite();
             return;
         }
         if (background == null || target == null || pin == null) return;
-        bool circular = currentSettings != null && currentSettings.Pattern == TimingPattern.Circular;
+        bool circular = currentSettings != null && currentSettings.UsesTiming;
+        float displayedPin = circularPinAngle;
         if (circular)
         {
             if (circularGraphic == null) return;
             circularPinAngle = Mathf.Repeat(circularPinAngle - currentSettings.CircularSpeed * Time.deltaTime, 360f);
-            circularGraphic.SetAngles(circularTargetCenter, currentSettings.CircularTargetAngle, circularPinAngle);
+            displayedPin = ShakenPinAngle();
+            circularGraphic.SetAngles(circularTargetCenter, CurrentTargetAngle(), displayedPin);
         }
         else MovePin();
 
@@ -79,7 +132,7 @@ public sealed class PlayerTiming : MonoBehaviour
         {
             bool success;
             if (circular)
-                success = Mathf.Abs(Mathf.DeltaAngle(circularPinAngle, circularTargetCenter)) <= currentSettings.CircularTargetAngle * 0.5f;
+                success = Mathf.Abs(Mathf.DeltaAngle(displayedPin, circularTargetCenter)) <= CurrentTargetAngle() * 0.5f;
             else
             {
                 float pinCenter = pin.localPosition.x + pin.rect.center.x;
@@ -87,7 +140,11 @@ public sealed class PlayerTiming : MonoBehaviour
                 success = Mathf.Abs(pinCenter - targetCenter) <= target.rect.width * 0.5f;
             }
             Debug.Log(success ? "성공" : "실패", this);
-            if (success && currentSettings != null && stations != null) stations.Succeed(currentSettings.Action);
+            if (currentSettings != null && stations != null)
+            {
+                if (success) stations.Succeed(currentSettings.Action);
+                else stations.Fail(currentSettings.Action);
+            }
         }
     }
 
@@ -96,19 +153,37 @@ public sealed class PlayerTiming : MonoBehaviour
     private RectTransform FindArea()
     {
         if (interactionAreas == null) return null;
+        if (repairRect != null && stations != null && stations.IsInsideDetachedTire(transform.position)) return repairRect;
         foreach (Transform child in interactionAreas)
         {
-            if (!child.gameObject.activeInHierarchy || !(child is RectTransform area)) continue;
+            if (!child.gameObject.activeInHierarchy || !(child is RectTransform area) || area == repairRect) continue;
             Vector3 local = area.InverseTransformPoint(transform.position);
             if (area.rect.Contains(new Vector2(local.x, local.y))) return area;
         }
         return null;
     }
 
+    private float CurrentTargetAngle() => Mathf.Min(360f, currentSettings.CircularTargetAngle + (stations != null ? stations.TimingBonusDegrees : 0f));
+
+    private float ShakenPinAngle()
+    {
+        return circularPinAngle + (shakeRemaining > 0f ? Random.Range(-timingJitterDegrees, timingJitterDegrees) * shakeRemaining / shakeDuration : 0f);
+    }
+
+    private void ResetHoldTiming()
+    {
+        if (background != null) background.gameObject.SetActive(false);
+        if (circularGraphic == null) return;
+        circularGraphic.gameObject.SetActive(true);
+        circularTargetCenter = Random.Range(0f, 360f);
+        circularPinAngle = 180f;
+        circularGraphic.SetAngles(circularTargetCenter, 60f, circularPinAngle);
+    }
+
     private void ResetTiming()
     {
         if (background == null || target == null || pin == null) return;
-        bool circular = currentSettings != null && currentSettings.Pattern == TimingPattern.Circular;
+        bool circular = currentSettings != null && currentSettings.UsesTiming;
         background.gameObject.SetActive(!circular);
         if (circularGraphic != null) circularGraphic.gameObject.SetActive(circular);
         if (circular)
@@ -117,7 +192,7 @@ public sealed class PlayerTiming : MonoBehaviour
             circularGraphic.gameObject.SetActive(true);
             circularTargetCenter = Random.Range(0f, 360f);
             circularPinAngle = 180f;
-            circularGraphic.SetAngles(circularTargetCenter, currentSettings.CircularTargetAngle, circularPinAngle);
+            circularGraphic.SetAngles(circularTargetCenter, CurrentTargetAngle(), circularPinAngle);
             return;
         }
         float halfTarget = target.rect.width * 0.5f;
@@ -146,24 +221,153 @@ public sealed class PlayerTiming : MonoBehaviour
         rect.localPosition = position;
     }
 
+    private void UpdateProgressIndicators()
+    {
+        if (stations == null) return;
+        if (healthFill != null) healthFill.fillAmount = Mathf.Clamp01(stations.Durability / 100f);
+        if (repairProgress != null) repairProgress.SetActive(stations.WheelDetached && !stations.Failed && !stations.ChoosingUpgrade);
+        if (repairFill != null) repairFill.fillAmount = Mathf.Clamp01(stations.WheelRepairSteps / 2f);
+        if (distanceMarker != null)
+        {
+            float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
+            distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(progress, 0.5f);
+            distanceMarker.anchoredPosition = Vector2.zero;
+        }
+    }
+
+    private void RestartGame() { if (stations != null) stations.Restart(); }
+    private void ChooseUpgrade(int choice) { if (stations != null) stations.ChooseUpgrade(choice); }
+
+    private void UpdateStationStatus()
+    {
+        if (stationStatus == null || stations == null) return;
+        UpdateProgressIndicators();
+        if (restartButton != null) restartButton.SetActive(stations.Failed);
+        if (upgradePanel != null) upgradePanel.SetActive(stations.ChoosingUpgrade);
+        if (stations.Failed) { stationStatus.text = stations.FailureReason; return; }
+        if (stations.ChoosingUpgrade)
+        {
+            stationStatus.text = $"STAGE {stations.StageNumber} COMPLETE - CHOOSE AN UPGRADE";
+            upgradeLabels[0].text = $"1 / A: CUSHION AXLE  Lv {stations.CushionAxleLevel} -> {stations.CushionAxleLevel + 1}  (impact x 0.78)";
+            upgradeLabels[1].text = $"2 / X: TRAINED HORSES  Lv {stations.HorseLevel} -> {stations.HorseLevel + 1}  (+3 speed)";
+            upgradeLabels[2].text = $"3 / Y: PRECISION SIGHT  Lv {stations.PrecisionLevel} -> {stations.PrecisionLevel + 1}  (+2.7% timing)";
+            return;
+        }
+        string stageName = StageNames[(stations.StageNumber - 1) % StageNames.Length];
+        stationStatus.text = stageName;
+        if (!inside || currentSettings == null) return;
+        switch (currentSettings.Action)
+        {
+            case StationAction.ShellDeposit:
+                stationStatus.text += $"     STORED SHELLS: {stations.DepositedShells}";
+                break;
+            case StationAction.Reload:
+                if (stations.IsLoaded) stationStatus.text += $"     CANNON LOADED - FIRE FIRST     STORED: {stations.DepositedShells}";
+                else if (!stations.IsDeposited) stationStatus.text += "     STORAGE EMPTY - BRING A SHELL";
+                else stationStatus.text += $"     STORED SHELLS: {stations.DepositedShells}";
+                break;
+        }
+    }
+
+    public void SetWheelRepairActive(bool active)
+    {
+        if (repairRect != null) repairRect.gameObject.SetActive(active);
+    }
+
+    public void ShakeCamera(float strength, float duration)
+    {
+        shakeStrength = Mathf.Max(shakeStrength, Mathf.Max(0f, strength));
+        shakeDuration = Mathf.Max(0.01f, duration);
+        shakeRemaining = shakeDuration;
+    }
+
+    private static readonly string[] StageNames = { "THORNWOOD PASS", "ASHEN ROAD", "TWILIGHT BORDER" };
+    private readonly Vector3[] uiCorners = new Vector3[4];
+
+    private void IncludeRect(ref Bounds bounds, RectTransform rect)
+    {
+        if (rect == null || !rect.gameObject.activeInHierarchy) return;
+        rect.GetWorldCorners(uiCorners);
+        foreach (Vector3 corner in uiCorners) bounds.Encapsulate(corner);
+    }
+
     private void LateUpdate()
     {
         if (gameCamera == null) return;
         float t = 1f - Mathf.Exp(-cameraSmoothness * Time.deltaTime);
         bool aiming = IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
-        float targetSize = aiming ? originalCameraSize : inside ? zoomSize : originalCameraSize;
-        Vector3 destination = inside ? new Vector3(transform.position.x, transform.position.y, originalCameraPosition.z) : originalCameraPosition;
+        bool royalFocus = inside && currentSettings != null && currentSettings.Action == StationAction.RoyalFamily;
+        bool zooming = aiming || inside || (stations != null && (stations.IsCarrying || stations.IsHoldingShell));
+        float zoom = stations != null && (stations.IsCarrying || stations.IsHoldingShell) ? 3f : inside ? 4f : 1f;
+        float targetSize = originalCameraSize / zoom;
+        Vector3 destination = zooming ? new Vector3(transform.position.x, transform.position.y, originalCameraPosition.z) : originalCameraPosition;
+        Bounds visibleBounds = new Bounds(transform.position, Vector3.zero);
+
         if (aiming)
         {
             Vector3 muzzle = cannonAim.Muzzle.position;
-            Vector2 aimOffset = cannonAim.Direction * cannonAim.LineLength;
-            // Keep the whole line visible; a horizontal aim leaves 20% of the screen beyond its end.
-            targetSize = Mathf.Max(aimOffset.x / (1.28f * gameCamera.aspect), Mathf.Abs(aimOffset.y) / 1.6f, 1.5f);
-            destination = new Vector3(muzzle.x + targetSize * gameCamera.aspect * 0.68f, muzzle.y + aimOffset.y * 0.5f, originalCameraPosition.z);
+            Vector3 endpoint = muzzle + (Vector3)cannonAim.Direction * cannonAim.LineLength;
+            visibleBounds = new Bounds(muzzle, Vector3.zero);
+            visibleBounds.Encapsulate(endpoint + new Vector3(0.25f, 0.25f));
+            visibleBounds.Encapsulate(endpoint - new Vector3(0.25f, 0.25f));
+            if (stations != null && stations.CartBody != null && stations.CartBody.enabled && stations.CartBody.gameObject.activeInHierarchy)
+            {
+                // Keep the rightmost 20% of the cart body, including its full height, in view.
+                Bounds cartBounds = stations.CartBody.bounds;
+                float cartVisibleLeft = Mathf.Lerp(cartBounds.max.x, cartBounds.min.x, 0.2f);
+                visibleBounds.Encapsulate(new Vector3(cartVisibleLeft, cartBounds.min.y, muzzle.z));
+                visibleBounds.Encapsulate(new Vector3(cartBounds.max.x, cartBounds.max.y, muzzle.z));
+            }
+            targetSize = originalCameraSize / 2f;
         }
-        gameCamera.transform.position = Vector3.Lerp(gameCamera.transform.position, destination, t);
+        if (zooming)
+        {
+            // Read the live layout every frame, including while the cannon is focused.
+            if (timingPanel != null && timingPanel.activeInHierarchy)
+            {
+                RectTransform timingRect = circularGraphic != null && circularGraphic.gameObject.activeInHierarchy
+                    ? circularGraphic.rectTransform : background;
+                IncludeRect(ref visibleBounds, timingRect);
+            }
+            if (royalFocus && stations != null)
+            {
+                IncludeRect(ref visibleBounds, stations.PrinceAnxietyUI);
+                IncludeRect(ref visibleBounds, stations.PrincessAnxietyUI);
+            }
+        }
+
+        if (zooming && gameCamera.orthographic)
+        {
+            float aspect = Mathf.Max(gameCamera.aspect, 0.01f);
+            const float safeFraction = 0.9f;
+            destination = new Vector3(visibleBounds.center.x, visibleBounds.center.y, originalCameraPosition.z);
+            targetSize = Mathf.Max(targetSize, visibleBounds.extents.y / safeFraction,
+                visibleBounds.extents.x / (aspect * safeFraction));
+        }
+        Vector3 basePosition = gameCamera.transform.position - lastShakeOffset;
+        basePosition = Vector3.Lerp(basePosition, destination, t);
+        lastShakeOffset = Vector3.zero;
+        if (shakeRemaining > 0f)
+        {
+            float intensity = shakeStrength * Mathf.Clamp01(shakeRemaining / shakeDuration);
+            lastShakeOffset = new Vector3(Random.Range(-intensity, intensity), Random.Range(-intensity, intensity), 0f);
+            shakeRemaining = Mathf.Max(0f, shakeRemaining - Time.unscaledDeltaTime);
+            if (shakeRemaining == 0f) shakeStrength = 0f;
+        }
+        gameCamera.transform.position = basePosition + lastShakeOffset;
         if (gameCamera.orthographic)
-            gameCamera.orthographicSize = Mathf.Lerp(gameCamera.orthographicSize, targetSize, t);
+        {
+            float size = Mathf.Lerp(gameCamera.orthographicSize, targetSize, t);
+            if (zooming)
+            {
+                // During the transition, also fit the current bounds around the current camera.
+                Vector3 center = gameCamera.transform.position;
+                float halfHeight = Mathf.Max(Mathf.Abs(visibleBounds.min.y - center.y), Mathf.Abs(visibleBounds.max.y - center.y));
+                float halfWidth = Mathf.Max(Mathf.Abs(visibleBounds.min.x - center.x), Mathf.Abs(visibleBounds.max.x - center.x));
+                size = Mathf.Max(size, halfHeight / 0.9f, halfWidth / (Mathf.Max(gameCamera.aspect, 0.01f) * 0.9f));
+            }
+            gameCamera.orthographicSize = size;
+        }
         else
             gameCamera.fieldOfView = Mathf.Lerp(gameCamera.fieldOfView, inside ? Mathf.Min(originalFieldOfView, 30f) : originalFieldOfView, t);
     }

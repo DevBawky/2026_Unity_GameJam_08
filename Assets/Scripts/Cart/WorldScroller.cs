@@ -9,7 +9,7 @@ public class WorldScroller : MonoBehaviour
     {
         if (cart == null) return;
         float angle = cart.Heading * Mathf.Deg2Rad;
-        transform.position += new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (cart.Speed * Time.deltaTime);
+        transform.position += new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (cart.Speed * 5f * Time.deltaTime);
         // The uniform road must cover the camera even after the scrolling tiles have looped.
         if (roadSurface != null && Camera.main != null)
         {
