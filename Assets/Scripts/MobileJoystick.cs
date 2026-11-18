@@ -9,6 +9,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private RectTransform area;
     private int pointerId = int.MinValue;
 
+    public event System.Action Released;
     public Vector2 Direction { get; private set; }
     public bool IsMobileMode { get; private set; }
 
@@ -47,7 +48,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (eventData.pointerId == pointerId) ResetJoystick();
+        if (eventData.pointerId == pointerId) { ResetJoystick(); Released?.Invoke(); }
     }
 
     private void OnDisable() => ResetJoystick();
