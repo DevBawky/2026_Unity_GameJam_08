@@ -27,6 +27,8 @@ public sealed class CameraRig : MonoBehaviour
     private float shakeDuration = 0.01f;
     private float shakeStrength;
 
+    public void Bind(NetworkPlayer actor) { player=actor.Timing; cannonAim=actor.Cannon; }
+
     public float ShakeAmount => shakeRemaining > 0f ? shakeRemaining / shakeDuration : 0f;
 
     private void Awake()
@@ -45,11 +47,14 @@ public sealed class CameraRig : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (NetworkPlayer.LocalPlayer == null) return;
+        if (player != NetworkPlayer.LocalPlayer.Timing) Bind(NetworkPlayer.LocalPlayer);
         float t = 1f - Mathf.Exp(-smoothness * Time.deltaTime);
         bool aiming = player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
-        bool carrying = stations.IsCarrying || stations.IsHoldingShell;
-        bool zooming = aiming || player.IsInside || carrying;
-        float targetSize = homeSize / (carrying ? CarryZoom : player.IsInside ? StationZoom : 1f);
+        bool carrying = NetworkPlayer.LocalPlayer.Carrying.Value || NetworkPlayer.LocalPlayer.Holding.Value;
+        bool atOwnStation = player.HasStationAccess;
+        bool zooming = aiming || atOwnStation || carrying;
+        float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f);
         Vector3 destination = homePosition;
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
@@ -75,7 +80,7 @@ public sealed class CameraRig : MonoBehaviour
         if (zooming)
         {
             IncludeRect(ref visible, player.ActiveTimingRect);
-            if (player.IsAt(StationAction.RoyalFamily))
+            if (atOwnStation && player.IsAt(StationAction.RoyalFamily))
             {
                 IncludeRect(ref visible, stations.PrinceAnxietyUI);
                 IncludeRect(ref visible, stations.PrincessAnxietyUI);

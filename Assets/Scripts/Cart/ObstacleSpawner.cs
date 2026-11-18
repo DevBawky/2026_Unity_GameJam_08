@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 using System.Collections.Generic;
 
 // 마차 앞쪽(왼쪽) 멀리에 바위·통나무를 소환해 배경과 같은 속도로 흘려보내고,
@@ -31,7 +32,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
     // 다음 스테이지 시작 시 CartStations가 호출한다.
     public void ResetForStage()
     {
-        foreach (Obstacle obstacle in active) if (obstacle != null) Destroy(obstacle.gameObject);
+        foreach (Obstacle obstacle in active) if (obstacle != null) obstacle.GetComponent<NetworkObject>().Despawn(true);
         active.Clear();
         Schedule();
     }
@@ -46,12 +47,14 @@ public sealed class ObstacleSpawner : MonoBehaviour
     {
         Obstacle prefab = Random.value < logProbability ? logPrefab : rockPrefab;
         var position = new Vector3(cartBody.bounds.min.x - spawnDistance, Random.Range(-spawnSideRange, spawnSideRange), 0f);
-        active.Add(Instantiate(prefab, position, Quaternion.identity, transform));
+        var item=Instantiate(prefab,position,Quaternion.identity);
+        item.GetComponent<NetworkObject>().Spawn(true);
+        active.Add(item);
     }
 
     private void Update()
     {
-        if (stations.Failed || stations.ChoosingUpgrade) return;
+        if (!stations.IsServer || !CartStations.Running) return;
         if (Time.time >= nextSpawnTime)
         {
             Spawn();
@@ -77,14 +80,14 @@ public sealed class ObstacleSpawner : MonoBehaviour
             float hitY = Mathf.Lerp(previous.y, next.y, hitT);
             if (crossed && Mathf.Abs(hitY - cartBounds.center.y) <= cartHalfHeight + obstacle.Size.y * 0.5f)
             {
-                Destroy(obstacle.gameObject);
+                obstacle.GetComponent<NetworkObject>().Despawn(true);
                 active.RemoveAt(i);
                 stations.ReceiveCollision(obstacle.Damage);
                 if (stations.Failed) return;
             }
             else if (next.x > cartBounds.max.x + spawnDistance)
             {
-                Destroy(obstacle.gameObject);
+                obstacle.GetComponent<NetworkObject>().Despawn(true);
                 active.RemoveAt(i);
             }
         }

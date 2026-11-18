@@ -5,5 +5,11 @@ public sealed class WorldScroller : MonoBehaviour
 {
     [SerializeField] private CartMotion cart;
 
-    private void Update() => transform.position += cart.ScrollVelocity * Time.deltaTime;
+    private Vector3 origin;
+    private void Awake() => origin=transform.position;
+    private void Update()
+    {
+        if (cart==null || !cart.IsSpawned) return;
+        transform.position=origin+Vector3.right*cart.ScrollDistance;
+    }
 }

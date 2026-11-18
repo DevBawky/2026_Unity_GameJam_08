@@ -47,9 +47,11 @@ public sealed class StageHud : MonoBehaviour
 
     private void Update()
     {
+        if (NetworkPlayer.LocalPlayer == null || !stations.IsSpawned) return;
+        player=NetworkPlayer.LocalPlayer.Timing;
         UpdateIndicators();
-        restartButton.SetActive(stations.Failed);
-        upgradePanel.SetActive(stations.ChoosingUpgrade);
+        restartButton.SetActive(stations.Failed && stations.IsHost);
+        upgradePanel.SetActive(stations.ChoosingUpgrade && stations.IsHost);
         UpdateAlert();
 
         int key = HashCode.Combine(stations.Failed, stations.ChoosingUpgrade, stations.StageNumber,

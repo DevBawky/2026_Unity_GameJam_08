@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 // 스폰 영역 중심에 둔다(카메라 최대 범위 밖). 스테이지 시작부터 경과 시간이 웨이브 waveStartTime을 지나면
 // 그 웨이브의 몬스터를 한 프레임에 전부 영역 안 무작위 위치에 소환한다.
@@ -40,7 +41,8 @@ public class EnemySpawner : MonoBehaviour
 
     private void Update()
     {
-        if (cartStations != null && cartStations.StageNumber != stageNumber) RestartWaves();
+        if (cartStations == null || !cartStations.IsServer || !CartStations.Running) return;
+        if (cartStations.StageNumber != stageNumber) RestartWaves();
 
         elapsed += Time.deltaTime;
         while (nextWave < stage.waves.Count && stage.waves[nextWave].waveStartTime <= elapsed)
@@ -53,7 +55,10 @@ public class EnemySpawner : MonoBehaviour
         stageNumber = cartStations.StageNumber;
         elapsed = 0f;
         nextWave = 0;
-        for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
+        foreach (var enemy in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
+            if (enemy.IsSpawned) enemy.NetworkObject.Despawn(true);
+        foreach (var arrow in FindObjectsByType<Arrow>(FindObjectsSortMode.None))
+            if (arrow.IsSpawned) arrow.NetworkObject.Despawn(true);
     }
 
     private void SpawnWave(WaveSO wave)
@@ -62,8 +67,9 @@ public class EnemySpawner : MonoBehaviour
             for (int i = 0; i < s.count; i++)
             {
                 var offset = new Vector3(Random.Range(-0.5f, 0.5f) * areaSize.x, Random.Range(-0.5f, 0.5f) * areaSize.y);
-                var go = Instantiate(s.unit.prefab, transform.position + offset, Quaternion.identity, transform);
-                go.GetComponent<Enemy>().Init(s.unit, wave, cartBody, baseScreenRightX);
+                var go = Instantiate(s.unit.prefab, transform.position + offset, Quaternion.identity);
+                go.GetComponent<Enemy>().Init(s.unit,wave,cartBody,baseScreenRightX);
+                go.GetComponent<NetworkObject>().Spawn(true);
             }
     }
 

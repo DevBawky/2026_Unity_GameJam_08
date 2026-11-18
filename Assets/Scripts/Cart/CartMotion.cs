@@ -1,10 +1,11 @@
 using UnityEngine;
+using Unity.Netcode;
 
 // 마차 속도·이동 거리·방향.
 // 마차는 화면 x에 고정이고, 배경(WorldScroller)과 장애물(ObstacleSpawner)이 ScrollVelocity로 흘러간다.
 // 방향(Heading)은 좌우 말 속도 차이로 꺾이고, 마차는 그 방향으로 길 안에서 위아래로 움직인다.
 // 길 가장자리에 닿으면 막히고 방향이 0이 된다. 빨라진 말은 그림이 앞으로 나간다.
-public sealed class CartMotion : MonoBehaviour
+public sealed class CartMotion : NetworkBehaviour
 {
     [SerializeField] private float cruiseSpeed = 13f;
     [Tooltip("말 업그레이드 1레벨당 기본 속도 증가")]
@@ -30,6 +31,7 @@ public sealed class CartMotion : MonoBehaviour
     [SerializeField, Min(0f)] private float maximumHorseAdvance = 1f;
     [SerializeField, Min(0f)] private float horseVisualMoveSpeed = 3f;
 
+    public NetworkVariable<CartMotionState> State = new();
     private float baseSpeed;
     private float maximumHorseSpeed;
     private Vector3 leftHorseStart;
@@ -44,6 +46,7 @@ public sealed class CartMotion : MonoBehaviour
     public float RightHorseSpeed { get; private set; }
     public float SpeedPerHorseLevel => speedPerHorseLevel;
     public Vector3 ScrollVelocity => Vector3.right * (Mathf.Cos(Heading * Mathf.Deg2Rad) * Speed * scrollScale);
+    public float ScrollDistance { get; private set; }
 
     private void Awake()
     {
@@ -71,10 +74,12 @@ public sealed class CartMotion : MonoBehaviour
 
     private void Update()
     {
+        if (!IsSpawned || !IsServer || !CartStations.Running) return;
         TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier * EnemyRope.CartSpeedMultiplier;
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * Time.deltaTime);
         Heading = Mathf.Clamp(Heading + (RightHorseSpeed - LeftHorseSpeed) * turnRate * Time.deltaTime, -maxHeading, maxHeading);
         Distance += Speed * Time.deltaTime;
+        ScrollDistance += ScrollVelocity.x * Time.deltaTime;
         MoveLaterally();
         UpdateHorseVisual(leftHorseVisual, leftHorseStart, LeftHorseSpeed);
         UpdateHorseVisual(rightHorseVisual, rightHorseStart, RightHorseSpeed);
@@ -100,4 +105,28 @@ public sealed class CartMotion : MonoBehaviour
         Vector3 target = start + Vector3.left * advance;
         visual.localPosition = Vector3.MoveTowards(visual.localPosition, target, horseVisualMoveSpeed * Time.deltaTime);
     }
+    public override void OnNetworkSpawn()
+    {
+        State.OnValueChanged += Changed;
+        NetworkManager.NetworkTickSystem.Tick += Publish;
+        if (IsServer) Publish(); else Apply(State.Value);
+    }
+    public override void OnNetworkDespawn()
+    {
+        State.OnValueChanged -= Changed;
+        NetworkManager.NetworkTickSystem.Tick -= Publish;
+    }
+    private void Publish()
+    {
+        if (!IsSpawned || !IsServer) return;
+        State.Value=new CartMotionState{Speed=Speed,Target=TargetSpeed,Distance=Distance,Heading=Heading,Left=LeftHorseSpeed,Right=RightHorseSpeed,Multiplier=SpeedMultiplier,Scroll=ScrollDistance};
+    }
+    private void Changed(CartMotionState previous,CartMotionState value) { if (!IsServer) Apply(value); }
+    private void Apply(CartMotionState value)
+    {
+        Speed=value.Speed; TargetSpeed=value.Target; Distance=value.Distance; Heading=value.Heading;
+        LeftHorseSpeed=value.Left; RightHorseSpeed=value.Right; SpeedMultiplier=value.Multiplier;
+        ScrollDistance=value.Scroll;
+    }
+
 }

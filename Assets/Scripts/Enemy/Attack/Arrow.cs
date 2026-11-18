@@ -1,7 +1,8 @@
 using UnityEngine;
+using Unity.Netcode;
 
 // 궁수 화살. 쏜 순간의 조준 지점(마차 가장자리)까지 직선으로 날아가 마차 피해를 낸다.
-public class Arrow : MonoBehaviour
+public class Arrow : NetworkBehaviour
 {
     private Vector3 target;
     private float speed;
@@ -17,9 +18,10 @@ public class Arrow : MonoBehaviour
 
     private void Update()
     {
+        if (!IsSpawned || !IsServer || !CartStations.Running) return;
         transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
         if (transform.position != target) return;
         Enemy.HitCart(damage);
-        Destroy(gameObject);
+        NetworkObject.Despawn(true);
     }
 }

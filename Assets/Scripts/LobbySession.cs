@@ -20,10 +20,10 @@ public sealed class LobbySession : MonoBehaviour
     [SerializeField] private NetworkManager manager;
     [SerializeField] private UnityTransport transport;
     [SerializeField] private LobbyRoster roster;
-    [SerializeField] private NetworkObject playerPrefab;
     private readonly Dictionary<ulong, (int slot, string name)> admitted = new();
     private bool leaving;
     private bool quitting;
+    private bool loadingGame;
     private static string returnMessage;
     private System.Threading.CancellationToken lifetime;
     public bool Busy { get; private set; }
@@ -183,6 +183,8 @@ public sealed class LobbySession : MonoBehaviour
     {
         if (manager.IsServer)
         {
+            var game=FindFirstObjectByType<MultiplayerGameScene>();
+            if (game != null) game.Release(id);
             admitted.Remove(id);
             if (roster.IsSpawned)
                 for (int i = roster.Players.Count - 1; i >= 0; i--)
@@ -225,11 +227,13 @@ public sealed class LobbySession : MonoBehaviour
             return;
         }
         roster.Starting.Value = true;
+        loadingGame = true;
         manager.SceneManager.OnLoadEventCompleted += Loaded;
         var result = manager.SceneManager.LoadScene(GameScene, LoadSceneMode.Single);
         if (result != SceneEventProgressStatus.Started)
         {
             manager.SceneManager.OnLoadEventCompleted -= Loaded;
+            loadingGame = false;
             roster.Starting.Value = false;
             Status = "씬을 불러오지 못했습니다: " + result;
         }
@@ -238,6 +242,7 @@ public sealed class LobbySession : MonoBehaviour
     private void Loaded(string scene, LoadSceneMode mode, List<ulong> completed, List<ulong> timedOut)
     {
         if (scene != GameScene || !manager.IsServer) return;
+        loadingGame = false;
         manager.SceneManager.OnLoadEventCompleted -= Loaded;
         foreach (ulong id in timedOut) manager.DisconnectClient(id);
         var spawn = FindFirstObjectByType<MultiplayerGameScene>();
@@ -245,10 +250,22 @@ public sealed class LobbySession : MonoBehaviour
         foreach (var entry in admitted)
         {
             if (!completed.Contains(entry.Key) || !manager.ConnectedClients.ContainsKey(entry.Key)) continue;
-            var player = Instantiate(playerPrefab, spawn.SpawnPosition(entry.Value.slot), Quaternion.identity);
-            player.SpawnAsPlayerObject(entry.Key, true);
-            player.GetComponent<LobbyNetworkPlayer>().Slot.Value = entry.Value.slot;
+            spawn.Assign(entry.Key,entry.Value.slot,new Unity.Collections.FixedString64Bytes(entry.Value.name));
         }
+        CartStations.Instance.Begin();
+    }
+
+    public bool ReloadGame()
+    {
+        if (!manager.IsHost || loadingGame) return false;
+        loadingGame = true;
+        manager.SceneManager.OnLoadEventCompleted += Loaded;
+        var result = manager.SceneManager.LoadScene(GameScene,LoadSceneMode.Single);
+        if (result == SceneEventProgressStatus.Started) return true;
+        manager.SceneManager.OnLoadEventCompleted -= Loaded;
+        loadingGame = false;
+        Status = "씬을 다시 불러오지 못했습니다: " + result;
+        return false;
     }
 
     private void OnApplicationQuit() { quitting = true; }

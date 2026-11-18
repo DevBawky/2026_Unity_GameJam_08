@@ -1,18 +1,26 @@
 using System;
 using UnityEngine;
+using Unity.Netcode;
 
 // 웨이브 배율이 적용된 값으로 초기화되고, 마차 몸체 가장자리를 향해 일정 속도로 다가온다.
 // 사거리 안에 들어오면 유닛 종류(UnitSO.type)에 따라 공격한다.
 //   Lancer → attackInterval마다 근접 공격
 //   Archer → 화면 안(screenInset)에 들어오면 멈춰서 attackInterval마다 화살 발사
 //   Chaser → 로프를 건다 (EnemyRope)
-public class Enemy : MonoBehaviour
+public class Enemy : NetworkBehaviour
 {
     // 마차 피해 신호. EnemySpawner가 마차 내구도(CartStations)에 연결한다.
     public static event Action<float> CartHit;
     public static void HitCart(float damage) => CartHit?.Invoke(damage);
 
+    [SerializeField] private UnitSO unitDefinition;
+    public NetworkVariable<float> Health = new();
     public UnitSO Unit { get; private set; }
+    public override void OnNetworkSpawn()
+    {
+        if (Unit==null) Unit=unitDefinition;
+        if (IsServer) Health.Value=hp;
+    }
 
     private SpriteRenderer target;
     private EnemyRope rope;
@@ -41,12 +49,15 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        hp -= damage;
-        if (hp <= 0f) Destroy(gameObject);
+        if (!IsSpawned || !IsServer || !CartStations.Running) return;
+        hp -= Mathf.Max(0f,damage);
+        Health.Value=hp;
+        if (hp <= 0f) NetworkObject.Despawn(true);
     }
 
     private void Update()
     {
+        if (!IsSpawned || !IsServer || !CartStations.Running || Unit==null || target==null) return;
         if (rope != null && rope.Attached) return;
 
         Vector3 pos = transform.position;
@@ -74,6 +85,10 @@ public class Enemy : MonoBehaviour
         if (Unit.type == UnitType.Lancer)
             HitCart(attack);
         else if (Unit.arrowPrefab != null)
-            Instantiate(Unit.arrowPrefab, pos, Quaternion.identity, transform.parent).GetComponent<Arrow>().Launch(goal, Unit.arrowSpeed, attack);
+        {
+            var shot=Instantiate(Unit.arrowPrefab,pos,Quaternion.identity);
+            shot.GetComponent<Arrow>().Launch(goal,Unit.arrowSpeed,attack);
+            shot.GetComponent<NetworkObject>().Spawn(true);
+        }
     }
 }

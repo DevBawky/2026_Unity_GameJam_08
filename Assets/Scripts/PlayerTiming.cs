@@ -22,20 +22,23 @@ public sealed class PlayerTiming : MonoBehaviour
     [Tooltip("충격 직후 타이밍 핀이 흔들리는 최대 각도")]
     [SerializeField, Min(0f)] private float timingJitterDegrees = 10f;
 
-    private CartStations stations;
+    [SerializeField] private CartStations stations;
+    private NetworkPlayer actor;
     private RectTransform currentArea;
     private TimingArea currentSettings;
     private bool inside;
     private bool actionRequested;
+    private int lastReservationArea = -2;
     private bool wasHoldingShell;
     private float circularTargetCenter;
     private float circularPinAngle;
     private float pinDirection = 1f;
 
-    public bool IsCannonFocus => IsAt(StationAction.Cannon) || stations.IsFiring;
-    public bool CanInteract => stations.IsHoldingShell
-        || (inside && currentSettings != null && currentSettings.Action != StationAction.ShellDeposit && stations.CanUse(currentSettings.Action));
+    public bool IsCannonFocus => (IsAt(StationAction.Cannon) && stations.HoldsStation(StationAction.Cannon,actor)) || (stations.IsFiring && stations.Gunner.Value==actor.OwnerClientId);
+    public bool CanInteract => actor.Holding.Value
+        || (inside && currentSettings != null && currentSettings.Action != StationAction.ShellDeposit && stations.CanUse(currentSettings.Action,actor));
     public bool IsInside => inside;
+    public bool HasStationAccess => inside && currentSettings != null && stations.HoldsStation(currentSettings.Action,actor);
     public bool IsAt(StationAction action) => inside && currentSettings != null && currentSettings.Action == action;
     public StationAction? CurrentAction => inside && currentSettings != null ? currentSettings.Action : null;
     public RectTransform ActiveTimingRect => timingPanel == null || !timingPanel.activeInHierarchy ? null
@@ -43,13 +46,13 @@ public sealed class PlayerTiming : MonoBehaviour
 
     private void Awake()
     {
-        stations = GetComponent<CartStations>();
+        actor = GetComponent<NetworkPlayer>();
         if (timingPanel != null) timingPanel.SetActive(false);
     }
 
     public void TriggerInteraction()
     {
-        if (CanInteract) actionRequested = true;
+        if (actor != null && actor.Local && CanInteract) actionRequested = true;
     }
 
     public void SetWheelRepairActive(bool active)
@@ -59,14 +62,22 @@ public sealed class PlayerTiming : MonoBehaviour
 
     private void Update()
     {
+        if (actor == null || !actor.IsSpawned || !actor.Assigned.Value) { timingPanel.SetActive(false); return; }
+        if (!actor.IsOwner) { ApplyRemote(); return; }
+        SetWheelRepairActive(stations.WheelDetached);
         UpdateCurrentArea();
+        int requested = inside && currentSettings != null ? (int)currentSettings.Action : -1;
+        if (requested != lastReservationArea || (requested >= 0 && !stations.HoldsStation((StationAction)requested,actor)))
+            actor.RequestStation(requested);
+        lastReservationArea = requested;
         if (stations.Failed || stations.ChoosingUpgrade)
         {
             actionRequested = false;
+            timingPanel.SetActive(false);
             return;
         }
 
-        bool holdingShell = stations.IsHoldingShell;
+        bool holdingShell = actor.Holding.Value;
         if (holdingShell != wasHoldingShell)
         {
             wasHoldingShell = holdingShell;
@@ -74,9 +85,10 @@ public sealed class PlayerTiming : MonoBehaviour
             if (holdingShell) ResetHoldTiming();
             else if (inside && currentSettings != null && currentSettings.UsesTiming) ResetTiming();
         }
-        if (!holdingShell && IsAt(StationAction.ShellDeposit)) stations.Enter(StationAction.ShellDeposit);
+        if (!holdingShell && actor.Carrying.Value && IsAt(StationAction.ShellDeposit)
+            && stations.CanUse(StationAction.ShellDeposit,actor)) actor.Request(StationAction.ShellDeposit,true);
         if (timingPanel != null && !holdingShell)
-            timingPanel.SetActive(inside && currentSettings != null && currentSettings.UsesTiming && stations.CanUse(currentSettings.Action));
+            timingPanel.SetActive(inside && currentSettings != null && currentSettings.UsesTiming && stations.CanUse(currentSettings.Action,actor));
 
         bool pressed = ConsumePress();
         if (holdingShell)
@@ -85,10 +97,10 @@ public sealed class PlayerTiming : MonoBehaviour
             return;
         }
         if (!inside) return;
-        if (currentSettings != null && !stations.CanUse(currentSettings.Action)) return;
+        if (currentSettings != null && !stations.CanUse(currentSettings.Action,actor)) return;
         if (currentSettings != null && !currentSettings.UsesTiming)
         {
-            if (currentSettings.Action == StationAction.Cannon && pressed) stations.Ignite();
+            if (currentSettings.Action == StationAction.Cannon && pressed) actor.Request(StationAction.Cannon,true);
             return;
         }
         UpdateStationTiming(pressed);
@@ -103,7 +115,7 @@ public sealed class PlayerTiming : MonoBehaviour
         inside = area != null;
         bool usesTiming = inside && (currentSettings == null || currentSettings.UsesTiming);
         if (timingPanel != null) timingPanel.SetActive(usesTiming);
-        if (inside && currentSettings != null) stations.Enter(currentSettings.Action);
+        if (inside && currentSettings != null && currentSettings.Action==StationAction.ShellDeposit) actor.Request(currentSettings.Action,true);
         if (usesTiming) ResetTiming();
     }
 
@@ -124,7 +136,7 @@ public sealed class PlayerTiming : MonoBehaviour
         float visiblePin = ShakenPinAngle();
         float holdAngle = Mathf.Min(360f, HoldTargetAngle + stations.TimingBonusDegrees);
         circularGraphic.SetAngles(circularTargetCenter, holdAngle, visiblePin);
-        if (pressed) stations.ResolveShellHold(Mathf.Abs(Mathf.DeltaAngle(visiblePin, circularTargetCenter)) <= holdAngle * 0.5f);
+        if (pressed) actor.Request(StationAction.ShellPile,Mathf.Abs(Mathf.DeltaAngle(visiblePin, circularTargetCenter)) <= holdAngle * 0.5f,true);
     }
 
     private void UpdateStationTiming(bool pressed)
@@ -152,21 +164,50 @@ public sealed class PlayerTiming : MonoBehaviour
             success = Mathf.Abs(pinCenter - targetCenter) <= target.rect.width * 0.5f;
         }
         if (currentSettings == null) return;
-        if (success) stations.Succeed(currentSettings.Action);
-        else stations.Fail(currentSettings.Action);
+        actor.Request(currentSettings.Action,success);
     }
 
     private RectTransform FindArea()
     {
         if (interactionAreas == null) return null;
         if (repairRect != null && stations.IsInsideDetachedTire(transform.position)) return repairRect;
-        foreach (Transform child in interactionAreas)
+        for (int i = 0; i < interactionAreas.childCount; i++)
         {
+            Transform child = interactionAreas.GetChild(i);
             if (!child.gameObject.activeInHierarchy || !(child is RectTransform area) || area == repairRect) continue;
             Vector3 local = area.InverseTransformPoint(transform.position);
             if (area.rect.Contains(new Vector2(local.x, local.y))) return area;
         }
         return null;
+    }
+
+    public bool IsInActionArea(StationAction action)
+    {
+        if (action==StationAction.WheelRepair) return stations.IsInsideDetachedTire(transform.position);
+        var area=FindArea();
+        return area != null && area.GetComponent<TimingArea>().Action==action;
+    }
+    private void LateUpdate()
+    {
+        if (actor==null || !actor.Local) return;
+        bool visible=CartStations.Running && timingPanel.activeSelf;
+        int action=actor.Holding.Value ? -2 : currentSettings != null ? (int)currentSettings.Action : -1;
+        float speed=actor.Holding.Value ? HoldPinSpeed : currentSettings != null ? currentSettings.CircularSpeed : 0f;
+        float width=actor.Holding.Value ? Mathf.Min(360f,HoldTargetAngle+stations.TimingBonusDegrees) : currentSettings != null ? CurrentTargetAngle() : 0f;
+        actor.PublishTask(action,visible,circularTargetCenter,width,circularPinAngle,speed);
+    }
+    private void ApplyRemote()
+    {
+        var task=actor.TaskState.Value;
+        bool ownsTask = task.Action == -2 ? actor.Holding.Value
+            : task.Action >= 0 && stations.HoldsStation((StationAction)task.Action,actor);
+        bool show=task.Visible && CartStations.Running && ownsTask;
+        timingPanel.SetActive(show);
+        if (!show || circularGraphic==null) return;
+        background.gameObject.SetActive(false);
+        circularGraphic.gameObject.SetActive(true);
+        float angle=Mathf.Repeat(task.Angle-(float)(actor.NetworkManager.ServerTime.Time-task.Time)*task.Speed,360f);
+        circularGraphic.SetAngles(task.Target,task.Width,angle);
     }
 
     private float CurrentTargetAngle() => Mathf.Min(360f, currentSettings.CircularTargetAngle + stations.TimingBonusDegrees);
