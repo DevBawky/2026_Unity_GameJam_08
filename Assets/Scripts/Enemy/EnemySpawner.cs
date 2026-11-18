@@ -40,7 +40,7 @@ public class EnemySpawner : MonoBehaviour
         }
         cartHit = cartStations.ReceiveCollision;
         Enemy.CartHit += cartHit;
-        stageNumber = cartStations.StageNumber;
+        if (stageNumber == 0) stageNumber = cartStations.StageNumber;
     }
 
     private void OnDisable()
@@ -51,7 +51,7 @@ public class EnemySpawner : MonoBehaviour
 
     public void Advance(float dt)
     {
-        if (cartStations == null || !cartStations.IsServer || !CartStations.Running) return;
+        if (!isActiveAndEnabled || cartStations == null || !cartStations.IsServer || !CartStations.Running) return;
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
         elapsed += dt;

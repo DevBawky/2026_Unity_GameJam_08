@@ -13,7 +13,7 @@ public struct CartNetworkState : INetworkSerializeByMemcpy, IEquatable<CartNetwo
 [Serializable]
 public struct CartMotionState : INetworkSerializeByMemcpy, IEquatable<CartMotionState>
 {
-    public float Speed, Target, Distance, Left, Right, Multiplier, Scroll;
+    public float Speed, Target, Distance, Left, Right, Multiplier, Scroll, ObstacleSlow, SlowRemaining;
     public int LeftStep, RightStep, Lane;
-    public bool Equals(CartMotionState v) => Speed==v.Speed && Target==v.Target && Distance==v.Distance && LeftStep==v.LeftStep && RightStep==v.RightStep && Lane==v.Lane && Left==v.Left && Right==v.Right && Multiplier==v.Multiplier && Scroll==v.Scroll;
+    public bool Equals(CartMotionState v) => Speed==v.Speed && Target==v.Target && Distance==v.Distance && LeftStep==v.LeftStep && RightStep==v.RightStep && Lane==v.Lane && Left==v.Left && Right==v.Right && Multiplier==v.Multiplier && Scroll==v.Scroll && ObstacleSlow==v.ObstacleSlow && SlowRemaining==v.SlowRemaining;
 }
