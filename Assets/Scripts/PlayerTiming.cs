@@ -156,7 +156,10 @@ public sealed class PlayerTiming : MonoBehaviour
         if (aiming)
         {
             Vector3 muzzle = cannonAim.Muzzle.position;
-            destination = new Vector3(muzzle.x + targetSize * gameCamera.aspect * 0.6f, muzzle.y, originalCameraPosition.z);
+            Vector2 aimOffset = cannonAim.Direction * cannonAim.LineLength;
+            // Keep the whole line visible; a horizontal aim leaves 20% of the screen beyond its end.
+            targetSize = Mathf.Max(aimOffset.x / (1.28f * gameCamera.aspect), Mathf.Abs(aimOffset.y) / 1.6f, 1.5f);
+            destination = new Vector3(muzzle.x + targetSize * gameCamera.aspect * 0.68f, muzzle.y + aimOffset.y * 0.5f, originalCameraPosition.z);
         }
         gameCamera.transform.position = Vector3.Lerp(gameCamera.transform.position, destination, t);
         if (gameCamera.orthographic)
