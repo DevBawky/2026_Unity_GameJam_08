@@ -13,8 +13,55 @@ public struct LooseWheelState : INetworkSerializeByMemcpy, IEquatable<LooseWheel
         && Angle.Equals(other.Angle) && Mount == other.Mount;
 }
 
+// 바퀴 빠짐·수리와, 빠져서 굴러가는 바퀴(적을 튕겨냄).
 public sealed partial class CartStations
 {
+    private void SetTireAlpha(float alpha)
+    {
+        if (detachedTire == null) return;
+        Color color = detachedTire.color;
+        if (missingWheelSprite != null)
+        {
+            bool missing = alpha <= 0f;
+            detachedTire.sprite = missing ? missingWheelSprite : mountedWheelSprite;
+            alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
+        }
+        color.a = alpha;
+        detachedTire.color = color;
+    }
+
+    public bool IsInsideDetachedTire(Vector3 position)
+    {
+        if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
+        Vector3 local = detachedTire.transform.InverseTransformPoint(position);
+        Bounds spriteBounds = detachedTire.sprite.bounds;
+        return local.x >= spriteBounds.min.x && local.x <= spriteBounds.max.x
+            && local.y >= spriteBounds.min.y && local.y <= spriteBounds.max.y;
+    }
+
+    private void DetachWheel()
+    {
+        if (wheelDetached || tires.Count == 0) return;
+        detachedTire = tires[(int)(Sample()*tires.Count)];
+        detachedTireAlpha = detachedTire.color.a;
+        LaunchWheel(detachedTire);
+        wheelDetached = true;
+        wheelEverDetached = true;
+        wheelRepairSteps = 0;
+        SetTireAlpha(0f);
+        cart.SpeedMultiplier = wheelLossSpeedMultiplier;
+        Publish();
+    }
+
+    private void RepairWheel()
+    {
+        SetTireAlpha(detachedTireAlpha);
+        detachedTire = null;
+        wheelDetached = false;
+        cart.SpeedMultiplier = 1f;
+        Publish();
+    }
+
     public NetworkList<LooseWheelState> LooseWheels = new();
     private readonly List<SpriteRenderer> wheelVisuals = new();
 
