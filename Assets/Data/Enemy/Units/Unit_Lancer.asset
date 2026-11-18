@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75d7f6bd1fa4c874286c63455ec627b3, type: 3}
   m_Name: Unit_Lancer
   m_EditorClassIdentifier: Assembly-CSharp::UnitSO
+  type: 0
   prefab: {fileID: 5076484409338409596, guid: 17d758ee2e688c14fbfcebf67c0c8ec3, type: 3}
   moveSpeed: 3
   attackPower: 10

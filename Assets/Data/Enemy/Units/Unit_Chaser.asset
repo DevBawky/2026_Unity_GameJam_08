@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75d7f6bd1fa4c874286c63455ec627b3, type: 3}
   m_Name: Unit_Chaser
   m_EditorClassIdentifier: Assembly-CSharp::UnitSO
+  type: 2
   prefab: {fileID: 534948089611357973, guid: 333a887085baa044f8ba254fb875ccc9, type: 3}
   moveSpeed: 3.5
   attackPower: 0

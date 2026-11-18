@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75d7f6bd1fa4c874286c63455ec627b3, type: 3}
   m_Name: Unit_Archer
   m_EditorClassIdentifier: Assembly-CSharp::UnitSO
+  type: 1
   prefab: {fileID: 6952476210459360221, guid: d0e3ce557e0605c47a991f223622f592, type: 3}
   moveSpeed: 3
   attackPower: 5

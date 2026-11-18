@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // 생성 시 웨이브 배율이 적용된 값으로 초기화되고, 마차 몸체 가장자리를 향해 일정 속도로 다가온다.
-// 사거리 안에 들어오면 유닛 설정에 따라 공격한다.
-//   ropeSkill 있음  → 로프를 건다(줄 표시, 마차 감속, 몬스터 전체 가속). 이 몬스터가 사라지면 풀림
-//   arrowPrefab 있음 → attackInterval마다 화살 발사
-//   둘 다 없음      → attackInterval마다 근접 공격
+// 사거리 안에 들어오면 유닛 종류(UnitSO.type)에 따라 공격한다.
+//   Chaser → 로프를 건다(줄 표시, 마차 감속, 몬스터 전체 가속). 이 몬스터가 사라지면 풀림
+//   Archer → attackInterval마다 화살 발사
+//   Lancer → attackInterval마다 근접 공격
 public class Enemy : MonoBehaviour
 {
     // 마차 피해 신호. 마차 내구도 담당 코드가 구독한다.
@@ -62,7 +62,7 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (Unit.ropeSkill != null)
+        if (Unit.type == UnitType.Chaser)
         {
             AttachRope(goal);
             return;
@@ -72,7 +72,7 @@ public class Enemy : MonoBehaviour
         if (attackTimer > 0f) return;
         attackTimer = Unit.attackInterval;
 
-        if (Unit.arrowPrefab != null)
+        if (Unit.type == UnitType.Archer)
             Instantiate(Unit.arrowPrefab, pos, Quaternion.identity).GetComponent<Arrow>().Launch(goal, Unit.arrowSpeed, Attack);
         else
             HitCart(Attack);
