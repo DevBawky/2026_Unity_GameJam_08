@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // 개발자 패널. F1로 열고 닫으며, 버튼은 씬에서 OnClick으로 아래 메서드에 연결한다.
-// 상태를 바꾸는 버튼은 호스트에서만 동작한다. 개발 빌드(에디터 포함)에서만 켜진다.
+// 상태를 바꾸는 버튼은 호스트에서만 동작한다. 에디터와 실제 빌드 모두에서 켜진다.
 public sealed class DevPanel : MonoBehaviour
 {
     private static readonly float[] Speeds = { 1f, 2f, 4f };
@@ -17,7 +17,6 @@ public sealed class DevPanel : MonoBehaviour
 
     private void Awake()
     {
-        if (!Debug.isDebugBuild) gameObject.SetActive(false);
         panel.SetActive(false);
     }
 
