@@ -14,11 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UnitSO
   type: 0
   prefab: {fileID: 5076484409338409596, guid: 17d758ee2e688c14fbfcebf67c0c8ec3, type: 3}
-  moveSpeed: 3
-  attackPower: 10
+  moveSpeed: 2.7
+  attackPower: 11
   attackRange: 0.3
   attackInterval: 1
   hp: 1
+  screenInset: 1
   arrowPrefab: {fileID: 0}
   arrowSpeed: 12
   ropeSkill: {fileID: 0}

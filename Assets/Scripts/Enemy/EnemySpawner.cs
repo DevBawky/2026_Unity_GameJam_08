@@ -8,10 +8,9 @@ using Random = UnityEngine.Random;
 // 다음 스테이지로 넘어가면 웨이브를 처음부터 다시 돌린다.
 public class EnemySpawner : MonoBehaviour
 {
+    [Tooltip("모든 스테이지가 이 웨이브 구성을 쓴다 (Stage_01)")]
     [SerializeField] private StageSO stage;
-    [SerializeField] private StageSO[] campaign;
     public int SpawnedWaves => nextWave;
-    private StageSO ActiveStage => campaign != null && campaign.Length >= stageNumber && stageNumber > 0 ? campaign[stageNumber - 1] : stage;
     [SerializeField] private SpriteRenderer cartBody;
     [SerializeField] private CartStations cartStations;
     [SerializeField] private Vector2 areaSize = new(4f, 8f);
@@ -56,7 +55,7 @@ public class EnemySpawner : MonoBehaviour
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
         elapsed += dt;
-        var waves = ActiveStage.waves;
+        var waves = stage.waves;
         if (waves.Count == 0) return;
         while (cartStations.Endless.Value || nextWave < waves.Count)
         {
@@ -100,7 +99,7 @@ public class EnemySpawner : MonoBehaviour
         for(int i=0;i<saved.Length;i++)
         {
             var entry=saved[i];
-            foreach(var setup in ActiveStage.waves)
+            foreach(var setup in stage.waves)
             {
                 var match=setup.spawns.Find(s=>s.unit.name==entry.Unit);
                 if(match.unit==null) continue;
