@@ -21,4 +21,15 @@ public class UnitSO : ScriptableObject
 
     [Tooltip("체력 (미확정). 대포 한 방에 처치되면 1로 둔다")]
     [Min(0)] public float hp = 1f;
+
+    [Header("원거리 (궁수)")]
+    [Tooltip("화살 프리팹 (Arrow 컴포넌트 필요). 비워두면 근접 공격")]
+    public GameObject arrowPrefab;
+
+    [Tooltip("화살 비행 속도 (m/s)")]
+    [Min(0.1f)] public float arrowSpeed = 12f;
+
+    [Header("스킬 (추격조)")]
+    [Tooltip("로프 스킬. 넣으면 사거리 안에서 공격 대신 로프를 건다")]
+    public RopeSkillSO ropeSkill;
 }

@@ -16,6 +16,10 @@ MonoBehaviour:
   spawns:
   - unit: {fileID: 11400000, guid: 0c15eef4cd363f741ad2b76160912d95, type: 2}
     count: 5
+  - unit: {fileID: 11400000, guid: 46a2e591832397648a24524490c4a800, type: 2}
+    count: 2
+  - unit: {fileID: 11400000, guid: 2e44ac0f084e7d648945c8c5742eb414, type: 2}
+    count: 1
   speedMin: 0.03
   speedMax: 0.02
   attackMultiplier: 1.2
