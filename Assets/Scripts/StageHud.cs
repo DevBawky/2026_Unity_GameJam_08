@@ -76,13 +76,14 @@ public sealed class StageHud : MonoBehaviour
         if (stations.ChapterComplete || stations.ChoosingUpgrade)
         {
             bool reporting=stations.Report.Value<0;
-            stationStatus.text=$"{(stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : stations.KingReply.Value.ToString())}  ·  왕자 {stations.PrincePoints.Value}점  공주 {stations.PrincessPoints.Value}점  ·  {stations.Affection.Value} AP";
+            string headline=stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : stations.KingReply.Value.ToString();
+            stationStatus.text=$"{LocalizationTable.T(headline)}  ·  {LocalizationTable.F("왕자 {0}점  공주 {1}점", stations.PrincePoints.Value, stations.PrincessPoints.Value)}  ·  {stations.Affection.Value} AP";
             for(int i=0;i<upgradeButtons.Length;i++)
             {
                 bool visible=!reporting || i<3;
                 upgradeButtons[i].gameObject.SetActive(visible);
                 if(!visible) continue;
-                upgradeLabels[i].text=reporting ? CartStations.Reports[i] : i==CartStations.Departure ? "다음 구간 출발" : $"{CartRules.Active.GetCard(i).title}  {CartRules.Active.GetCard(i).price} AP";
+                upgradeLabels[i].text=reporting ? LocalizationTable.T(CartStations.Reports[i]) : i==CartStations.Departure ? LocalizationTable.T("다음 구간 출발") : $"{LocalizationTable.T(CartRules.Active.GetCard(i).title)}  {CartRules.Active.GetCard(i).price} AP";
                 upgradeButtons[i].interactable=reporting ? stations.IsHost : i==CartStations.Departure || stations.CanBuy(i);
             }
             return;

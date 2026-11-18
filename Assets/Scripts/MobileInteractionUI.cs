@@ -35,7 +35,7 @@ public sealed class MobileInteractionUI : MonoBehaviour
             actionButton.SetActive(true);
             actionControl.interactable = CartStations.Running && timing.CanInteract;
             var guide = CartStations.Running ? WorkGuide.For(local, CartStations.Instance) : default;
-            actionLabel.text = guide.Action ?? "행동";
+            actionLabel.text = guide.Action ?? LocalizationTable.T("행동");
             actionLabel.color = actionControl.interactable ? new Color32(64, 45, 37, 255) : new Color32(245, 240, 224, 255);
             var colors = actionControl.colors;
             if (guide.Color.a > 0f && colors.normalColor != guide.Color)

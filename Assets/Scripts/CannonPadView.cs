@@ -14,6 +14,6 @@ public sealed class CannonPadView : MonoBehaviour
         if (game == null || shown == game.CannonAction) return;
         shown = game.CannonAction;
         marker.sprite = shown == StationAction.Reload ? reload : cannon;
-        label.SetText(shown == StationAction.Reload ? "장전" : shown == StationAction.Cannon ? "포수" : "포신 청소");
+        label.SetText(LocalizationTable.T(shown == StationAction.Reload ? "장전" : shown == StationAction.Cannon ? "포수" : "포신 청소"));
     }
 }

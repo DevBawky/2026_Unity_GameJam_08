@@ -50,7 +50,7 @@ public sealed class WheelRepairMarker : MonoBehaviour
         pad.sprite = busy ? busyPad : availablePad;
         tool.sprite = busy ? inactiveTool : availableTool;
         labelBackground.sprite = busy ? busyLabel : availableLabel;
-        string message = game.WheelRepairSteps > 0 ? "핀 고정" : spareInCellar ? "수리 !" : "바퀴 필요";
+        string message = LocalizationTable.T(game.WheelRepairSteps > 0 ? "핀 고정" : spareInCellar ? "수리 !" : "바퀴 필요");
         if (label.text != message) label.text = message;
 
         float phase = (float)game.NetworkManager.ServerTime.Time * 5.7f;

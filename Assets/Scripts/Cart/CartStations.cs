@@ -367,6 +367,6 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         Publish();
         if (storedShell != null) storedShell.SetActive(depositedShells > 0);
-        if (rackCountLabel != null) rackCountLabel.SetText("적재 {0}발", depositedShells);
+        if (rackCountLabel != null) rackCountLabel.SetText(LocalizationTable.T("적재 {0}발"), depositedShells);
     }
 }

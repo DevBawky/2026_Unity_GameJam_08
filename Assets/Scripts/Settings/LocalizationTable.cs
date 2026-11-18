@@ -32,7 +32,16 @@ public sealed class LocalizationTable : ScriptableObject
 
     [SerializeField] private List<Entry> entries = new List<Entry>();
 
+    private static LocalizationTable loaded;
     private Dictionary<string, string> english;
+
+    // 씬의 LocalizedText 등이 이 표를 참조하면 로드되면서 등록된다. 코드에서 만든 문구는 T/F로 번역한다.
+    private void OnEnable() => loaded = this;
+
+    public static string T(string korean) => loaded != null ? loaded.Translate(korean) : korean;
+
+    // 숫자가 들어가는 문구: 표의 키는 "{0}" 자리표시를 포함한 한국어 원문이다.
+    public static string F(string koreanFormat, params object[] args) => string.Format(T(koreanFormat), args);
 
     public string Translate(string korean)
     {

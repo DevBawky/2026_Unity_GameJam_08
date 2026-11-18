@@ -17,12 +17,12 @@ internal readonly struct WorkGuide
     private WorkGuide(string action = null, string hint = null, Color color = default,
         bool timed = false, float progress = -1f, string progressName = null, float seconds = -1f)
     {
-        Action = action;
-        Hint = hint;
+        Action = LocalizationTable.T(action);
+        Hint = LocalizationTable.T(hint);
         Color = color;
         Timed = timed;
         Progress = progress;
-        ProgressName = progressName;
+        ProgressName = LocalizationTable.T(progressName);
         Seconds = seconds;
     }
 
@@ -65,7 +65,7 @@ internal readonly struct WorkGuide
                         progress: player.CookProgress.Value / CartRules.Active.cookSeconds);
                 case StationAction.WheelRack: return new WorkGuide("예비 바퀴 들기", "예비 바퀴를 드세요", Sand);
                 case StationAction.CannonCleaning:
-                    return new WorkGuide("청소하기", $"포신 청소 {game.CleaningTaps}/{CartStations.CleaningTapsRequired}", Orange,
+                    return new WorkGuide("청소하기", LocalizationTable.F("포신 청소 {0}/{1}", game.CleaningTaps, CartStations.CleaningTapsRequired), Orange,
                         progress: (float)game.CleaningTaps / CartStations.CleaningTapsRequired);
                 case StationAction.Reload:
                     return game.IsDeposited ? new WorkGuide("장전", color: Green, timed: true)
@@ -127,7 +127,7 @@ internal readonly struct WorkGuide
         if (!game.AimsAtSteeringZone(player.DriverAim.Value))
             return new WorkGuide("채찍질", "왼쪽 스틱으로 말 엉덩이를 겨냥하세요", Purple);
         int hits = right ? game.RightWounds.Value : game.LeftWounds.Value;
-        return new WorkGuide("채찍질", $"{side} 채찍질 · {hits}/{CartStations.RunawayHits}회", Purple,
+        return new WorkGuide("채찍질", LocalizationTable.F("{0} 채찍질 · {1}/{2}회", LocalizationTable.T(side), hits, CartStations.RunawayHits), Purple,
             progress: (float)hits / CartStations.RunawayHits);
     }
 }

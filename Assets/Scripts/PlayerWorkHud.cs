@@ -100,8 +100,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
         int key = HashCode.Combine(result, timed, ready, guide.Action, guide.Hint, tenths);
         if (hud.HintKey != key)
         {
-            string text = result ?? (timed ? (ready ? "지금! " : "초록 구간에서 ") + guide.Action : guide.Hint);
-            if (tenths >= 0) text += $" · {tenths / 10f:0.0}초";
+            string text = result ?? (timed ? LocalizationTable.T(ready ? "지금! " : "초록 구간에서 ") + guide.Action : guide.Hint);
+            if (tenths >= 0) text += LocalizationTable.F(" · {0:0.0}초", tenths / 10f);
             hud.hint.text = text;
             hud.HintKey = key;
         }
@@ -224,7 +224,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
         if (!measured.TryGetValue(label, out var cached) || cached.key != key)
         {
             string moodColor = alarm ? "#ffcea0" : "#e2d4ed";
-            string text = $"<color={nameColor}>{name}</color>  관심 {attention}% · 배고픔 {hunger}%  <color={moodColor}>{mood}</color>";
+            string stats = LocalizationTable.F("관심 {0}% · 배고픔 {1}%", attention, hunger);
+            string text = $"<color={nameColor}>{LocalizationTable.T(name)}</color>  {stats}  <color={moodColor}>{LocalizationTable.T(mood)}</color>";
             label.text = text;
             cached = (key, label.GetPreferredValues(text, (widthLimit - 16f) / scale, 1000f) * scale);
             measured[label] = cached;

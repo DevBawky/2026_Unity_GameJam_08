@@ -22,10 +22,10 @@ public sealed class PlayerTiming : MonoBehaviour
     public string ResultText { get; private set; }
     public string VisibleResult => Time.unscaledTime < resultUntil
         && (!cookingImpactResult || HasStationAccess && IsAt(StationAction.Kitchen)) ? ResultText : null;
-    public void ShowResult(bool loaded) => ShowResult(loaded ? "장전 완료 · 포수 점화 가능" : "장전 실패 · 포탄 1발 손실");
+    public void ShowResult(bool loaded) => ShowResult(LocalizationTable.T(loaded ? "장전 완료 · 포수 점화 가능" : "장전 실패 · 포탄 1발 손실"));
 
     internal void ShowCookingImpact(int percentLost) =>
-        ShowResult($"마차 흔들림 · 제작 진행도 {percentLost}%p 감소", cookingImpact: true);
+        ShowResult(LocalizationTable.F("마차 흔들림 · 제작 진행도 {0}%p 감소", percentLost), cookingImpact: true);
 
     private void ShowResult(string text, bool cookingImpact = false)
     {

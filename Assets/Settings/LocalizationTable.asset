@@ -140,3 +140,291 @@ MonoBehaviour:
     english: Couldn't connect to the new host.
   - korean: "\uBC29\uC7A5 \uC2B9\uACC4\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
     english: Host migration failed.
+  - korean: "\uAC11\uD310\uC73C\uB85C"
+    english: To Deck
+  - korean: "\uB9C8\uBD80\uC11D"
+    english: Driver
+  - korean: "\uBC14\uD034 \uC218\uB9AC \uD544\uC694"
+    english: Wheel repair needed
+  - korean: "\uC608\uBE44 \uBC14\uD034"
+    english: Spare Wheel
+  - korean: "\uC9C0\uD558\uCE35 \uACC4\uB2E8"
+    english: Cellar Stairs
+  - korean: "\uD3EC\uD0C4 \uD544\uC694"
+    english: Shells needed
+  - korean: "\uC774\uBAA8\uD2F0\uCF58"
+    english: Emotes
+  - korean: "\uB180\uB790\uC5B4\uC694"
+    english: Whoa!
+  - korean: "\uD3EC\uC2E0 \uCCAD\uC18C"
+    english: Clean Barrel
+  - korean: "\uBC14\uD034 \uD544\uC694"
+    english: Wheel needed
+  - korean: "\uD3EC\uD0C4 \uB354\uBBF8"
+    english: Shell Pile
+  - korean: "\uACF5\uC8FC"
+    english: Princess
+  - korean: "\uC655\uC790"
+    english: Prince
+  - korean: "\uC544\uC774 \uB3CC\uBD04 \uD544\uC694"
+    english: Child care needed
+  - korean: "\uAC04\uC2DD \uC81C\uC791"
+    english: Snack Station
+  - korean: "\uB9C8\uCC28 \uC870\uC791 \uD544\uC694"
+    english: Driver needed
+  - korean: "\uC774\uD0C8"
+    english: Exit
+  - korean: "1\uCE35 \uACC4\uB2E8"
+    english: 1F Stairs
+  - korean: "\uC7A5\uC804 \uD544\uC694"
+    english: Reload needed
+  - korean: "\uD14C\uC2A4\uD2B8 \uC124\uC815"
+    english: Test Settings
+  - korean: "\uC870\uC900\uB960"
+    english: Accuracy
+  - korean: "\uACC4\uC18D\uD558\uAE30"
+    english: Continue
+  - korean: "\uD14C\uC2A4\uD2B8 \uC885\uB8CC"
+    english: End Test
+  - korean: "\uACC4\uB2E8"
+    english: Stairs
+  - korean: "\uBC29 \uB098\uAC00\uAE30"
+    english: Leave Room
+  - korean: "\uD589\uB3D9"
+    english: Action
+  - korean: "\uC88B\uC544\uC694"
+    english: Nice!
+  - korean: "\uC218\uB9AC 1"
+    english: Repair 1
+  - korean: "\uC218\uB9AC 2"
+    english: Repair 2
+  - korean: "\uC218\uB9AC 3"
+    english: Repair 3
+  - korean: "\uC218\uB9AC 4"
+    english: Repair 4
+  - korean: "\uC7A5\uC804"
+    english: Reload
+  - korean: "\uD3EC\uC218"
+    english: Gunner
+  - korean: "\uD540 \uACE0\uC815"
+    english: Pin it
+  - korean: "\uC218\uB9AC !"
+    english: Repair!
+  - korean: "\uC801\uC7AC {0}\uBC1C"
+    english: Rack {0}
+  - korean: "\uD3EC\uD0C4 \uC694\uCCAD"
+    english: Shells please
+  - korean: "\uC7A5\uC804 \uC694\uCCAD"
+    english: Reload please
+  - korean: "\uBC14\uD034 \uC218\uB9AC"
+    english: Fix wheel
+  - korean: "\uB9C8\uCC28 \uC870\uC791"
+    english: Drive
+  - korean: "\uC544\uC774 \uB3CC\uBD04"
+    english: Kids
+  - korean: "\uB180\uB78C"
+    english: Whoa!
+  - korean: "\uD3EC\uD0C4 \uBCF4\uAE09\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
+    english: requests a shell supply.
+  - korean: "\uB300\uD3EC \uC7A5\uC804\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
+    english: requests a cannon reload.
+  - korean: "\uBC14\uD034 \uC218\uB9AC\uB97C \uC694\uCCAD\uD569\uB2C8\uB2E4."
+    english: requests a wheel repair.
+  - korean: "\uB9C8\uCC28 \uC870\uC791\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
+    english: requests a driver.
+  - korean: "\uC544\uC774 \uB3CC\uBD04\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
+    english: requests child care.
+  - korean: "\uC88B\uC544\uC694\uB97C \uBCF4\uB0C8\uC2B5\uB2C8\uB2E4."
+    english: sent a thumbs up.
+  - korean: "\uAE5C\uC9DD \uB180\uB790\uC2B5\uB2C8\uB2E4."
+    english: is startled!
+  - korean: "P{0} \uD50C\uB808\uC774\uC5B4\uAC00 {1}"
+    english: P{0} {1}
+  - korean: "\uCC29\uD0C4\uC810\uC744 \uC870\uC815\uD558\uC138\uC694"
+    english: Adjust the impact point
+  - korean: "\uC67C\uCABD \uC2A4\uD2F1\uC73C\uB85C \uCC29\uD0C4\uC810\uC744 \uB9DE\uCD94\uC138\uC694"
+    english: Aim the impact point with the left stick
+  - korean: "{0:0.0}\uCD08"
+    english: '{0:0.0}s'
+  - korean: "\uD3EC\uD0C4 \uBD99\uC7A1\uAE30"
+    english: Hold the shell
+  - korean: "\uACF5\uC8FC \uBA39\uC774\uAE30"
+    english: Feed the Princess
+  - korean: "\uC655\uC790 \uBA39\uC774\uAE30"
+    english: Feed the Prince
+  - korean: "\uACF5\uC8FC\uC5D0\uAC8C \uAC04\uC2DD\uC744 \uC8FC\uC138\uC694"
+    english: Give the Princess a snack
+  - korean: "\uC655\uC790\uC5D0\uAC8C \uAC04\uC2DD\uC744 \uC8FC\uC138\uC694"
+    english: Give the Prince a snack
+  - korean: "\uC548\uC544 \uC62C\uB9AC\uAE30"
+    english: Pick up
+  - korean: "\uACF5\uC8FC\uB97C \uC548\uC544 \uC62C\uB9AC\uC138\uC694"
+    english: Pick up the Princess
+  - korean: "\uC655\uC790\uB97C \uC548\uC544 \uC62C\uB9AC\uC138\uC694"
+    english: Pick up the Prince
+  - korean: "\uACC4\uB2E8\uC73C\uB85C 1\uCE35\uC5D0 \uC62C\uB77C\uAC00\uC138\uC694"
+    english: Take the stairs up to 1F
+  - korean: "5\uC2DC \uBC29\uD5A5 \uD30C\uB780 \uC801\uC7AC\uCE78\uC73C\uB85C \uC62E\uAE30\uC138\uC694"
+    english: Carry it to the blue rack at 5 o'clock
+  - korean: "\uAC04\uC2DD\uC744 \uB4E4\uACE0 1\uCE35\uC73C\uB85C \uC62C\uB77C\uAC00\uC138\uC694"
+    english: Bring the snack up to 1F
+  - korean: "\uC549\uC544 \uC788\uB294 \uC544\uC774\uC5D0\uAC8C \uAC04\uC2DD\uC744
+      \uAC00\uC838\uAC00\uC138\uC694"
+    english: Bring the snack to a seated child
+  - korean: "\uC810\uD654 \uC911"
+    english: Firing
+  - korean: "\uC810\uD654"
+    english: Fire
+  - korean: "\uAE38\uAC8C \uB20C\uB7EC \uB9CC\uB4E4\uAE30"
+    english: Hold to cook
+  - korean: "\uD589\uB3D9\uC744 \uAE38\uAC8C \uB20C\uB7EC \uAC04\uC2DD\uC744 \uB9CC\uB4DC\uC138\uC694"
+    english: Hold Action to make a snack
+  - korean: "\uC608\uBE44 \uBC14\uD034 \uB4E4\uAE30"
+    english: Pick up spare wheel
+  - korean: "\uC608\uBE44 \uBC14\uD034\uB97C \uB4DC\uC138\uC694"
+    english: Pick up the spare wheel
+  - korean: "\uCCAD\uC18C\uD558\uAE30"
+    english: Clean
+  - korean: "\uD3EC\uC2E0 \uCCAD\uC18C {0}/{1}"
+    english: Barrel cleaning {0}/{1}
+  - korean: "\uC7A5\uC804 \uB300\uAE30"
+    english: Waiting to reload
+  - korean: "\uC801\uC7AC\uCE78\uC5D0 \uD3EC\uD0C4\uC744 \uAC00\uC838\uC624\uC138\uC694"
+    english: Bring a shell to the rack
+  - korean: "\uD3EC\uD0C4 \uB4E4\uAE30"
+    english: Pick up shell
+  - korean: "\uBC14\uD034 \uB07C\uC6B0\uAE30"
+    english: Fit the wheel
+  - korean: "\uCC28\uCD95 \uD540 \uACE0\uC815"
+    english: Pin the axle
+  - korean: "\uACE0\uC7A5 \uB09C \uBC14\uD034\uC758 \uC218\uB9AC \uC6D0\uC73C\uB85C
+      \uC774\uB3D9\uD558\uC138\uC694"
+    english: Go to the broken wheel's repair circle
+  - korean: "\uACC4\uB2E8\uC73C\uB85C \uC9C0\uD558\uCE35\uC5D0 \uB0B4\uB824\uAC00\uC138\uC694"
+    english: Take the stairs down to the cellar
+  - korean: "\uD3EC\uC2E0\uC744 \uBA3C\uC800 \uCCAD\uC18C\uD558\uC138\uC694"
+    english: Clean the barrel first
+  - korean: "12\uC2DC \uBC29\uD5A5\uC5D0\uC11C \uC608\uBE44 \uBC14\uD034\uB97C \uAC00\uC838\uC624\uC138\uC694"
+    english: Get a spare wheel at 12 o'clock
+  - korean: "\uC9C0\uB8E8\uD574\uC694 \xB7 \uB9C8\uCC28 \uC55E\uB4A4\uB098 \uC9C0\uD558\uCE35\uC73C\uB85C
+      \uAC00\uC138\uC694"
+    english: "Bored \xB7 Walk to the cart's ends or the cellar"
+  - korean: "\uC548\uACE0 \uAC78\uC5B4\uC11C \uB2EC\uB798 \uC8FC\uC138\uC694"
+    english: Walk while holding to soothe
+  - korean: "\uC549\uD788\uAE30"
+    english: Seat
+  - korean: "\uACF5\uC8FC\uB97C \uC88C\uC11D\uC5D0 \uC549\uD788\uC138\uC694"
+    english: Seat the Princess
+  - korean: "\uC655\uC790\uB97C \uC88C\uC11D\uC5D0 \uC549\uD788\uC138\uC694"
+    english: Seat the Prince
+  - korean: "\uACF5\uC8FC\uB97C \uC88C\uC11D\uC73C\uB85C \uB370\uB824\uAC00\uC138\uC694"
+    english: Take the Princess to her seat
+  - korean: "\uC655\uC790\uB97C \uC88C\uC11D\uC73C\uB85C \uB370\uB824\uAC00\uC138\uC694"
+    english: Take the Prince to his seat
+  - korean: "\uC624\uB978\uB9D0"
+    english: Right horse
+  - korean: "\uC67C\uB9D0"
+    english: Left horse
+  - korean: "\uC624\uB978\uB9D0 \uD3ED\uC8FC \xB7 \uC704\uB85C \uAE09\uD68C\uC804"
+    english: "Right horse bolting \xB7 Sharp turn up"
+  - korean: "\uC67C\uB9D0 \uD3ED\uC8FC \xB7 \uC544\uB798\uB85C \uAE09\uD68C\uC804"
+    english: "Left horse bolting \xB7 Sharp turn down"
+  - korean: "\uC624\uB978\uB9D0 \uC9C0\uCE68 \xB7 \uCCB4\uB825 \uD68C\uBCF5 \uC911"
+    english: "Right horse tired \xB7 Recovering"
+  - korean: "\uC67C\uB9D0 \uC9C0\uCE68 \xB7 \uCCB4\uB825 \uD68C\uBCF5 \uC911"
+    english: "Left horse tired \xB7 Recovering"
+  - korean: "\uC624\uB978\uB9D0 \uB180\uB78C \xB7 \uC7A0\uC2DC \uC26C\uAC8C \uD558\uC138\uC694"
+    english: "Right horse spooked \xB7 Let it rest"
+  - korean: "\uC67C\uB9D0 \uB180\uB78C \xB7 \uC7A0\uC2DC \uC26C\uAC8C \uD558\uC138\uC694"
+    english: "Left horse spooked \xB7 Let it rest"
+  - korean: "\uCC44\uCC0D\uC9C8"
+    english: Whip
+  - korean: "\uC67C\uCABD \uC2A4\uD2F1\uC73C\uB85C \uB9D0 \uC5C9\uB369\uC774\uB97C
+      \uACA8\uB0E5\uD558\uC138\uC694"
+    english: Aim at the horse's rump with the left stick
+  - korean: "{0} \uCC44\uCC0D\uC9C8 \xB7 {1}/{2}\uD68C"
+    english: "{0} whip \xB7 {1}/{2}"
+  - korean: "\uC9C0\uAE08! "
+    english: 'Now! '
+  - korean: "\uCD08\uB85D \uAD6C\uAC04\uC5D0\uC11C "
+    english: 'In the green: '
+  - korean: " \xB7 {0:0.0}\uCD08"
+    english: " \xB7 {0:0.0}s"
+  - korean: "\uAD00\uC2EC {0}% \xB7 \uBC30\uACE0\uD514 {1}%"
+    english: "Attention {0}% \xB7 Hunger {1}%"
+  - korean: "\uC9C0\uB8E8\uD574\uD568"
+    english: Bored
+  - korean: "\uC548\uACA8\uC11C \uC6B0\uB294 \uC911"
+    english: Crying in arms
+  - korean: "\uB180\uB77C\uC11C \uC6B0\uB294 \uC911"
+    english: Crying (startled)
+  - korean: "\uBC30\uACE0\uD30C\uC11C \uC6B0\uB294 \uC911"
+    english: Crying (hungry)
+  - korean: "\uB118\uC5B4\uC9D0"
+    english: Fallen
+  - korean: "\uB3CC\uC544\uB2E4\uB2C8\uB294 \uC911"
+    english: Wandering
+  - korean: "\uC548\uACA8 \uC788\uC74C"
+    english: Being carried
+  - korean: "\uCC29\uC11D \uC911"
+    english: Seated
+  - korean: "\uC7A5\uC804 \uC644\uB8CC \xB7 \uD3EC\uC218 \uC810\uD654 \uAC00\uB2A5"
+    english: "Loaded \xB7 Gunner can fire"
+  - korean: "\uC7A5\uC804 \uC2E4\uD328 \xB7 \uD3EC\uD0C4 1\uBC1C \uC190\uC2E4"
+    english: "Reload failed \xB7 1 shell lost"
+  - korean: "\uB9C8\uCC28 \uD754\uB4E4\uB9BC \xB7 \uC81C\uC791 \uC9C4\uD589\uB3C4
+      {0}%p \uAC10\uC18C"
+    english: "Cart shook \xB7 Cooking progress -{0}%p"
+  - korean: "\uCC55\uD130 \uC644\uB8CC"
+    english: Chapter Complete
+  - korean: "\uB9C8\uC655\uC5D0\uAC8C \uBCF4\uACE0"
+    english: Report to the Demon King
+  - korean: "\uC655\uC790 {0}\uC810  \uACF5\uC8FC {1}\uC810"
+    english: Prince {0} pts  Princess {1} pts
+  - korean: "\uB2E4\uC74C \uAD6C\uAC04 \uCD9C\uBC1C"
+    english: Depart for the next section
+  - korean: "\uC655\uC871 \uB3CC\uBD04"
+    english: Royal Care
+  - korean: "\uB9C8\uCC28 \uD53C\uD574"
+    english: Cart Damage
+  - korean: "\uD3EC\uD0C4 \uBCF4\uAE09"
+    english: Shell Supply
+  - korean: "\uC218\uB9AC"
+    english: Repair
+  - korean: "\uC815\uBC00 \uB3C4\uAD6C"
+    english: Precision Tools
+  - korean: "\uB300\uD3EC \uACE0\uC815\uB300"
+    english: Cannon Mount
+  - korean: "\uB300\uAD6C\uACBD \uD3EC\uC2E0"
+    english: Large-Bore Barrel
+  - korean: "\uAC15\uD654 \uCC28\uCCB4"
+    english: Reinforced Hull
+  - korean: "\uC6B4\uBC18 \uC7A5\uAD6C"
+    english: Hauling Gear
+  - korean: "\uC644\uCDA9 \uCC28\uCD95"
+    english: Shock Axle
+  - korean: "\uAE38\uB4E4\uC778 \uAD70\uB9C8"
+    english: Trained Warhorses
+  - korean: "\uC6B8\uC5C8\uB358 \uC2DC\uAC04\uB9CC\uD07C \uAC10\uC810\uD588\uB2E4.
+      \uB180\uB77C\uBA74 \uC548\uACE0 \uAC77\uACE0, \uBC30\uACE0\uD504\uBA74 \uAC04\uC2DD\uC744
+      \uC8FC\uC5B4\uB77C."
+    english: Points were lost for the time they cried. If startled, carry them and
+      walk; if hungry, give them a snack.
+  - korean: "\uB450 \uC544\uC774\uB97C \uC798 \uB3CC\uBD24\uAD70."
+    english: You took good care of both children.
+  - korean: "\uC790\uB9AC\uB97C \uBE44\uC6B4 \uC544\uC774\uB294 \uC790\uAE30 \uC88C\uC11D\uC73C\uB85C
+      \uB370\uB824\uB2E4\uC8FC\uC5B4\uB77C."
+    english: Take any child who left their seat back to it.
+  - korean: "\uB0B4\uAD6C\uB3C4 {0}/{1:0}. "
+    english: 'Durability {0}/{1:0}. '
+  - korean: "\uBE60\uC9C4 \uBC14\uD034\uB97C \uC218\uB9AC\uD560\uC9C0 \uC0C1\uC758\uD574\uB77C."
+    english: Discuss whether to fix the missing wheel.
+  - korean: "\uC218\uB9AC\uC640 \uBCF4\uAC15 \uC911 \uBB34\uC5C7\uC774 \uD544\uC694\uD55C\uC9C0
+      \uC0C1\uC758\uD574\uB77C."
+    english: Discuss whether you need repairs or upgrades.
+  - korean: "\uB0A8\uC740 \uD3EC\uD0C4 {0}\uBC1C, \uBD84\uC2E4 {1}\uBC1C. \uC7A5\uC804\uC218\uC640
+      \uC6B4\uBC18 \uB2F4\uB2F9\uC774 \uC5F0\uB77D\uD558\uAC8C \uD574\uB77C."
+    english: 'Shells left: {0}, lost: {1}. The loader and carrier should keep in
+      touch.'
+  - korean: "\uB3C4\uC6B0\uBBF8 {0}"
+    english: Helper {0}

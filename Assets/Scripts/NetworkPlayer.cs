@@ -128,7 +128,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (shownName != Nickname.Value || shownEmote != (showEmote ? Emote.Value : 0))
         {
             shownName=Nickname.Value; shownEmote=showEmote ? Emote.Value : 0;
-            nameLabel.text=shownName.ToString()+(showEmote ? " · "+CrewControls.Messages[shownEmote-1] : "");
+            nameLabel.text=shownName.ToString()+(showEmote ? " · "+LocalizationTable.T(CrewControls.Messages[shownEmote-1]) : "");
         }
         if (IsServer && CartStations.Running && Holding.Value && NetworkManager.ServerTime.Time >= HoldDeadline.Value)
             CartStations.Instance.ResolveShellHold(this, false);
@@ -190,7 +190,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (!IsServer) return;
         Bot.Value = true;
         Slot.Value = slot;
-        Nickname.Value = new FixedString64Bytes($"도우미 {slot + 1}");
+        Nickname.Value = new FixedString64Bytes(LocalizationTable.F("도우미 {0}", slot + 1));
         if (OwnerClientId != NetworkManager.ServerClientId) NetworkObject.RemoveOwnership();
         Assigned.Value = true;
         RefreshAssignment();

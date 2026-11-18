@@ -35,11 +35,12 @@ public sealed partial class CartStations
         if(Report.Value<0)
         {
             if(actor.OwnerClientId!=NetworkManager.ServerClientId || choice<0 || choice>=Reports.Length) return;
+            // 추후 변경점: 보고 답변은 방장 언어로 만들어 네트워크로 보낸다. 참가자마다 다른 언어를 쓰려면 템플릿 번호와 숫자만 보내야 한다.
             string reply = choice switch {
-                0 => crying[0]+crying[1]>0 ? "울었던 시간만큼 감점했다. 놀라면 안고 걷고, 배고프면 간식을 주어라." :
-                    PrincePoints.Value+PrincessPoints.Value>=14 ? "두 아이를 잘 돌봤군." : "자리를 비운 아이는 자기 좌석으로 데려다주어라.",
-                1 => $"내구도 {Mathf.RoundToInt(durability)}/{Capacity:0}. " + (wheelDetached ? "빠진 바퀴를 수리할지 상의해라." : "수리와 보강 중 무엇이 필요한지 상의해라."),
-                _ => $"남은 포탄 {shellsInPile+depositedShells+(loaded?1:0)}발, 분실 {lostShells}발. 장전수와 운반 담당이 연락하게 해라."
+                0 => LocalizationTable.T(crying[0]+crying[1]>0 ? "울었던 시간만큼 감점했다. 놀라면 안고 걷고, 배고프면 간식을 주어라." :
+                    PrincePoints.Value+PrincessPoints.Value>=14 ? "두 아이를 잘 돌봤군." : "자리를 비운 아이는 자기 좌석으로 데려다주어라."),
+                1 => LocalizationTable.F("내구도 {0}/{1:0}. ", Mathf.RoundToInt(durability), Capacity) + LocalizationTable.T(wheelDetached ? "빠진 바퀴를 수리할지 상의해라." : "수리와 보강 중 무엇이 필요한지 상의해라."),
+                _ => LocalizationTable.F("남은 포탄 {0}발, 분실 {1}발. 장전수와 운반 담당이 연락하게 해라.", shellsInPile+depositedShells+(loaded?1:0), lostShells)
             };
             KingReply.Value = new Unity.Collections.FixedString512Bytes(reply);
             Report.Value=choice; ShopRound.Value++; return;

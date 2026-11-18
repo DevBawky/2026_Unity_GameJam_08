@@ -68,13 +68,13 @@ public sealed class TeamEmotes : MonoBehaviour
             Place(aimNotice, safe.center.x, top, width, height);
             var game = CartStations.Instance;
             float accuracy = Mathf.Clamp01(player.Cannon.Accuracy);
-            aimTitle.SetText(game.IsFiring ? "착탄점을 조정하세요" : "왼쪽 스틱으로 착탄점을 맞추세요");
+            aimTitle.SetText(LocalizationTable.T(game.IsFiring ? "착탄점을 조정하세요" : "왼쪽 스틱으로 착탄점을 맞추세요"));
             aimAccuracy.SetText("{0:0}%", accuracy * 100f);
             aimFill.fillAmount = accuracy;
             var track = (RectTransform)aimFill.rectTransform.parent;
             track.anchorMin = new Vector2(Mathf.Max(.079f, 42f / width), track.anchorMin.y);
             if (game.IsFiring)
-                aimTime.SetText("{0:0.0}초", Mathf.Max(0f, (float)(game.FuseDeadline.Value - player.NetworkManager.ServerTime.Time)));
+                aimTime.SetText(LocalizationTable.T("{0:0.0}초"), Mathf.Max(0f, (float)(game.FuseDeadline.Value - player.NetworkManager.ServerTime.Time)));
             else aimTime.SetText("");
         }
         if (showEmote)
@@ -95,7 +95,7 @@ public sealed class TeamEmotes : MonoBehaviour
         if (key < 0 || key >= emotes.Count) return;
         player.ShowEmoteBubble(emotes[key].icon);
         noticeIcon.sprite = emotes[key].icon;
-        noticeLabel.text = $"P{player.Slot.Value + 1} 플레이어가 {emotes[key].message}";
+        noticeLabel.text = LocalizationTable.F("P{0} 플레이어가 {1}", player.Slot.Value + 1, LocalizationTable.T(emotes[key].message));
         noticeHideTime = Time.unscaledTime + noticeSeconds;
         notice.SetActive(true);
     }
