@@ -34,7 +34,7 @@ public class CartMotion : MonoBehaviour
     }
     private void Update()
     {
-        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier;
+        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier * Enemy.CartSpeedMultiplier; // 마지막 항: 추격조 로프 감속
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * Time.deltaTime);
         Heading = Mathf.Clamp(Heading + (RightHorseSpeed - LeftHorseSpeed) * turnRate * Time.deltaTime, -maxHeading, maxHeading);
         Distance += Speed * Time.deltaTime;

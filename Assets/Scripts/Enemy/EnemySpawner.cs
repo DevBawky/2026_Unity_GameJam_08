@@ -6,10 +6,14 @@ public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] StageSO stage;
     [SerializeField] SpriteRenderer cartBody;
+    [SerializeField] CartStations cartStations; // 몬스터 공격 → 마차 내구도
     [SerializeField] Vector2 areaSize = new(4f, 8f);
 
     float elapsed;
     int nextWave;
+
+    void OnEnable() => Enemy.CartHit += cartStations.ReceiveCollision;
+    void OnDisable() => Enemy.CartHit -= cartStations.ReceiveCollision;
 
     void Update()
     {
