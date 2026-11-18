@@ -70,7 +70,7 @@ public sealed class PlayerTiming : MonoBehaviour
         if (requested != lastReservationArea || (requested >= 0 && !stations.HoldsStation((StationAction)requested,actor)))
             actor.RequestStation(requested);
         lastReservationArea = requested;
-        if (stations.Failed || stations.ChoosingUpgrade)
+        if (!CartStations.Running)
         {
             actionRequested = false;
             timingPanel.SetActive(false);

@@ -27,8 +27,11 @@ public sealed class CartMotion : NetworkBehaviour
     [Header("Horse visual position")]
     [SerializeField] private Transform leftHorseVisual;
     [SerializeField] private Transform rightHorseVisual;
+    [Tooltip("말 속도가 기본보다 1 빠를 때 그림이 앞으로 나가는 거리")]
     [SerializeField, Min(0f)] private float horseAdvancePerSpeed = 0.18f;
+    [Tooltip("말 그림이 앞으로 나갈 수 있는 최대 거리")]
     [SerializeField, Min(0f)] private float maximumHorseAdvance = 1f;
+    [Tooltip("말 그림이 목표 위치로 움직이는 속도")]
     [SerializeField, Min(0f)] private float horseVisualMoveSpeed = 3f;
 
     public NetworkVariable<CartMotionState> State = new();

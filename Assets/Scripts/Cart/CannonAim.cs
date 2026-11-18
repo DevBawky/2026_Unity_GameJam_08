@@ -95,6 +95,8 @@ public sealed class CannonAim : MonoBehaviour
         }
         bool mobileAim = aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.IsMobileMode;
         if (Mouse.current == null || gameCamera == null || mobileAim) return;
+        // 마우스를 움직이거나 누를 때만 따라간다. 안 그러면 방향키·패드를 떼는 순간 마우스 쪽으로 튄다.
+        if (Mouse.current.delta.ReadValue().sqrMagnitude <= 0f && !Mouse.current.leftButton.isPressed) return;
         Vector3 screen = Mouse.current.position.ReadValue();
         screen.z = Mathf.Abs(muzzle.position.z - gameCamera.transform.position.z);
         SetDirection(gameCamera.ScreenToWorldPoint(screen) - muzzle.position);

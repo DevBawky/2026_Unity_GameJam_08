@@ -11,6 +11,14 @@ using UnityEngine.SceneManagement;
 // 말 강화, 왕족 달래기, 포탄 운반·장전·발사, 바퀴 수리 결과를 처리하고
 // 내구도·왕족 불안·바퀴 빠짐·스테이지 완료(업그레이드 선택)·실패를 관리한다.
 // 장애물은 ObstacleSpawner, 카메라 흔들림은 CameraRig, 화면 문구·경고는 StageHud가 맡는다.
+public enum StageFlow : byte
+{
+    Waiting,
+    Running,
+    ChoosingUpgrade,
+    Failed
+}
+
 public sealed class CartStations : NetworkBehaviour
 {
     public const float MaxDurability = 100f;
@@ -76,14 +84,15 @@ public sealed class CartStations : NetworkBehaviour
     public static CartStations Instance { get; private set; }
     public NetworkVariable<CartNetworkState> State = new();
     public NetworkVariable<FixedString64Bytes> Failure = new();
-    private bool ready;
+    // 게임 흐름: 시작 대기 → 진행 → 업그레이드 선택 또는 실패. 동시에 둘이 될 수 없어 enum 하나로 둔다.
+    private StageFlow flow = StageFlow.Waiting;
     private NetworkPlayer gunner;
     public NetworkVariable<ulong> Gunner = new(ulong.MaxValue);
     // Indexed by StationAction. Only the server grants or releases a workstation.
     public NetworkList<ulong> StationOwners = new();
     private const int StationCount = 8;
     public const ulong NoStationOwner = ulong.MaxValue;
-    public static bool Running => Instance != null && Instance.IsSpawned && Instance.ready && !Instance.failed && !Instance.choosingUpgrade;
+    public static bool Running => Instance != null && Instance.IsSpawned && Instance.flow == StageFlow.Running;
     private SpriteRenderer cartBody;
     private SpriteRenderer detachedTire;
     private float detachedTireAlpha;
@@ -91,8 +100,6 @@ public sealed class CartStations : NetworkBehaviour
     private float princeAnxiety;
     private float princessAnxiety;
     private float stageStartDistance;
-    private bool failed;
-    private bool choosingUpgrade;
     private bool wheelDetached;
     private bool wheelEverDetached;
     private bool loaded;
@@ -106,9 +113,9 @@ public sealed class CartStations : NetworkBehaviour
 
     public CartMotion Cart => cart;
     public SpriteRenderer CartBody => cartBody;
-    public bool Failed => failed;
+    public bool Failed => flow == StageFlow.Failed;
     public string FailureReason { get; private set; } = "CART DESTROYED";
-    public bool ChoosingUpgrade => choosingUpgrade;
+    public bool ChoosingUpgrade => flow == StageFlow.ChoosingUpgrade;
     public int StageNumber => stageNumber;
     public float StageDistance => Mathf.Max(0f, cart.Distance - stageStartDistance);
     public int StageGoal => baseStageGoal + (stageNumber - 1) * stageGoalPerStage;
@@ -151,17 +158,16 @@ public sealed class CartStations : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsSpawned || !IsServer || !ready) return;
+        if (!IsSpawned || !IsServer || flow == StageFlow.Waiting) return;
         ReconcileStations();
-        if (failed)
+        switch (flow)
         {
-            if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)) Restart();
-            return;
-        }
-        if (choosingUpgrade)
-        {
-            ReadUpgradeInput();
-            return;
+            case StageFlow.Failed:
+                if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)) Restart();
+                return;
+            case StageFlow.ChoosingUpgrade:
+                ReadUpgradeInput();
+                return;
         }
         if (StageDistance >= StageGoal)
         {
@@ -369,9 +375,9 @@ public sealed class CartStations : NetworkBehaviour
 
     private void FailStage(string reason)
     {
-        if (failed) return;
+        if (flow != StageFlow.Running) return;
         FailureReason = reason;
-        failed = true;
+        flow = StageFlow.Failed;
         Publish();
     }
 
@@ -424,13 +430,13 @@ public sealed class CartStations : NetworkBehaviour
 
     private void BeginUpgradeSelection()
     {
-        choosingUpgrade = true;
+        flow = StageFlow.ChoosingUpgrade;
         Publish();
     }
 
     public void ChooseUpgrade(int upgrade)
     {
-        if (!IsHost || !choosingUpgrade || upgrade < 0 || upgrade > 2) return;
+        if (!IsHost || flow != StageFlow.ChoosingUpgrade || upgrade < 0 || upgrade > 2) return;
         switch (upgrade)
         {
             case 0: cushionAxleLevel++; break;
@@ -447,8 +453,7 @@ public sealed class CartStations : NetworkBehaviour
         cart.ResetForStage(horseLevel);
         ResetStageState();
         obstacles.ResetForStage();
-        choosingUpgrade = false;
-
+        flow = StageFlow.Running;
         Refresh();
     }
 
@@ -470,10 +475,10 @@ public sealed class CartStations : NetworkBehaviour
     // Keep networking alive while NGO reloads the same authored scene on every peer.
     public void Restart()
     {
-        if (!IsHost || !failed || !ready) return;
-        ready = false;
+        if (!IsHost || flow != StageFlow.Failed) return;
+        flow = StageFlow.Waiting;
         Publish();
-        if (!FindFirstObjectByType<LobbySession>().ReloadGame()) { ready = true; Publish(); }
+        if (!FindFirstObjectByType<LobbySession>().ReloadGame()) { flow = StageFlow.Failed; Publish(); }
     }
 
     public override void OnDestroy()
@@ -485,7 +490,7 @@ public sealed class CartStations : NetworkBehaviour
     public void Begin()
     {
         if (!IsServer) return;
-        ready = true;
+        flow = StageFlow.Running;
         obstacles.ResetForStage();
         Publish();
     }
@@ -509,19 +514,19 @@ public sealed class CartStations : NetworkBehaviour
     private void Publish()
     {
         if (!IsSpawned || !IsServer) return;
-        State.Value = new CartNetworkState { Ready=ready, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
+        State.Value = new CartNetworkState { Flow=flow, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
             StageStart=stageStartDistance, Stage=stageNumber, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
             RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1,
-            Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel, Failed=failed, Upgrade=choosingUpgrade,
+            Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel,
             Loaded=loaded, Firing=fuseLit, Wheel=wheelDetached, EverWheel=wheelEverDetached };
         Failure.Value = new FixedString64Bytes(FailureReason);
     }
     private void Apply(CartNetworkState v)
     {
-        ready=v.Ready; durability=v.Durability; princeAnxiety=v.Prince; princessAnxiety=v.Princess;
+        flow=v.Flow; durability=v.Durability; princeAnxiety=v.Prince; princessAnxiety=v.Princess;
         stageStartDistance=v.StageStart; stageNumber=Mathf.Max(1,v.Stage); depositedShells=v.Stored; shellsInPile=v.Pile; lostShells=v.Lost;
         wheelRepairSteps=v.RepairSteps; cushionAxleLevel=v.Cushion; horseLevel=v.Horse; precisionLevel=v.Precision;
-        failed=v.Failed; choosingUpgrade=v.Upgrade; loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
+        loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
         for (int i = 0; i < tires.Count; i++)
         {
             var color = tires[i].color;

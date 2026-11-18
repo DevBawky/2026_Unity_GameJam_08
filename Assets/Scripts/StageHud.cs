@@ -1,5 +1,5 @@
-using System;
 using TMPro;
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +32,8 @@ public sealed class StageHud : MonoBehaviour
     [SerializeField, Min(0f)] private float horseDifferenceWarning = 0.5f;
 
     private readonly StringBuilder alert = new();
+    private SpriteRenderer alertTire;
+    private string alertTireNumber;
     private int lastStatusKey = int.MinValue;
     private int lastProgressPercent = -1;
 
@@ -116,10 +118,8 @@ public sealed class StageHud : MonoBehaviour
     {
         if (statusAlert == null) return;
         alert.Clear();
-        if (stations.Failed)
-            alert.Append(stations.FailureReason);
-        else if (!stations.ChoosingUpgrade)
-            BuildWarnings();
+        // 실패 문구는 stationStatus가 보여 주므로 경고 패널은 진행 중일 때만 쓴다.
+        if (CartStations.Running) BuildWarnings();
 
         if (!alert.Equals(statusAlert.text.AsSpan())) statusAlert.text = alert.ToString();
         bool show = alert.Length > 0;
@@ -128,10 +128,16 @@ public sealed class StageHud : MonoBehaviour
 
     private void BuildWarnings()
     {
-        if (stations.WheelDetached && stations.DetachedTire != null)
+        SpriteRenderer tire = stations.DetachedTire;
+        if (stations.WheelDetached && tire != null)
         {
-            string number = stations.DetachedTire.name.Replace("Tire ", "");
-            alert.Append(number).Append(stations.WheelRepairSteps == 0 ? "번 타이어 고장 - 수리 필요" : "번 타이어 축 핀 고정 필요");
+            // name 접근과 Replace는 매번 문자열을 만들어서 타이어가 바뀔 때만 구한다.
+            if (tire != alertTire)
+            {
+                alertTire = tire;
+                alertTireNumber = tire.name.Replace("Tire ", "");
+            }
+            alert.Append(alertTireNumber).Append(stations.WheelRepairSteps == 0 ? "번 타이어 고장 - 수리 필요" : "번 타이어 축 핀 고정 필요");
         }
         if (stations.PrinceAnxiety >= anxietyWarningLevel)
             AppendLine(stations.PrinceEscaping ? "왕자 탈출 시도 - 달래기 필요" : "왕자 불안도 높음");
