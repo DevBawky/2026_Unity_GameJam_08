@@ -4,7 +4,7 @@ using UnityEngine;
 // 웨이브 배율이 적용된 값으로 초기화되고, 마차 몸체 가장자리를 향해 일정 속도로 다가온다.
 // 사거리 안에 들어오면 유닛 종류(UnitSO.type)에 따라 공격한다.
 //   Lancer → attackInterval마다 근접 공격
-//   Archer → attackInterval마다 화살 발사
+//   Archer → 화면 안(screenInset)에 들어오면 멈춰서 attackInterval마다 화살 발사
 //   Chaser → 로프를 건다 (EnemyRope)
 public class Enemy : MonoBehaviour
 {
@@ -20,16 +20,18 @@ public class Enemy : MonoBehaviour
     private float attack;
     private float hp;
     private float attackTimer;
+    private float screenRightX;
 
     private void Awake() => TryGetComponent(out rope);
 
-    public void Init(UnitSO unit, WaveSO wave, SpriteRenderer cartBody)
+    public void Init(UnitSO unit, WaveSO wave, SpriteRenderer cartBody, float baseScreenRightX)
     {
         Unit = unit;
         speed = wave.RollSpeed(unit);
         attack = wave.AttackOf(unit);
         hp = unit.hp;
         target = cartBody;
+        screenRightX = baseScreenRightX;
 
         if (unit.type == UnitType.Archer && unit.arrowPrefab == null)
             Debug.LogWarning($"[{unit.name}] 궁수인데 화살 프리팹이 없어 공격하지 않습니다", unit);
@@ -50,7 +52,10 @@ public class Enemy : MonoBehaviour
         Vector3 pos = transform.position;
         Vector3 goal = target.bounds.ClosestPoint(pos);
         goal.z = pos.z;
-        if (Vector2.Distance(pos, goal) > Unit.attackRange)
+        bool inRange = Unit.type == UnitType.Archer
+            ? pos.x <= screenRightX - Unit.screenInset
+            : Vector2.Distance(pos, goal) <= Unit.attackRange;
+        if (!inRange)
         {
             transform.position = Vector3.MoveTowards(pos, goal, speed * EnemyRope.MonsterSpeedMultiplier * Time.deltaTime);
             return;
@@ -58,7 +63,7 @@ public class Enemy : MonoBehaviour
 
         if (Unit.type == UnitType.Chaser)
         {
-            if (rope != null) rope.Attach(Unit.ropeSkill, goal);
+            if (rope != null) rope.Attach(Unit.ropeSkill, target.transform, goal);
             return;
         }
 

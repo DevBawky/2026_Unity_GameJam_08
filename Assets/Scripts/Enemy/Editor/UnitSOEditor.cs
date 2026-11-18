@@ -11,7 +11,8 @@ public class UnitSOEditor : Editor
         var type = (UnitType)serializedObject.FindProperty(nameof(UnitSO.type)).enumValueIndex;
 
         var hidden = new List<string>();
-        if (type != UnitType.Archer) hidden.AddRange(new[] { nameof(UnitSO.arrowPrefab), nameof(UnitSO.arrowSpeed) });
+        if (type != UnitType.Archer) hidden.AddRange(new[] { nameof(UnitSO.screenInset), nameof(UnitSO.arrowPrefab), nameof(UnitSO.arrowSpeed) });
+        if (type == UnitType.Archer) hidden.Add(nameof(UnitSO.attackRange)); // 궁수는 사거리 대신 screenInset
         if (type != UnitType.Chaser) hidden.Add(nameof(UnitSO.ropeSkill));
         if (type == UnitType.Chaser) hidden.AddRange(new[] { nameof(UnitSO.attackPower), nameof(UnitSO.attackInterval) });
 

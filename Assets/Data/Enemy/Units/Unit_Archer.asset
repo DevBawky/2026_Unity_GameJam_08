@@ -19,6 +19,7 @@ MonoBehaviour:
   attackRange: 4.5
   attackInterval: 2
   hp: 1
+  screenInset: 1
   arrowPrefab: {fileID: 4079422841388882290, guid: 51f8e5218da52964e82389e7898de20b, type: 3}
   arrowSpeed: 12
   ropeSkill: {fileID: 0}

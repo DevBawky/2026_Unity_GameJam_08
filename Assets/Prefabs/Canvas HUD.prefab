@@ -2050,6 +2050,7 @@ GameObject:
   - component: {fileID: 4814866109069987400}
   - component: {fileID: 9085397663570206002}
   - component: {fileID: 1179945175230513384}
+  - component: {fileID: 7691179081304191043}
   m_Layer: 5
   m_Name: Canvas HUD
   m_TagString: Untagged
@@ -2148,6 +2149,42 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &7691179081304191043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7018096242200163728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8631e43878564a43963600d22f7542e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageHud
+  stations: {fileID: 0}
+  player: {fileID: 0}
+  stationStatus: {fileID: 0}
+  restartButton: {fileID: 5463165467500195195}
+  upgradePanel: {fileID: 3484600927086067296}
+  upgradeButtons:
+  - {fileID: 823270281398126014}
+  - {fileID: 852195514232464616}
+  - {fileID: 516828556328057308}
+  upgradeLabels:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  healthFill: {fileID: 4606755063335508064}
+  repairFill: {fileID: 949220116518606274}
+  repairProgress: {fileID: 7561749510816378353}
+  distanceMarker: {fileID: 7490019734379769946}
+  distanceLabel: {fileID: 0}
+  statusAlert: {fileID: 0}
+  statusPanel: {fileID: 0}
+  anxietyWarningLevel: 0.5
+  durabilityWarningLevel: 0.3
+  headingWarningDegrees: 8
+  horseDifferenceWarning: 0.5
 --- !u!1 &7065578853918465753
 GameObject:
   m_ObjectHideFlags: 0
