@@ -41,7 +41,17 @@ public sealed class StageHud : MonoBehaviour
         UpdateIndicators();
         restartButton.SetActive((stations.Failed || stations.ChapterComplete) && stations.IsHost);
         upgradePanel.SetActive(stations.ChoosingUpgrade);
-        if (stations.ChoosingUpgrade || stations.ChapterComplete) { UpdateStatusText(); return; }
+        if (stations.ChoosingUpgrade || stations.ChapterComplete)
+        {
+            // 정비 화면 문구·버튼은 보고·구매·점수가 바뀔 때만 다시 만든다.
+            int shopKey = HashCode.Combine(stations.ChapterComplete, stations.Report.Value, stations.ShopRound.Value,
+                stations.Affection.Value, stations.PrincePoints.Value, stations.PrincessPoints.Value, stations.IsHost,
+                stations.KingReply.Value.GetHashCode());
+            if (shopKey == lastStatusKey) return;
+            lastStatusKey = shopKey;
+            UpdateStatusText();
+            return;
+        }
 
         int key = HashCode.Combine(stations.Failed, stations.ChoosingUpgrade, stations.StageNumber,
             player.CurrentAction, stations.DepositedShells, stations.IsLoaded);

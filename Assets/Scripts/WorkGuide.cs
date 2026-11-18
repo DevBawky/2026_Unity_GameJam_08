@@ -127,7 +127,8 @@ internal readonly struct WorkGuide
         if (!game.AimsAtSteeringZone(player.DriverAim.Value))
             return new WorkGuide("채찍질", "왼쪽 스틱으로 말 엉덩이를 겨냥하세요", Purple);
         int hits = right ? game.RightWounds.Value : game.LeftWounds.Value;
-        return new WorkGuide("채찍질", LocalizationTable.F("{0} 채찍질 · {1}/{2}회", LocalizationTable.T(side), hits, CartStations.RunawayHits), Purple,
+        string whipFormat = right ? "오른말 채찍질 · {0}/{1}회" : "왼말 채찍질 · {0}/{1}회";
+        return new WorkGuide("채찍질", LocalizationTable.F(whipFormat, hits, CartStations.RunawayHits), Purple,
             progress: (float)hits / CartStations.RunawayHits);
     }
 }

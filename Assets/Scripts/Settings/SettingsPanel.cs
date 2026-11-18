@@ -5,7 +5,6 @@ using UnityEngine.UI;
 // 설정 창: 볼륨 3종(SoundManager), 화면 모드(Screen), 언어(LocalizationTable)를 바꾼다.
 public sealed class SettingsPanel : MonoBehaviour
 {
-    [SerializeField] private LocalizationTable table;
     [SerializeField] private Slider masterSlider, bgmSlider, sfxSlider;
     [SerializeField] private TMP_Text screenModeLabel, languageLabel;
 
@@ -56,7 +55,7 @@ public sealed class SettingsPanel : MonoBehaviour
     private void RefreshLabels()
     {
         bool windowed = Screen.fullScreenMode == FullScreenMode.Windowed;
-        screenModeLabel.text = table.Translate(windowed ? "창 모드" : "전체 화면");
+        screenModeLabel.text = LocalizationTable.T(windowed ? "창 모드" : "전체 화면");
         languageLabel.text = LocalizationTable.Current == LocalizationTable.Language.Korean ? "한국어" : "English";
     }
 }

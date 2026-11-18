@@ -8,6 +8,8 @@ public sealed class SoundManager : MonoBehaviour
     public const string BgmVolume = "BgmVolume";
     public const string SfxVolume = "SfxVolume";
     private const float DefaultVolume = 0.8f;
+    private const float MuteDecibels = -80f;
+    private const float DecibelsPerDecade = 20f;
 
     public static SoundManager Instance { get; private set; }
 
@@ -54,6 +56,6 @@ public sealed class SoundManager : MonoBehaviour
 
     private void ApplyVolume(string parameter, float volume)
     {
-        mixer.SetFloat(parameter, volume > 0.0001f ? Mathf.Log10(volume) * 20f : -80f);
+        mixer.SetFloat(parameter, volume > 0.0001f ? Mathf.Log10(volume) * DecibelsPerDecade : MuteDecibels);
     }
 }

@@ -342,8 +342,6 @@ MonoBehaviour:
   - korean: "\uC67C\uCABD \uC2A4\uD2F1\uC73C\uB85C \uB9D0 \uC5C9\uB369\uC774\uB97C
       \uACA8\uB0E5\uD558\uC138\uC694"
     english: Aim at the horse's rump with the left stick
-  - korean: "{0} \uCC44\uCC0D\uC9C8 \xB7 {1}/{2}\uD68C"
-    english: "{0} whip \xB7 {1}/{2}"
   - korean: "\uC9C0\uAE08! "
     english: 'Now! '
   - korean: "\uCD08\uB85D \uAD6C\uAC04\uC5D0\uC11C "
@@ -428,3 +426,15 @@ MonoBehaviour:
       touch.'
   - korean: "\uB3C4\uC6B0\uBBF8 {0}"
     english: Helper {0}
+  - korean: "\uC624\uB978\uB9D0 \uCC44\uCC0D\uC9C8 \xB7 {0}/{1}\uD68C"
+    english: "Right horse whip \xB7 {0}/{1}"
+  - korean: "\uC67C\uB9D0 \uCC44\uCC0D\uC9C8 \xB7 {0}/{1}\uD68C"
+    english: "Left horse whip \xB7 {0}/{1}"
+  - korean: "\uC5F0\uACB0 \uC2E4\uD328: "
+    english: 'Connection failed: '
+  - korean: "\uC52C\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4: "
+    english: 'Couldn''t load the scene: '
+  - korean: "\uC52C\uC744 \uB2E4\uC2DC \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4: "
+    english: 'Couldn''t reload the scene: '
+  - korean: "mainGame \uC52C\uC774 \uBE4C\uB4DC \uBAA9\uB85D\uC5D0 \uC5C6\uC2B5\uB2C8\uB2E4."
+    english: mainGame is not in the build list.
