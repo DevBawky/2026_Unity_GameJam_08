@@ -15,5 +15,12 @@ public sealed class Obstacle : MonoBehaviour
     public float SlowSeconds => slowSeconds;
     public Vector2 Size { get; private set; }
 
+    public static readonly System.Collections.Generic.List<Obstacle> WheelSurfaces = new();
+    private void OnEnable()
+    {
+        if (name.StartsWith("Log",System.StringComparison.Ordinal) || name.StartsWith("Rock",System.StringComparison.Ordinal))
+            WheelSurfaces.Add(this);
+    }
+    private void OnDisable() => WheelSurfaces.Remove(this);
     private void Awake() => Size = GetComponent<SpriteRenderer>().bounds.size;
 }

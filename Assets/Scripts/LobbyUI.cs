@@ -12,6 +12,8 @@ public sealed class LobbyUI : MonoBehaviour
     [SerializeField] private GameObject loadingPanel;
     [SerializeField] private TMP_Text loadingLabel;
     [SerializeField] private Button createButton, joinButton, backButton, leaveButton, startButton;
+    [SerializeField] private GameObject practicePanel;
+    private int pendingSeats;
     private bool joining;
     private float copiedUntil;
 
@@ -23,7 +25,7 @@ public sealed class LobbyUI : MonoBehaviour
     private void Update()
     {
         bool connected = session.InRoom;
-        titlePanel.SetActive(!joining && !connected);
+        titlePanel.SetActive(!joining && !connected && !practicePanel.activeSelf);
         joinPanel.SetActive(joining && !connected);
         roomPanel.SetActive(connected);
         bool busy = session.Busy;
@@ -64,6 +66,15 @@ public sealed class LobbyUI : MonoBehaviour
         GUIUtility.systemCopyBuffer = session.Roster.Code.Value.ToString();
         copiedUntil = Time.unscaledTime + 2f;
     }
-    public void PracticeSolo() => session.StartPractice(1);
-    public void PracticePair() => session.StartPractice(2);
+    public void PracticeSolo() => ChoosePractice(1);
+    public void PracticePair() => ChoosePractice(2);
+    private void ChoosePractice(int seats)
+    {
+        pendingSeats = seats;
+        practicePanel.SetActive(true);
+        practicePanel.transform.SetAsLastSibling();
+    }
+    public void CancelPractice() => practicePanel.SetActive(false);
+    public void BeginPractice() => session.StartPractice(pendingSeats);
+    public void BeginTest() => session.StartPractice(pendingSeats, true);
 }

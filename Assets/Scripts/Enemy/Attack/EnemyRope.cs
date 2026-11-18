@@ -66,6 +66,14 @@ public class EnemyRope : NetworkBehaviour
         line.SetPosition(1, cart.position + endOffset);
     }
 
+    public void Detach()
+    {
+        attached.Remove(this);
+        attachedLocally = false;
+        Connected.Value = false;
+        line.enabled = false;
+    }
+
     private void OnDisable()
     {
         attached.Remove(this);

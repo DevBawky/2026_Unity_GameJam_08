@@ -5,24 +5,27 @@ using UnityEngine.UI;
 // 플레이어 상호작용. 상호작용 영역(TimingArea) 안에 들어가면 타이밍 미니게임을 띄우고 성공·실패를 CartStations에 알린다.
 // 포탄을 들고 충격을 받으면 버티기 판정(원형 타이밍)을 띄운다.
 // 카메라 연출은 CameraRig, 화면 문구·경고 패널은 StageHud가 맡는다.
+[DefaultExecutionOrder(25)]
 public sealed class PlayerTiming : MonoBehaviour
 {
     private const float HoldPinSpeed = 180f;
     private const float HoldTargetAngle = 60f;
-    private const float PinStartAngle = 180f;
+    private Vector3 panelOrigin;
 
     [SerializeField] private RectTransform interactionAreas;
     [SerializeField] private RectTransform repairRect;
     [SerializeField] private GameObject timingPanel;
     [SerializeField] private Image workProgressFill;
     [SerializeField] private RectTransform background;
-    [SerializeField] private RectTransform target;
-    [SerializeField] private RectTransform pin;
     [SerializeField] private CircularTimingGraphic circularGraphic;
-    [SerializeField] private CameraRig cameraRig;
-    [SerializeField, Min(0.01f)] private float pinSpeed = 3f;
-    [Tooltip("충격 직후 타이밍 핀이 흔들리는 최대 각도")]
-    [SerializeField, Min(0f)] private float timingJitterDegrees = 10f;
+    private float resultUntil;
+    public string ResultText { get; private set; }
+    public string VisibleResult => Time.unscaledTime < resultUntil ? ResultText : null;
+    public void ShowResult(bool loaded)
+    {
+        ResultText = loaded ? "장전 완료 · 포수 점화 가능" : "장전 실패 · 포탄 1발 손실";
+        resultUntil = Time.unscaledTime + 1.6f;
+    }
 
     [SerializeField] private CartStations stations;
     private NetworkPlayer actor;
@@ -42,7 +45,6 @@ public sealed class PlayerTiming : MonoBehaviour
     private bool wasHoldingShell;
     private float circularTargetCenter;
     private float circularPinAngle;
-    private float pinDirection = 1f;
 
     public bool IsCannonFocus => (IsAt(StationAction.Cannon) && stations.HoldsStation(StationAction.Cannon,actor)) || (stations.IsFiring && stations.Gunner.Value==actor.NetworkObjectId);
     public bool CanInteract => actor.Holding.Value
@@ -58,6 +60,7 @@ public sealed class PlayerTiming : MonoBehaviour
     private void Awake()
     {
         actor = GetComponent<NetworkPlayer>();
+        if (timingPanel != null) panelOrigin = timingPanel.transform.localPosition;
         if (timingPanel != null) timingPanel.SetActive(false);
     }
 
@@ -74,7 +77,7 @@ public sealed class PlayerTiming : MonoBehaviour
     private void Update()
     {
         if (actor == null || !actor.IsSpawned || !actor.Assigned.Value) { timingPanel.SetActive(false); return; }
-        if (!actor.IsOwner) { ApplyRemote(); return; }
+        if (!actor.Local) { ApplyRemote(); return; }
         SetWheelRepairActive(stations.WheelDetached);
         if (actor.SecondLocal ? Keyboard.current?.rightShiftKey.wasPressedThisFrame == true : Keyboard.current?.qKey.wasPressedThisFrame == true || Gamepad.current?.buttonEast.wasPressedThisFrame == true) ExitStation();
         UpdateCurrentArea();
@@ -108,14 +111,14 @@ public sealed class PlayerTiming : MonoBehaviour
         }
         if (NearbyRoyal is StationAction royal)
         {
-            if (pressed && stations.CanUse(royal, actor)) actor.Request(royal, true);
+            if (pressed && stations.CanUse(royal, actor)) actor.Request(royal);
             return;
         }
         if (!inside) return;
         if (currentSettings != null && !stations.CanUse(currentSettings.Action,actor)) return;
         if (currentSettings != null && !currentSettings.UsesTiming)
         {
-            if (pressed) actor.Request(currentSettings.Action,true);
+            if (pressed) actor.Request(currentSettings.Action);
             return;
         }
         UpdateStationTiming(pressed);
@@ -152,42 +155,48 @@ public sealed class PlayerTiming : MonoBehaviour
         return pressed;
     }
 
+    public static float TargetCenter(StationAction action, bool hold, int repairStep)
+    {
+        if (hold) return 360f * .57f;
+        if (action == StationAction.WheelRepair) return 360f * (repairStep == 0 ? .46f : .82f);
+        return 360f * (action == StationAction.Reload ? .68f : .54f);
+    }
+
+    private static float PinAt(double time, float speed) =>
+        Mathf.Repeat(180f - (float)((System.Math.Floor(time * 30d) / 30d * speed) % 360d), 360f);
+
+    private float TargetWidth(float baseWidth) =>
+        Mathf.Min(360f, baseWidth + stations.TimingBonusDegrees) * stations.TimingWidthRate;
+
+    public bool TimingSuccess(StationAction action, bool hold, double time)
+    {
+        var area = hold ? null : FindArea();
+        var settings = area != null ? area.GetComponent<TimingArea>() : null;
+        if (!hold && (settings == null || settings.Action != action || !settings.UsesTiming)) return false;
+        float angle = PinAt(time, hold ? HoldPinSpeed : settings.CircularSpeed);
+        float center = TargetCenter(action, hold, stations.WheelRepairSteps);
+        return Mathf.Abs(Mathf.DeltaAngle(angle, center)) <= TargetWidth(hold ? HoldTargetAngle : settings.CircularTargetAngle) * .5f;
+    }
+
+    private void DrawRing(StationAction action, bool hold)
+    {
+        circularTargetCenter = TargetCenter(action, hold, stations.WheelRepairSteps);
+        circularPinAngle = PinAt(actor.NetworkManager.ServerTime.Time, hold ? HoldPinSpeed : currentSettings.CircularSpeed);
+        circularGraphic.SetAngles(circularTargetCenter, TargetWidth(hold ? HoldTargetAngle : currentSettings.CircularTargetAngle), circularPinAngle);
+    }
+
     private void UpdateHoldTiming(bool pressed)
     {
         if (circularGraphic == null) return;
-        circularPinAngle = Mathf.Repeat(circularPinAngle - HoldPinSpeed * Time.deltaTime, 360f);
-        float visiblePin = ShakenPinAngle();
-        float holdAngle = Mathf.Min(360f, HoldTargetAngle + stations.TimingBonusDegrees);
-        circularGraphic.SetAngles(circularTargetCenter, holdAngle, visiblePin);
-        if (pressed) actor.Request(StationAction.ShellPile,Mathf.Abs(Mathf.DeltaAngle(visiblePin, circularTargetCenter)) <= holdAngle * 0.5f,true);
+        DrawRing(StationAction.ShellPile, true);
+        if (pressed) actor.Request(StationAction.ShellPile, true);
     }
 
     private void UpdateStationTiming(bool pressed)
     {
-        if (background == null || target == null || pin == null) return;
-        bool circular = currentSettings != null && currentSettings.UsesTiming;
-        float displayedPin = circularPinAngle;
-        if (circular)
-        {
-            if (circularGraphic == null) return;
-            circularPinAngle = Mathf.Repeat(circularPinAngle - currentSettings.CircularSpeed * Time.deltaTime, 360f);
-            displayedPin = ShakenPinAngle();
-            circularGraphic.SetAngles(circularTargetCenter, CurrentTargetAngle(), displayedPin);
-        }
-        else MovePin();
-
-        if (!pressed) return;
-        bool success;
-        if (circular)
-            success = Mathf.Abs(Mathf.DeltaAngle(displayedPin, circularTargetCenter)) <= CurrentTargetAngle() * 0.5f;
-        else
-        {
-            float pinCenter = pin.localPosition.x + pin.rect.center.x;
-            float targetCenter = target.localPosition.x + target.rect.center.x;
-            success = Mathf.Abs(pinCenter - targetCenter) <= target.rect.width * 0.5f;
-        }
-        if (currentSettings == null) return;
-        actor.Request(currentSettings.Action,success);
+        if (currentSettings == null || circularGraphic == null) return;
+        DrawRing(currentSettings.Action, false);
+        if (pressed) actor.Request(currentSettings.Action);
     }
 
     private RectTransform FindArea()
@@ -214,6 +223,21 @@ public sealed class PlayerTiming : MonoBehaviour
         return nearestRoyal;
     }
 
+    public RectTransform AreaFor(StationAction action)
+    {
+        if (action == StationAction.WheelRepair) return repairRect;
+        foreach (RectTransform area in interactionAreas)
+            if (area.TryGetComponent<TimingArea>(out var station) && station.Action == action) return area;
+        return null;
+    }
+
+    public bool InsideCompletedArea(StationAction action)
+    {
+        if (action == StationAction.WheelRepair) return IsInActionArea(action);
+        var area = AreaFor(action);
+        return area != null && area.rect.Contains(area.InverseTransformPoint(transform.position));
+    }
+
     public bool IsInActionArea(StationAction action)
     {
         if (action==StationAction.WheelRepair) return actor.InCellar && stations.IsInsideDetachedTire(transform.position - Vector3.up * NetworkPlayer.CellarOffset);
@@ -224,6 +248,7 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         if (!actor.IsSpawned || !actor.Assigned.Value || !CartStations.Running) return -1f;
         var rules = CartRules.Active;
+        if (stations.CarriedChild(actor, out var child) && child.Upset) return child.Soothing / CartStations.SootheDistance;
         if (actor.Holding.Value)
             return Mathf.Clamp01((float)(actor.HoldDeadline.Value - actor.NetworkManager.ServerTime.Time) / rules.shellHoldSeconds);
         if (stations.IsFiring && stations.Gunner.Value == actor.NetworkObjectId)
@@ -237,6 +262,8 @@ public sealed class PlayerTiming : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (timingPanel != null && timingPanel.activeInHierarchy && actor != null && actor.IsSpawned)
+            timingPanel.transform.position = timingPanel.transform.parent.TransformPoint(panelOrigin) + stations.RingOffset(actor);
         if (workProgressFill != null)
         {
             float progress = WorkProgress();
@@ -248,7 +275,7 @@ public sealed class PlayerTiming : MonoBehaviour
         bool visible=CartStations.Running && timingPanel.activeSelf;
         int action=actor.Holding.Value ? -2 : currentSettings != null ? (int)currentSettings.Action : -1;
         float speed=actor.Holding.Value ? HoldPinSpeed : currentSettings != null ? currentSettings.CircularSpeed : 0f;
-        float width=actor.Holding.Value ? Mathf.Min(360f,HoldTargetAngle+stations.TimingBonusDegrees) : currentSettings != null ? CurrentTargetAngle() : 0f;
+        float width=actor.Holding.Value ? TargetWidth(HoldTargetAngle) : currentSettings != null ? TargetWidth(currentSettings.CircularTargetAngle) : 0f;
         actor.PublishTask(action,visible,circularTargetCenter,width,circularPinAngle,speed);
     }
     private void ApplyRemote()
@@ -265,63 +292,21 @@ public sealed class PlayerTiming : MonoBehaviour
         circularGraphic.SetAngles(task.Target,task.Width,angle);
     }
 
-    private float CurrentTargetAngle() => Mathf.Min(360f, currentSettings.CircularTargetAngle + stations.TimingBonusDegrees);
-
-    private float ShakenPinAngle() => circularPinAngle + Random.Range(-timingJitterDegrees, timingJitterDegrees) * cameraRig.ShakeAmount;
-
     private void ResetHoldTiming()
     {
         if (background != null) background.gameObject.SetActive(false);
         if (circularGraphic == null) return;
         circularGraphic.gameObject.SetActive(true);
-        circularTargetCenter = Random.Range(0f, 360f);
-        circularPinAngle = PinStartAngle;
-        circularGraphic.SetAngles(circularTargetCenter, HoldTargetAngle, circularPinAngle);
+        DrawRing(StationAction.ShellPile, true);
     }
 
     private void ResetTiming()
     {
-        if (background == null || target == null || pin == null) return;
-        bool circular = currentSettings != null && currentSettings.UsesTiming;
-        background.gameObject.SetActive(!circular);
-        if (circularGraphic != null) circularGraphic.gameObject.SetActive(circular);
-        if (circular)
-        {
-            if (circularGraphic == null) return;
-            circularTargetCenter = Random.Range(0f, 360f);
-            circularPinAngle = PinStartAngle;
-            circularGraphic.SetAngles(circularTargetCenter, CurrentTargetAngle(), circularPinAngle);
-            return;
-        }
-        float halfTarget = target.rect.width * 0.5f;
-        float min = background.rect.xMin + halfTarget;
-        float max = background.rect.xMax - halfTarget;
-        SetCenterX(target, min <= max ? Random.Range(min, max) : background.rect.center.x);
-        SetCenterX(pin, background.rect.xMin + pin.rect.width * 0.5f);
-        pinDirection = 1f;
+        if (background != null) background.gameObject.SetActive(false);
+        if (circularGraphic == null || currentSettings == null) return;
+        circularGraphic.gameObject.SetActive(currentSettings.UsesTiming);
+        if (currentSettings.UsesTiming) DrawRing(currentSettings.Action, false);
     }
 
-    // 바 타이밍: 핀이 양 끝을 왕복한다.
-    private void MovePin()
-    {
-        float min = background.rect.xMin + pin.rect.width * 0.5f;
-        float max = background.rect.xMax - pin.rect.width * 0.5f;
-        if (max <= min)
-        {
-            SetCenterX(pin, background.rect.center.x);
-            return;
-        }
-        float center = pin.localPosition.x + pin.rect.center.x;
-        float span = max - min;
-        float distance = Mathf.Repeat((pinDirection > 0 ? center - min : 2f * span - (center - min)) + pinSpeed * Time.deltaTime, 2f * span);
-        pinDirection = distance < span ? 1f : -1f;
-        SetCenterX(pin, min + (distance < span ? distance : 2f * span - distance));
-    }
 
-    private static void SetCenterX(RectTransform rect, float x)
-    {
-        Vector3 position = rect.localPosition;
-        position.x = x - rect.rect.center.x;
-        rect.localPosition = position;
-    }
 }

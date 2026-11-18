@@ -18,6 +18,16 @@ public sealed class MultiplayerGameScene : MonoBehaviour
         if (player.Slot.Value < 0) player.transform.position = spawnPoints[slot].position;
         player.Assign(client,slot,name);
     }
+    public void FillEmptySeats()
+    {
+        for (int slot = 0; slot < players.Length; slot++)
+        {
+            var player = players[slot];
+            if (player.Assigned.Value) continue;
+            player.transform.position = spawnPoints[slot].position;
+            player.TakeBotControl(slot);
+        }
+    }
     public void Release(ulong client)
     {
         foreach (var player in players)

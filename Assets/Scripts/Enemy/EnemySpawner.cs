@@ -15,6 +15,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private SpriteRenderer cartBody;
     [SerializeField] private CartStations cartStations;
     [SerializeField] private Vector2 areaSize = new(4f, 8f);
+    public Bounds SpawnBounds => new Bounds(transform.position, areaSize);
 
     private float elapsed;
     private int nextWave;
@@ -38,7 +39,7 @@ public class EnemySpawner : MonoBehaviour
             Debug.LogWarning($"[{name}] cartStations가 비어 있어 몬스터 공격이 마차 내구도에 반영되지 않습니다", this);
             return;
         }
-        cartHit = cartStations.ReceiveCollision;
+        cartHit = cartStations.ReceiveEnemyHit;
         Enemy.CartHit += cartHit;
         if (stageNumber == 0) stageNumber = cartStations.StageNumber;
     }
@@ -55,12 +56,27 @@ public class EnemySpawner : MonoBehaviour
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
         elapsed += dt;
-        while (nextWave < ActiveStage.waves.Count && ActiveStage.waves[nextWave].waveStartTime <= elapsed)
-            SpawnWave(ActiveStage.waves[nextWave++]);
+        var waves = ActiveStage.waves;
+        if (waves.Count == 0) return;
+        while (cartStations.Endless.Value || nextWave < waves.Count)
+        {
+            int index = nextWave % waves.Count;
+            float at = waves[index].waveStartTime + (nextWave / waves.Count) * (waves[waves.Count - 1].waveStartTime + 10f);
+            if (elapsed < at) break;
+            if (cartStations.Endless.Value)
+            {
+                int incoming = 0;
+                foreach (var group in waves[index].spawns) incoming += group.count;
+                while (Enemy.Active.Count > 0 && Enemy.Active.Count + incoming > 16)
+                    Enemy.Active[0].NetworkObject.Despawn(true);
+            }
+            SpawnWave(waves[index]);
+            nextWave++;
+        }
     }
 
     // 남은 몬스터와 날아가던 화살(둘 다 이 오브젝트의 자식)을 치우고 타이머를 처음으로 돌린다.
-    private void RestartWaves()
+    public void RestartWaves()
     {
         stageNumber = cartStations.StageNumber;
         elapsed = 0f;

@@ -3,7 +3,7 @@ using Unity.Netcode;
 
 // 마차 속도·이동 거리·방향.
 // 마차는 화면 x에 고정이고, 배경(WorldScroller)과 장애물(ObstacleSpawner)이 ScrollVelocity로 흘러간다.
-// 채찍 한 번으로 한 차선만 이동한다. 전진 속도는 차선과 별도로 계산한다.
+// 채찍질은 목표 Y를 조정하고 마차가 그 위치를 부드럽게 따라간다.
 public sealed class CartMotion : NetworkBehaviour
 {
     [SerializeField] private float cruiseSpeed = 13f;
@@ -12,7 +12,10 @@ public sealed class CartMotion : NetworkBehaviour
     [SerializeField] private float acceleration = 3f;
     [Tooltip("말 강화 1회당 속도 증가")]
     [SerializeField] private float speedGain = 1f;
-    [SerializeField, Min(0.01f)] private float laneChangeSpeed = 5f;
+    public const float WhipSteeringStep = 0.25f;
+    [Tooltip("일반 조향 시 목표 Y에 접근하는 비율(초당). 5이면 약 0.46초에 90% 도달합니다.")]
+    [UnityEngine.Serialization.FormerlySerializedAs("laneChangeSpeed")]
+    [SerializeField, Min(0.01f)] private float steeringResponse = 5f;
     [Tooltip("배경·장애물이 흐르는 속도 = Speed × 이 값")]
     [SerializeField] private float scrollScale = 0.085f;
     private const int OuterLane = 2;
@@ -44,7 +47,7 @@ public sealed class CartMotion : NetworkBehaviour
     public float Distance { get; private set; }
     public int LeftStep { get; private set; }
     public int RightStep { get; private set; }
-    public int Lane { get; private set; }
+    public float Lane { get; private set; }
     public float SpeedMultiplier { get; set; } = 1f;
     public float LeftHorseSpeed { get; private set; }
     public float RightHorseSpeed { get; private set; }
@@ -66,7 +69,8 @@ public sealed class CartMotion : NetworkBehaviour
         LeftHorseSpeed = RightHorseSpeed = baseSpeed;
         TargetSpeed = baseSpeed;
         Speed = 0f;
-        LeftStep = RightStep = Lane = 0;
+        LeftStep = RightStep = 0;
+        Lane = 0f;
         SpeedMultiplier = 1f;
         obstacleSlowFactor = 1f;
         obstacleSlowRemaining = 0f;
@@ -93,15 +97,16 @@ public sealed class CartMotion : NetworkBehaviour
         opposite = Mathf.Max(0, opposite - 1);
         LeftStep = right ? opposite : struck;
         RightStep = right ? struck : opposite;
-        Lane = Mathf.Clamp(Lane + (right ? 1 : -1), -OuterLane, OuterLane);
+        float targetY = Lane + (right ? WhipSteeringStep : -WhipSteeringStep);
+        Lane = Mathf.Clamp(targetY, -OuterLane, OuterLane);
 
         if (right) RightHorseSpeed = Mathf.Min(maximumHorseSpeed, RightHorseSpeed + speedGain*strength);
         else LeftHorseSpeed = Mathf.Min(maximumHorseSpeed, LeftHorseSpeed + speedGain*strength);
     }
 
-    public void SpookHorse(bool right)
+    public void ResetHorsePace(bool right)
     {
-        if(right) RightHorseSpeed=baseSpeed*0.5f; else LeftHorseSpeed=baseSpeed*0.5f;
+        if (right) RightHorseSpeed = baseSpeed; else LeftHorseSpeed = baseSpeed;
     }
     public void Advance(float dt)
     {
@@ -112,16 +117,32 @@ public sealed class CartMotion : NetworkBehaviour
             if (obstacleSlowRemaining <= 0f) obstacleSlowFactor = 1f;
         }
         float stageSpeedLimit = CartStations.Instance.SpeedLimit;
-        TargetSpeed = Mathf.Min(stageSpeedLimit, (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier * EnemyRope.CartSpeedMultiplier) * obstacleSlowFactor;
+        var stations = CartStations.Instance;
+        int direction = stations.RunawayDirection;
+        float cruise = Mathf.Min(stageSpeedLimit, (LeftHorseSpeed + RightHorseSpeed) * .5f);
+        if (direction != 0) cruise += baseSpeed * .18f;
+        TargetSpeed = cruise * SpeedMultiplier * EnemyRope.CartSpeedMultiplier * obstacleSlowFactor * stations.FatigueRate;
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * dt);
         Distance += Speed * dt;
         ScrollDistance += ScrollVelocity.x * dt;
         Vector3 position = transform.position;
-        position.y = Mathf.MoveTowards(position.y, Lane, laneChangeSpeed * dt);
+        if (direction != 0)
+        {
+            Lane = direction * OuterLane;
+            position.y = Mathf.MoveTowards(position.y, Lane, CartStations.RunawaySteeringSpeed * stations.WorldPerWebUnit * dt);
+        }
+        else
+        {
+            position.y = PredictSteeringY(position.y, Lane, dt);
+            if (Mathf.Abs(Lane - position.y) < 0.001f) position.y = Lane;
+        }
         transform.position = position;
         UpdateHorseVisual(leftHorseVisual, leftHorseStart, LeftStep, dt);
         UpdateHorseVisual(rightHorseVisual, rightHorseStart, RightStep, dt);
     }
+
+    internal float PredictSteeringY(float y, float targetY, float seconds) =>
+        Mathf.Lerp(y, targetY, 1f - Mathf.Exp(-steeringResponse * seconds));
 
     private void UpdateHorseVisual(Transform visual, Vector3 start, int step, float dt)
     {

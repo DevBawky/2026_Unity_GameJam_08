@@ -43,7 +43,6 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField] private Transform cannonMuzzle;
     [FormerlySerializedAs("princeAnxietyBar"), SerializeField] private Image princeHungerBar;
     [FormerlySerializedAs("princessAnxietyBar"), SerializeField] private Image princessHungerBar;
-    [SerializeField, Min(0f)] private float projectileSpeed = 10f;
 
     [Header("Stage")]
     [SerializeField, Min(1)] private int stageNumber = 1;
@@ -110,6 +109,10 @@ public sealed partial class CartStations : NetworkBehaviour
     private int precisionLevel;
 
     public CartMotion Cart => cart;
+    // The reference deck spans 331 units. Use the authored deck width for world-space gameplay distances.
+    public float WorldPerWebUnit => cartBody.bounds.size.x / 331f;
+    public Vector3 RingOffset(NetworkPlayer player) =>
+        player.SecondLocal && secondCamera != null && secondCamera.CameraActive ? secondCamera.ShakeOffset : cameraRig.ShakeOffset;
     public SpriteRenderer CartBody => cartBody;
     public bool Failed => flow == StageFlow.Failed;
     public string FailureReason { get; private set; } = "CART DESTROYED";
@@ -132,6 +135,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public int PrecisionLevel => precisionLevel;
     public float PrecisionPerLevel => CartRules.Active.precision.amount;
     public float TimingBonusDegrees => precisionLevel * 360f * PrecisionPerLevel;
+    public NetworkVariable<bool> Endless = new();
     public bool IsLoaded => loaded;
     public bool IsDeposited => depositedShells > 0;
     public int DepositedShells => depositedShells;
@@ -178,14 +182,17 @@ public sealed partial class CartStations : NetworkBehaviour
     public static event System.Action<float> SimulationStep;
     private void AdvanceGame()
     {
+        AdvanceBots();
         AdvanceFuse();
         cart.Advance(Step);
         waveSpawner.Advance(Step);
         Waves.Value = waveSpawner.SpawnedWaves;
         SimulationStep?.Invoke(Step);
+        AdvanceWheels();
         if (!Running) return;
         AdvanceCare();
-        if (StageDistance >= StageGoal)
+        if (Endless.Value && shellsInPile == 0) shellsInPile = StartShellsInPile;
+        if (!Endless.Value && StageDistance >= StageGoal)
         {
             BeginUpgradeSelection();
             return;
@@ -193,11 +200,6 @@ public sealed partial class CartStations : NetworkBehaviour
         if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
         princeAnxiety = 1f - Prince.Value.Attention / 100f;
         princessAnxiety = 1f - Princess.Value.Attention / 100f;
-        if (failOnPassengerEscape && !DevInvincible && (princeAnxiety >= 1f || princessAnxiety >= 1f))
-        {
-            FailStage("PASSENGER ESCAPED");
-            return;
-        }
         Refresh();
     }
 
@@ -232,6 +234,7 @@ public sealed partial class CartStations : NetworkBehaviour
                 depositedShells--;
                 loaded = true;
                 CompleteStation(action, actor);
+                actor.ShowWorkResult(true);
                 break;
             case StationAction.WheelRepair:
                 if (!wheelDetached || (wheelRepairSteps == 0 && !actor.SpareWheel.Value)) break;
@@ -290,6 +293,13 @@ public sealed partial class CartStations : NetworkBehaviour
         if (!Running || actor.Holding.Value || requested < 0 || requested >= StationCount) return;
         var action = (StationAction)requested;
         if (actor.CompletedStation.Value == requested || TimingArea.IsRoyal(action) || !HasWork(action, actor) || !actor.Timing.IsInActionArea(action)) return;
+        if (!actor.Bot.Value && StationOwners[requested] != NoStationOwner &&
+            !(action == StationAction.Cannon && fuseLit))
+        {
+            foreach (var other in gameScene.Players)
+                if (other.Bot.Value && StationOwners[requested] == other.NetworkObjectId)
+                    ReleaseStations(other.NetworkObjectId);
+        }
         if (StationOwners[requested] == NoStationOwner) StationOwners[requested] = actor.NetworkObjectId;
     }
 
@@ -325,11 +335,13 @@ public sealed partial class CartStations : NetworkBehaviour
         for (int i = 0; i < StationOwners.Count; i++) StationOwners[i] = NoStationOwner;
     }
 
-    public void Fail(StationAction action)
+    public void Fail(StationAction action, NetworkPlayer actor)
     {
         if (!IsServer || action != StationAction.Reload || depositedShells <= 0 || loaded || fuseLit) return;
         depositedShells--;
         lostShells++;
+        CompleteStation(action, actor);
+        actor.ShowWorkResult(false);
         Refresh();
     }
 
@@ -360,6 +372,7 @@ public sealed partial class CartStations : NetworkBehaviour
         Gunner.Value = actor.NetworkObjectId;
         StartFuse();
     }
+    public NetworkVariable<double> LastShockTime = new(-100);
     private float fuseRemaining;
     private void StartFuse(float initial = -1f)
     {
@@ -373,6 +386,15 @@ public sealed partial class CartStations : NetworkBehaviour
         if (!fuseLit) return;
         fuseRemaining -= Step;
         if (fuseRemaining > 0.00001f) return;
+        var target = CannonAim.AimPoint(gunner != null ? gunner.Aim.Value : Vector2.zero, cannonMuzzle.position,
+            this, NetworkManager.ServerTime.Time, out var spread, out _);
+        // Isolate shot scatter from child, horse and wave random rolls.
+        uint seed = randomState ^ unchecked((uint)(careTicks+1)*1597334677u);
+        seed = unchecked(seed*1664525u+1013904223u);
+        float angle = 2f*Mathf.PI*(seed/4294967296f);
+        seed = unchecked(seed*1664525u+1013904223u);
+        float radius = Mathf.Sqrt(seed/4294967296f);
+        target += Vector2.Scale(spread, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle))) * radius;
         loaded = false;
         fuseLit = false;
         Gunner.Value = ulong.MaxValue;
@@ -384,17 +406,21 @@ public sealed partial class CartStations : NetworkBehaviour
         shot.GetComponent<Projectile>().SetCaliber(Barrel.Value);
         shot.GetComponent<NetworkObject>().Spawn(true);
         if (shot.TryGetComponent(out Projectile projectile))
-            projectile.Launch(gunner != null ? (Vector3)gunner.Aim.Value : cannonMuzzle.right, projectileSpeed);
+            projectile.Launch(target, 1750f * WorldPerWebUnit);
         Refresh();
     }
 
     // 장애물·몬스터 공격이 마차에 닿았을 때.
-    public void ReceiveCollision(float damage)
+    public void ReceiveCollision(float damage) => ReceiveImpact(damage, .34f);
+    public void ReceiveEnemyHit(float damage) => ReceiveImpact(damage, 0f);
+    public void ReceiveCatapultHit(float damage) => ReceiveImpact(damage, .52f);
+
+    private void ReceiveImpact(float damage, float fallChance)
     {
         if (!IsServer || !Running) return;
-        if (!DevInvincible) durability = Mathf.Max(0f, durability - Mathf.Max(0f, damage));
+        if (!DevInvincible) durability = Mathf.Max(Endless.Value ? 1f : 0f, durability - Mathf.Max(0f, damage));
         if (damage >= shellHoldDamageThreshold) ApplyImpact();
-        AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength);
+        AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength, false, fallChance);
         if (StageDistance >= wheelLossMinDistance && !wheelDetached && Sample() < wheelLossChance) DetachWheel();
         if (durability <= 0f) FailStage("CART DESTROYED");
     }
@@ -407,12 +433,13 @@ public sealed partial class CartStations : NetworkBehaviour
         Publish();
     }
 
-    private void AddImpactEffects(float anxiety, float shake, bool cannon = false)
+    private void AddImpactEffects(float anxiety, float shake, bool cannon = false, float fallChance = .25f)
     {
         float multiplier = Mathf.Pow(CushionImpactFactor, cushionAxleLevel);
         princeAnxiety = Mathf.Clamp01(princeAnxiety + anxiety * multiplier);
         princessAnxiety = Mathf.Clamp01(princessAnxiety + anxiety * multiplier);
-        ShockCare(shake * multiplier);
+        ShockCare(shake * multiplier, fallChance * multiplier);
+        LastShockTime.Value = NetworkManager.ServerTime.Time;
         ImpactRpc(++impactSequence, cannon, shake * multiplier, aimJitterDegrees * multiplier, shakeDuration);
     }
 
@@ -438,6 +465,7 @@ public sealed partial class CartStations : NetworkBehaviour
         if (wheelDetached || tires.Count == 0) return;
         detachedTire = tires[(int)(Sample()*tires.Count)];
         detachedTireAlpha = detachedTire.color.a;
+        LaunchWheel(detachedTire);
         wheelDetached = true;
         wheelEverDetached = true;
         wheelRepairSteps = 0;
@@ -473,6 +501,7 @@ public sealed partial class CartStations : NetworkBehaviour
         Gunner.Value = ulong.MaxValue;
         ClearStations();
         foreach (var actor in gameScene.Players) { actor.Carrying.Value = false; actor.Holding.Value = false; actor.SpareWheel.Value = false; actor.Snack.Value = false; actor.CookProgress.Value = 0; actor.CompletedStation.Value = -1; }
+        ClearTransientObjects();
         stageNumber++;
         stageStartDistance = cart.Distance;
         cart.ResetForStage(horseLevel);
@@ -481,7 +510,9 @@ public sealed partial class CartStations : NetworkBehaviour
         ResetStageState();
         obstacles.ResetForStage();
         flow = StageFlow.Running;
+        waveSpawner.RestartWaves();
         Refresh();
+        RememberStageEntry();
     }
 
     private void ResetStageState()
@@ -502,11 +533,36 @@ public sealed partial class CartStations : NetworkBehaviour
     public void Restart()
     {
         if (!IsHost || (flow != StageFlow.Failed && flow != StageFlow.Complete)) return;
-        flow = StageFlow.Waiting;
-        Publish();
-        // 솔로 테스트(로비 없음)에서는 재시작 불가 → Failed 유지, Play를 다시 누른다.
+        bool replayChapter = flow == StageFlow.Complete;
         var lobby = FindFirstObjectByType<LobbySession>();
-        if (lobby == null || !lobby.ReloadGame()) { flow = StageFlow.Failed; Publish(); }
+        if (lobby != null)
+        {
+            if (!lobby.ReloadGame(replayChapter ? null : stageEntryJson)) return;
+            flow = StageFlow.Waiting;
+            Publish();
+        }
+        else if (!string.IsNullOrEmpty(stageEntryJson))
+        {
+            ClearTransientObjects();
+            ClearStations();
+            obstacles.ResetForStage();
+            Restore(JsonUtility.FromJson<RunCheckpoint>(replayChapter ? chapterEntryJson : stageEntryJson));
+        }
+    }
+
+    private string stageEntryJson, chapterEntryJson;
+    private void RememberStageEntry()
+    {
+        stageEntryJson = null;
+        stageEntryJson = JsonUtility.ToJson(Capture(null));
+        if (stageNumber == 1) chapterEntryJson = stageEntryJson;
+    }
+    private void ClearTransientObjects()
+    {
+        LooseWheels.Clear();
+        waveSpawner.ClearEnemies();
+        foreach (var shot in FindObjectsByType<Projectile>(FindObjectsSortMode.None))
+            if (shot.IsSpawned) shot.NetworkObject.Despawn(true);
     }
 
     public override void OnDestroy()
@@ -519,9 +575,12 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         if (!IsServer) return;
         ResetCare();
+        gameScene.FillEmptySeats();
+        Endless.Value = LobbySession.LocalSeats > 0 && LobbySession.PracticeTest;
         flow = StageFlow.Running;
         obstacles.ResetForStage();
         Publish();
+        RememberStageEntry();
     }
     public override void OnNetworkSpawn()
     {
@@ -538,6 +597,7 @@ public sealed partial class CartStations : NetworkBehaviour
     }
     public override void OnNetworkDespawn()
     {
+        ClearWheelVisuals();
         Prince.OnValueChanged -= UpdatePrinceHunger;
         Princess.OnValueChanged -= UpdatePrincessHunger;
         State.OnValueChanged -= Changed;
@@ -592,8 +652,6 @@ public sealed partial class CartStations : NetworkBehaviour
         if (impactDust != null) impactDust.Emit(cannon ? 18 : 12);
         var clip = cannon ? cannonSound : hitSound;
         if (impactAudio != null && clip != null) impactAudio.PlayOneShot(clip);
-        foreach (var actor in gameScene.Players)
-            if (actor.Local) actor.Cannon.ApplyImpact(aim, duration);
     }
     // 개발자 패널(F1) 전용. 서버에서만 동작한다.
     public bool DevInvincible { get; set; }
@@ -610,7 +668,8 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         var child = rider.Value;
         child.Attention = 100f;
-        child.Crying = false;
+        child.Upset = child.Bored = child.BoredomPending = false;
+        child.Hunger = 0f;
         rider.Value = child;
     }
     public void DevRefillShells() { if (!IsServer) return; shellsInPile = StartShellsInPile; loaded = true; Refresh(); }

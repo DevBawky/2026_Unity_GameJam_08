@@ -38,7 +38,7 @@ public sealed class PlayerMovement : MonoBehaviour
         var stairs = actor.InCellar ? cellarStairs : deckStairs;
         if (stairs == null) return;
         bool onStairs = stairs.rect.Contains(stairs.InverseTransformPoint(transform.position));
-        if (onStairs && !stairLocked && !stations.IsCarryingChild(actor))
+        if (onStairs && !stairLocked)
         {
             var destination = actor.InCellar ? deckStairs : cellarStairs;
             transform.position += destination.position - stairs.position;
@@ -72,7 +72,8 @@ public sealed class PlayerMovement : MonoBehaviour
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Cannon) && !actor.Carrying.Value) return;
 
         input = Vector2.ClampMagnitude(input, 1f);
-        float speed = moveSpeed * (actor.Carrying.Value ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 2f/3f : 1f);
+        float speed = moveSpeed * stations.WalkRate * (actor.Carrying.Value ? carrySpeedMultiplier * stations.PorterMultiplier :
+            actor.SpareWheel.Value ? 110f / 165f : stations.IsCarryingChild(actor) ? 125f / 165f : 1f);
         Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (speed * Time.deltaTime);
         if (!actor.InCellar && input.sqrMagnitude > 0f)
         {
@@ -94,6 +95,31 @@ public sealed class PlayerMovement : MonoBehaviour
         Vector2 motion = desired - transform.position;
         motion -= normal * Mathf.Min(0f, Vector2.Dot(motion, normal));
         return transform.position + (Vector3)motion;
+    }
+
+    public Vector2 StairPoint(bool cellar) => (cellar ? cellarStairs : deckStairs).position;
+
+    private float BotWalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
+        ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 110f/165f
+        : stations.IsCarryingChild(actor) ? 125f/165f : 1f);
+
+    public float BotTimeToDeckPoint(Vector2 point)
+    {
+        Vector2 pos = transform.position;
+        float distance = actor.InCellar ? Vector2.Distance(pos, StairPoint(true)) +
+            Vector2.Distance(StairPoint(false), point) : Vector2.Distance(pos, point);
+        return distance / Mathf.Max(.01f, BotWalkSpeed);
+    }
+
+    public void WalkBot(Vector2 destination, bool cellar, float dt)
+    {
+        bool cross = actor.InCellar != cellar;
+        if (cross) destination = StairPoint(actor.InCellar);
+        Vector2 pos = transform.position;
+        var next = Vector2.MoveTowards(pos, destination, BotWalkSpeed * dt);
+        transform.position = ClampToCartBody(new Vector3(next.x, next.y, transform.position.z));
+        if (cross && Vector2.Distance(next, destination) < .08f)
+            transform.position += (Vector3)(StairPoint(cellar) - StairPoint(!cellar));
     }
 
     private Vector3 ClampToCartBody(Vector3 desired)
