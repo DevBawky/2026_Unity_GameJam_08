@@ -2,7 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 
 // 마차 속도·이동 거리·방향.
-// 마차는 화면 x에 고정이고, 배경(WorldScroller)과 장애물(ObstacleSpawner)이 ScrollVelocity로 흘러간다.
+// 마차는 화면 x에 고정이고, 배경(WorldScroller)·장애물(ObstacleSpawner)·투석 착탄 지점(CatapultStrike)이 ScrollVelocity로 흘러간다.
 // 방향(Heading)은 좌우 말 속도 차이로 꺾이고, 마차는 그 방향으로 길 안에서 위아래로 움직인다.
 // 길 가장자리에 닿으면 막히고 방향이 0이 된다. 빨라진 말은 그림이 앞으로 나간다.
 public sealed class CartMotion : NetworkBehaviour
@@ -17,8 +17,8 @@ public sealed class CartMotion : NetworkBehaviour
     [SerializeField] private float speedGain = 1f;
     [SerializeField, Min(0f)] private float turnRate = 0.75f;
     [SerializeField] private float maxHeading = 25f;
-    [Tooltip("배경·장애물이 흐르는 속도 = Speed × 이 값")]
-    [SerializeField] private float scrollScale = 5f;
+    [Tooltip("배경·장애물이 흐르는 속도 = Speed × 이 값 (1m당 월드 거리). 0.085가 웹판 비율(마차 길이 대비)이라 장애물이 몇 초간 보인다")]
+    [SerializeField] private float scrollScale = 0.085f;
     [Tooltip("위아래 이동 속도 = Speed × sin(Heading) × 이 값")]
     [SerializeField] private float lateralScale = 0.25f;
     [Tooltip("마차 중심이 위아래로 갈 수 있는 한계 (길 반폭 - 마차 반높이)")]
@@ -37,8 +37,14 @@ public sealed class CartMotion : NetworkBehaviour
     public NetworkVariable<CartMotionState> State = new();
     private float baseSpeed;
     private float maximumHorseSpeed;
+    private float obstacleSlowFactor = 1f;
+    private float obstacleSlowRemaining;
     private Vector3 leftHorseStart;
     private Vector3 rightHorseStart;
+
+    public float BaseSpeed => baseSpeed;
+    public float BaseScrollSpeed => baseSpeed * scrollScale;
+    public float LateralLimit => lateralLimit;
 
     public float Speed { get; private set; }
     public float TargetSpeed { get; private set; }
@@ -67,7 +73,21 @@ public sealed class CartMotion : NetworkBehaviour
         Speed = 0f;
         Heading = 0f;
         SpeedMultiplier = 1f;
+        obstacleSlowFactor = 1f;
+        obstacleSlowRemaining = 0f;
     }
+
+    // 장애물 충돌 감속. 이미 더 강한 감속이 걸려 있으면 무시하고, 더 강하면 현재 속도도 그 비율만큼 바로 깎는다(웹판 규칙).
+    public void ApplyObstacleSlow(float factor, float seconds)
+    {
+        if (factor > obstacleSlowFactor) return;
+        Speed *= factor / obstacleSlowFactor;
+        obstacleSlowRemaining = Mathf.Approximately(factor, obstacleSlowFactor) ? Mathf.Max(obstacleSlowRemaining, seconds) : seconds;
+        obstacleSlowFactor = factor;
+    }
+
+    // 투석 명중처럼 순간적으로 속도만 깎는 충격.
+    public void ApplySpeedHit(float multiplier) => Speed *= multiplier;
 
     public void BoostHorse(bool right)
     {
@@ -78,7 +98,12 @@ public sealed class CartMotion : NetworkBehaviour
     private void Update()
     {
         if (!IsSpawned || !IsServer || !CartStations.Running) return;
-        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier * EnemyRope.CartSpeedMultiplier;
+        if (obstacleSlowRemaining > 0f)
+        {
+            obstacleSlowRemaining -= Time.deltaTime;
+            if (obstacleSlowRemaining <= 0f) obstacleSlowFactor = 1f;
+        }
+        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f * SpeedMultiplier * EnemyRope.CartSpeedMultiplier * obstacleSlowFactor;
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * Time.deltaTime);
         Heading = Mathf.Clamp(Heading + (RightHorseSpeed - LeftHorseSpeed) * turnRate * Time.deltaTime, -maxHeading, maxHeading);
         Distance += Speed * Time.deltaTime;

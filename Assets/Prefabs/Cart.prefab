@@ -592,6 +592,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f31e38b8ee1453345a041730694f0eda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartMotion
+  ShowTopMostFoldoutHeaderGroup: 1
   cruiseSpeed: 13
   speedPerHorseLevel: 3
   maxBoostAboveBase: 5
@@ -599,7 +600,7 @@ MonoBehaviour:
   speedGain: 1
   turnRate: 0.75
   maxHeading: 25
-  scrollScale: 5
+  scrollScale: 0.085
   lateralScale: 0.25
   lateralLimit: 3.1
   leftHorseVisual: {fileID: 7825500536871029672}
@@ -607,6 +608,10 @@ MonoBehaviour:
   horseAdvancePerSpeed: 0.18
   maximumHorseAdvance: 1
   horseVisualMoveSpeed: 3
+  State:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
 --- !u!1 &5632297902906293167
 GameObject:
   m_ObjectHideFlags: 0

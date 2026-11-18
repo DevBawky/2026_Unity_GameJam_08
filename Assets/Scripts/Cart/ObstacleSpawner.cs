@@ -2,30 +2,38 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 
-// 마차 앞쪽(왼쪽) 멀리에 바위·통나무를 소환해 배경과 같은 속도로 흘려보내고,
-// 마차 몸체에 닿으면 CartStations.ReceiveCollision으로 피해를 준다.
+// 마차 앞쪽(왼쪽) 멀리에 도로 장애물(바위·통나무·사슴)을 소환해 배경과 같은 속도로 흘려보낸다.
+// 소환 간격은 주행 거리 기준이라 빨리 달릴수록 자주 만난다(웹판 규칙).
+// 마차 앞면에 닿으면 종류별 감속(CartMotion)과 피해(CartStations.ReceiveCollision)를 준다.
 // 한 프레임 이동량이 커도 지나치지 않게 이전·다음 위치 사이에서 충돌을 판정한다.
 public sealed class ObstacleSpawner : MonoBehaviour
 {
     [SerializeField] private CartMotion cart;
     [SerializeField] private CartStations stations;
     [SerializeField] private SpriteRenderer cartBody;
-    [SerializeField] private Obstacle rockPrefab;
-    [SerializeField] private Obstacle logPrefab;
-    [SerializeField, Range(0f, 1f)] private float logProbability = 0.4f;
-    [SerializeField, Min(0.1f)] private float minSpawnInterval = 3f;
-    [SerializeField, Min(0.1f)] private float maxSpawnInterval = 5f;
-    [Tooltip("스테이지가 하나 오를 때마다 소환 간격에 곱하는 값")]
-    [SerializeField, Range(0.1f, 1f)] private float spawnIntervalPerStage = 0.9f;
-    [Tooltip("마차 앞면에서 이만큼 앞(왼쪽)에 소환")]
-    [SerializeField, Min(1f)] private float spawnDistance = 45f;
+    [Tooltip("같은 확률로 고르는 장애물 프리팹 목록")]
+    [SerializeField] private Obstacle[] prefabs;
+
+    [Header("Spawn gap (주행 거리 m)")]
+    [Tooltip("1스테이지 기본 간격")]
+    [SerializeField, Min(1f)] private float baseGap = 76f;
+    [Tooltip("스테이지가 하나 오를 때마다 줄어드는 간격")]
+    [SerializeField, Min(0f)] private float gapPerStage = 4f;
+    [Tooltip("간격 최솟값")]
+    [SerializeField, Min(1f)] private float minGap = 32f;
+    [Tooltip("기본 간격에 더하는 무작위 범위")]
+    [SerializeField, Min(0f)] private float randomGap = 23f;
+
+    [Header("Placement")]
+    [Tooltip("마차 앞면에서 이만큼 앞(왼쪽)에 소환. 화면 왼쪽 끝 바로 밖이 되게 맞춘다")]
+    [SerializeField, Min(1f)] private float spawnDistance = 9.5f;
     [Tooltip("길 중앙 기준 위아래 소환 범위")]
     [SerializeField, Min(0f)] private float spawnSideRange = 4f;
     [Tooltip("마차 몸체 높이 중 충돌로 치는 비율 (가장자리로 스치면 피함)")]
     [SerializeField, Range(0.05f, 1f)] private float collisionHeightFraction = 0.65f;
 
     private readonly List<Obstacle> active = new();
-    private float nextSpawnTime;
+    private float nextSpawnDistance;
 
     private void Start() => Schedule();
 
@@ -39,15 +47,15 @@ public sealed class ObstacleSpawner : MonoBehaviour
 
     private void Schedule()
     {
-        float factor = Mathf.Pow(spawnIntervalPerStage, stations.StageNumber - 1);
-        nextSpawnTime = Time.time + Random.Range(minSpawnInterval, Mathf.Max(minSpawnInterval, maxSpawnInterval)) * factor;
+        float gap = Mathf.Max(minGap, baseGap - (stations.StageNumber - 1) * gapPerStage);
+        nextSpawnDistance = cart.Distance + gap + Random.Range(0f, randomGap);
     }
 
     private void Spawn()
     {
-        Obstacle prefab = Random.value < logProbability ? logPrefab : rockPrefab;
+        Obstacle prefab = prefabs[Random.Range(0, prefabs.Length)];
         var position = new Vector3(cartBody.bounds.min.x - spawnDistance, Random.Range(-spawnSideRange, spawnSideRange), 0f);
-        var item=Instantiate(prefab,position,Quaternion.identity);
+        Obstacle item = Instantiate(prefab, position, Quaternion.identity);
         item.GetComponent<NetworkObject>().Spawn(true);
         active.Add(item);
     }
@@ -55,7 +63,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
     private void Update()
     {
         if (!stations.IsServer || !CartStations.Running) return;
-        if (Time.time >= nextSpawnTime)
+        if (prefabs.Length > 0 && cart.Distance >= nextSpawnDistance)
         {
             Spawn();
             Schedule();
@@ -80,9 +88,10 @@ public sealed class ObstacleSpawner : MonoBehaviour
             float hitY = Mathf.Lerp(previous.y, next.y, hitT);
             if (crossed && Mathf.Abs(hitY - cartBounds.center.y) <= cartHalfHeight + obstacle.Size.y * 0.5f)
             {
+                cart.ApplyObstacleSlow(obstacle.SlowFactor, obstacle.SlowSeconds);
+                stations.ReceiveCollision(obstacle.Damage);
                 obstacle.GetComponent<NetworkObject>().Despawn(true);
                 active.RemoveAt(i);
-                stations.ReceiveCollision(obstacle.Damage);
                 if (stations.Failed) return;
             }
             else if (next.x > cartBounds.max.x + spawnDistance)

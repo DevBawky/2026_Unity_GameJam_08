@@ -47,12 +47,14 @@ MonoBehaviour:
   cart: {fileID: 0}
   stations: {fileID: 0}
   cartBody: {fileID: 0}
-  rockPrefab: {fileID: 8006847307704388264, guid: b7ec9cf3fb1ced444903c50932266376, type: 3}
-  logPrefab: {fileID: 5925149844747649662, guid: 55360678debb48641927acd929d2f563, type: 3}
-  logProbability: 0.4
-  minSpawnInterval: 3
-  maxSpawnInterval: 5
-  spawnIntervalPerStage: 0.9
-  spawnDistance: 45
+  prefabs:
+  - {fileID: 8006847307704388264, guid: b7ec9cf3fb1ced444903c50932266376, type: 3}
+  - {fileID: 5925149844747649662, guid: 55360678debb48641927acd929d2f563, type: 3}
+  - {fileID: 5925149844747649662, guid: 87e6c9b8c3060554f91f8f417101fef7, type: 3}
+  baseGap: 76
+  gapPerStage: 4
+  minGap: 32
+  randomGap: 23
+  spawnDistance: 9.5
   spawnSideRange: 4
   collisionHeightFraction: 0.65
