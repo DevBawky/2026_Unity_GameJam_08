@@ -157,20 +157,32 @@ public sealed partial class CartStations
         AdvanceHorse(true);
         AdvanceChild(Prince,0);
         AdvanceChild(Princess,1);
+        const float cookLossSecondsPerShock = .55f;
+        float cookSeconds = CartRules.Active.cookSeconds;
+        int lostTicks = Mathf.FloorToInt(pendingCookingShock * cookLossSecondsPerShock / Step + .5f);
+        pendingCookingShock = 0f;
         foreach (var actor in gameScene.Players)
         {
             if (!actor.Assigned.Value) continue;
-            if (actor.CookingHeld.Value && HoldsStation(StationAction.Kitchen,actor) && actor.HandsFree)
+            if (!HoldsStation(StationAction.Kitchen, actor))
             {
-                actor.CookProgress.Value = Mathf.Min(CartRules.Active.cookSeconds, actor.CookProgress.Value + Step * CookRate);
-                if (actor.CookProgress.Value >= CartRules.Active.cookSeconds - .00001f)
-                {
-                    actor.Snack.Value = true;
-                    actor.CookProgress.Value = 0;
-                    CompleteStation(StationAction.Kitchen, actor);
-                }
+                if (actor.CookProgress.Value > 0f) actor.CookProgress.Value = 0f;
+                continue;
             }
-            else if (!HoldsStation(StationAction.Kitchen, actor) && actor.CookProgress.Value > 0) actor.CookProgress.Value=0;
+
+            float loss = Mathf.Min(actor.CookProgress.Value, lostTicks * Step);
+            if (loss > 0f)
+            {
+                actor.CookProgress.Value -= loss;
+                actor.ShowCookingImpact(Mathf.FloorToInt(loss * 100f / cookSeconds + .5f));
+            }
+            if (!actor.CookingHeld.Value || !actor.HandsFree) continue;
+
+            actor.CookProgress.Value = Mathf.Min(cookSeconds, actor.CookProgress.Value + Step * CookRate);
+            if (actor.CookProgress.Value < cookSeconds - .00001f) continue;
+            actor.Snack.Value = true;
+            actor.CookProgress.Value = 0f;
+            CompleteStation(StationAction.Kitchen, actor);
         }
     }
 
@@ -356,14 +368,6 @@ public sealed partial class CartStations
         field.Value=child;
     }
 
-    private void ShockCare(float strength, float chance)
-    {
-        if(randomState==0) return;
-        foreach(var player in gameScene.Players)
-            if(player.CookProgress.Value>0) player.CookProgress.Value=Mathf.Max(0,player.CookProgress.Value-strength*7);
-        KnockDown(Prince,chance);
-        KnockDown(Princess,chance);
-    }
     private void KnockDown(NetworkVariable<RiderState> field,float chance)
     {
         var child=field.Value;

@@ -5178,7 +5178,6 @@ MonoBehaviour:
   secondary: {fileID: 0}
   secondPlayer: {fileID: 0}
   campaign: {fileID: 7414763233718772114}
-  emoteButton: {fileID: 7867775246734167912}
   seats:
   - bubble: {fileID: 623112673216685729}
     progressRow: {fileID: 5519932464868095514}
@@ -6001,9 +6000,9 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -6363,9 +6362,9 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0

@@ -39,6 +39,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public bool HandsFree => !Carrying.Value && !SpareWheel.Value && !Snack.Value && !CartStations.Instance.IsCarryingChild(this);
     public NetworkVariable<bool> Holding = new(false);
     public NetworkVariable<double> HoldDeadline = new();
+    internal double ShellSafeUntil { get; set; }
     public NetworkVariable<PlayerTaskState> TaskState = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<Vector2> Aim = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private GameObject carriedShell;
@@ -217,6 +218,17 @@ public sealed class NetworkPlayer : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void WorkResultRpc(bool loaded) { if (Local) timing.ShowResult(loaded); }
     public void ShowWorkResult(bool loaded) => WorkResultRpc(loaded);
+
+    [Rpc(SendTo.Owner)]
+    private void CookingImpactRpc(int percentLost)
+    {
+        if (Local) timing.ShowCookingImpact(percentLost);
+    }
+
+    internal void ShowCookingImpact(int percentLost)
+    {
+        if (!Bot.Value) CookingImpactRpc(percentLost);
+    }
 
     public void Request(StationAction action, bool hold = false)
     {

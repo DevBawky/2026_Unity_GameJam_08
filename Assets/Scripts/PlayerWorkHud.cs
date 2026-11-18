@@ -74,9 +74,9 @@ public sealed class PlayerWorkHud : MonoBehaviour
         hud.background.color = ready ? new Color32(189, 242, 153, 255) : new Color32(41, 40, 49, 238);
 
         var pane = view.pixelRect;
-        float widthLimit = Mathf.Min(timed ? 200f : 272f, pane.width - 12f);
+        float widthLimit = pane.width - 12f;
         if (widthLimit < 32f) { Show(hud.bubble, false); return; }
-        var preferred = hud.hint.GetPreferredValues(text, (widthLimit - 20f) / scale, 1000f) * scale;
+        var preferred = hud.hint.GetPreferredValues(text) * scale;
         bool progress = guide.HasProgress && !timed;
         float width = Mathf.Min(widthLimit, Mathf.Max(preferred.x + 20f, progress ? 165f : 32f));
         float textHeight = Mathf.Max(font * 1.25f, preferred.y);

@@ -19,6 +19,15 @@ public enum StageFlow : byte
     Complete
 }
 
+public struct CartWorkShock : INetworkSerializeByMemcpy, System.IEquatable<CartWorkShock>
+{
+    public double Time;
+    public float Strength, Phase;
+
+    public readonly bool Equals(CartWorkShock other) =>
+        Time == other.Time && Strength == other.Strength && Phase == other.Phase;
+}
+
 public sealed partial class CartStations : NetworkBehaviour
 {
     public const float MaxDurability = 100f;
@@ -32,6 +41,13 @@ public sealed partial class CartStations : NetworkBehaviour
 
     private const int StartShellsInPile = 17;
     private const int StartDepositedShells = 1;
+    private const float ObstacleShock = .98f;
+    private const float PursuerShock = 1.32f;
+    private const float CatapultShock = 1.42f;
+    private const float WheelShock = 1.2f;
+    private const float CannonShock = 1.45f;
+    private const float ShakeDecayPerSecond = 1.05f;
+    private const float ShellSlipThreshold = .4f;
 
     [SerializeField] private CartMotion cart;
     [SerializeField] private ObstacleSpawner obstacles;
@@ -60,13 +76,10 @@ public sealed partial class CartStations : NetworkBehaviour
 
     [Header("Impacts")]
     [SerializeField, Min(0f)] private float collisionAnxietyIncrease = 0.06f;
-    [Tooltip("이 피해 이상이면 포탄을 든 플레이어가 버티기 판정")]
-    [SerializeField, Min(0f)] private float shellHoldDamageThreshold = 6f;
     [SerializeField, Min(0f)] private float recoilAnxietyIncrease = 0.04f;
     [SerializeField, Min(0f)] private float impactShakeStrength = 0.3f;
     [SerializeField, Min(0f)] private float recoilShakeStrength = 0.2f;
     [SerializeField, Min(0.01f)] private float shakeDuration = 0.45f;
-    [SerializeField, Min(0f)] private float aimJitterDegrees = 6f;
 
     [Header("Wheel")]
     [SerializeField, Range(0f, 1f)] private float wheelLossChance = 0.25f;
@@ -106,6 +119,8 @@ public sealed partial class CartStations : NetworkBehaviour
     private bool wheelEverDetached;
     private bool loaded;
     private bool fuseLit;
+    private float pendingCookingShock;
+    private readonly NetworkVariable<CartWorkShock> workShock = new();
     private int wheelRepairSteps;
     private int depositedShells;
     private int shellsInPile;
@@ -189,8 +204,9 @@ public sealed partial class CartStations : NetworkBehaviour
     private void AdvanceGame()
     {
         AdvanceBots();
-        AdvanceFuse();
         cart.Advance(Step);
+        if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
+        AdvanceFuse();
         waveSpawner.Advance(Step);
         Waves.Value = waveSpawner.SpawnedWaves;
         SimulationStep?.Invoke(Step);
@@ -203,7 +219,6 @@ public sealed partial class CartStations : NetworkBehaviour
             BeginUpgradeSelection();
             return;
         }
-        if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
         princeAnxiety = 1f - Prince.Value.Attention / 100f;
         princessAnxiety = 1f - Princess.Value.Attention / 100f;
         Refresh();
@@ -351,15 +366,13 @@ public sealed partial class CartStations : NetworkBehaviour
         Refresh();
     }
 
-    // 큰 충격(발사 반동, 장애물·몬스터 충돌) 때 포탄을 든 플레이어에게 버티기 판정을 건다.
-    public void ApplyImpact()
+    private void StartShellCatch(double time)
     {
-        if (!IsServer) return;
         foreach (var actor in gameScene.Players)
         {
-            if (!actor.Assigned.Value || !actor.Carrying.Value) continue;
+            if (!actor.Assigned.Value || !actor.Carrying.Value || actor.Holding.Value || actor.ShellSafeUntil > time) continue;
+            actor.HoldDeadline.Value = time + CartRules.Active.shellHoldSeconds;
             actor.Holding.Value = true;
-            actor.HoldDeadline.Value = NetworkManager.ServerTime.Time + CartRules.Active.shellHoldSeconds;
         }
     }
 
@@ -367,7 +380,8 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         if (!IsServer || !actor.Holding.Value) return;
         actor.Holding.Value = false;
-        if (!success) { actor.Carrying.Value = false; lostShells++; }
+        if (success) actor.ShellSafeUntil = NetworkManager.ServerTime.Time + 1d;
+        else { actor.Carrying.Value = false; lostShells++; }
         Refresh();
     }
 
@@ -378,7 +392,6 @@ public sealed partial class CartStations : NetworkBehaviour
         Gunner.Value = actor.NetworkObjectId;
         StartFuse();
     }
-    public NetworkVariable<double> LastShockTime = new(-100);
     private float fuseRemaining;
     private void StartFuse(float initial = -1f)
     {
@@ -406,8 +419,7 @@ public sealed partial class CartStations : NetworkBehaviour
         Gunner.Value = ulong.MaxValue;
         CompleteStation(StationAction.Cannon, gunner);
         StationOwners[(int)StationAction.Cannon] = NoStationOwner;
-        ApplyImpact();
-        AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength, true);
+        AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength, CannonShock, .25f, cannon: true);
         Vector2 direction = target - (Vector2)cannonMuzzle.position;
         var rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
         GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position, rotation);
@@ -419,16 +431,15 @@ public sealed partial class CartStations : NetworkBehaviour
     }
 
     // 장애물·몬스터 공격이 마차에 닿았을 때.
-    public void ReceiveCollision(float damage) => ReceiveImpact(damage, .34f);
-    public void ReceiveEnemyHit(float damage) => ReceiveImpact(damage, 0f);
-    public void ReceiveCatapultHit(float damage) => ReceiveImpact(damage, .52f);
+    public void ReceiveCollision(float damage) => ReceiveImpact(damage, ObstacleShock, .34f);
+    public void ReceiveEnemyHit(float damage) => ReceiveImpact(damage, PursuerShock, 0f);
+    public void ReceiveCatapultHit(float damage) => ReceiveImpact(damage, CatapultShock, .52f);
 
-    private void ReceiveImpact(float damage, float fallChance)
+    private void ReceiveImpact(float damage, float strength, float fallChance)
     {
         if (!IsServer || !Running) return;
         if (!DevInvincible) durability = Mathf.Max(Endless.Value ? 1f : 0f, durability - Mathf.Max(0f, damage));
-        if (damage >= shellHoldDamageThreshold) ApplyImpact();
-        AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength, false, fallChance);
+        AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength, strength, fallChance);
         if (StageDistance >= wheelLossMinDistance && !wheelDetached && Sample() < wheelLossChance) DetachWheel();
         if (durability <= 0f) FailStage("CART DESTROYED");
     }
@@ -441,14 +452,39 @@ public sealed partial class CartStations : NetworkBehaviour
         Publish();
     }
 
-    private void AddImpactEffects(float anxiety, float shake, bool cannon = false, float fallChance = .25f)
+    private void AddImpactEffects(float anxiety, float cameraStrength, float workStrength, float fallChance, bool cannon = false)
     {
         float multiplier = Mathf.Pow(CushionImpactFactor, cushionAxleLevel);
         princeAnxiety = Mathf.Clamp01(princeAnxiety + anxiety * multiplier);
         princessAnxiety = Mathf.Clamp01(princessAnxiety + anxiety * multiplier);
-        ShockCare(shake * multiplier, fallChance * multiplier);
-        LastShockTime.Value = NetworkManager.ServerTime.Time;
-        ImpactRpc(++impactSequence, cannon, shake * multiplier, aimJitterDegrees * multiplier, shakeDuration);
+        if (fallChance > 0f && randomState != 0)
+        {
+            KnockDown(Prince, fallChance * multiplier);
+            KnockDown(Princess, fallChance * multiplier);
+        }
+
+        float strength = Mathf.Min(CannonShock, workStrength * multiplier);
+        // A hit and its wheel detachment can happen in the same simulation step.
+        pendingCookingShock = Mathf.Max(pendingCookingShock, strength);
+        double time = NetworkManager.ServerTime.Time;
+        uint sequence = ++impactSequence;
+        workShock.Value = new CartWorkShock
+        {
+            Time = time,
+            Strength = strength,
+            Phase = Mathf.Repeat(sequence * 2.3999632f, 2f * Mathf.PI)
+        };
+        if (strength > ShellSlipThreshold) StartShellCatch(time);
+        ImpactRpc(sequence, cannon, cameraStrength * multiplier, shakeDuration);
+    }
+
+    internal float WorkShakeAt(double time, out float phase)
+    {
+        var shock = workShock.Value;
+        phase = shock.Phase;
+        double elapsed = System.Math.Max(0d, time - shock.Time);
+        float steppedElapsed = (float)(System.Math.Floor(elapsed * 30d + 1e-6d) / 30d);
+        return Mathf.Max(0f, shock.Strength - steppedElapsed * ShakeDecayPerSecond);
     }
 
     private void SetTireAlpha(float alpha)
@@ -485,6 +521,7 @@ public sealed partial class CartStations : NetworkBehaviour
         wheelRepairSteps = 0;
         SetTireAlpha(0f);
         cart.SpeedMultiplier = wheelLossSpeedMultiplier;
+        AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f);
         Publish();
     }
 
@@ -514,7 +551,16 @@ public sealed partial class CartStations : NetworkBehaviour
         StopAllCoroutines();
         Gunner.Value = ulong.MaxValue;
         ClearStations();
-        foreach (var actor in gameScene.Players) { actor.Carrying.Value = false; actor.Holding.Value = false; actor.SpareWheel.Value = false; actor.Snack.Value = false; actor.CookProgress.Value = 0; actor.CompletedStation.Value = -1; }
+        foreach (var actor in gameScene.Players)
+        {
+            actor.Carrying.Value = false;
+            actor.Holding.Value = false;
+            actor.ShellSafeUntil = 0d;
+            actor.SpareWheel.Value = false;
+            actor.Snack.Value = false;
+            actor.CookProgress.Value = 0f;
+            actor.CompletedStation.Value = -1;
+        }
         ClearTransientObjects();
         stageNumber++;
         stageStartDistance = cart.Distance;
@@ -531,6 +577,8 @@ public sealed partial class CartStations : NetworkBehaviour
 
     private void ResetStageState()
     {
+        pendingCookingShock = 0f;
+        if (IsSpawned && IsServer) workShock.Value = default;
         if (stageNumber == 1) durability = MaxDurability;
         princeAnxiety = princessAnxiety = 0;
         depositedShells = StartDepositedShells;
@@ -642,7 +690,7 @@ public sealed partial class CartStations : NetworkBehaviour
         Refresh();
     }
     [Rpc(SendTo.ClientsAndHost)]
-    private void ImpactRpc(uint sequence, bool cannon, float shake, float aim, float duration)
+    private void ImpactRpc(uint sequence, bool cannon, float shake, float duration)
     {
         if (sequence == lastPlayedImpact) return;
         lastPlayedImpact = sequence;

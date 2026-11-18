@@ -13,6 +13,7 @@ public struct SeatCheckpoint
     public bool HasWhipAim;
     public bool Shell, Wheel, Snack, Holding;
     public float HoldRemaining, Cooking;
+    public float ShellSafetyRemaining;
 }
 [Serializable]
 public struct PursuerCheckpoint
@@ -43,6 +44,7 @@ public sealed class RunCheckpoint
     public LooseWheelState[] LooseWheels;
     public int[] StationSlots;
     public float CartY, WaveTime, FuseRemaining;
+    public float ShockStrength, ShockPhase;
     public int Wave, CareTicks, GunnerSlot, AP, Report, Round, Barrel, Stabilizer, Porter, Hull, RightWounds, LeftWounds, PrincePoints, PrincessPoints;
     public uint RandomState;
     public RiderState Prince, Princess;
@@ -61,8 +63,11 @@ public sealed partial class CartStations
     {
         Publish();
         var enemies=FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        double now = NetworkManager.ServerTime.Time;
+        float shock = WorkShakeAt(now, out float phase);
         return new RunCheckpoint {
             StageEntry=stageEntryJson, KingReply=KingReply.Value.ToString(),
+            ShockStrength=shock, ShockPhase=phase,
             LooseWheels=Enumerable.Range(0,LooseWheels.Count).Select(i=>LooseWheels[i]).ToArray(),
             StationSlots=Enumerable.Range(0,StationOwners.Count).Select(i=>Array.FindIndex(gameScene.Players,p=>p.NetworkObjectId==StationOwners[i])).ToArray(),
             Cart=State.Value, Failure=FailureReason, Motion=cart.Capture(), CartY=cart.transform.position.y,
@@ -74,7 +79,8 @@ public sealed partial class CartStations
             CareTicks=careTicks, RandomState=randomState, Seated=seated, Crying=crying, Grace=ignoreWanderUntil, HorseRest=nextHorseRest, Attention=attentionSum,
             Votes=Enumerable.Range(0,4).Select(i=>Votes[i]).ToArray(), SeatKeys=keys, Seats=gameScene.Players.Select(p=>new SeatCheckpoint {
                 Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
-                Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-NetworkManager.ServerTime.Time),Cooking=p.CookProgress.Value, CompletedStationKey=p.CompletedStation.Value+1
+                Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-now),Cooking=p.CookProgress.Value,
+                ShellSafetyRemaining=(float)Math.Max(0,p.ShellSafeUntil-now),CompletedStationKey=p.CompletedStation.Value+1
             }).ToArray(), Enemies=enemies.Select(e=>e.Capture()).ToArray(),
             Shots=FindObjectsByType<Projectile>(FindObjectsSortMode.None).Select(p=>p.Capture(enemies)).ToArray()
         };
@@ -83,6 +89,9 @@ public sealed partial class CartStations
     public void Restore(RunCheckpoint data)
     {
         StopAllCoroutines();
+        double now = NetworkManager.ServerTime.Time;
+        pendingCookingShock = 0f;
+        workShock.Value = new CartWorkShock { Time = now, Strength = data.ShockStrength, Phase = data.ShockPhase };
         cart.Restore(data.Motion,data.Cart.Horse);
         cart.transform.position=new Vector3(cart.transform.position.x,data.CartY,cart.transform.position.z);
         Apply(data.Cart); FailureReason=data.Failure;
@@ -107,7 +116,8 @@ public sealed partial class CartStations
             var p=gameScene.Players[i];var saved=data.Seats[i];p.Slot.Value=saved.Slot;
             p.RestoreSeat(saved);
             p.Carrying.Value=saved.Shell;p.SpareWheel.Value=saved.Wheel;p.Snack.Value=saved.Snack;
-            p.Holding.Value=saved.Holding;p.HoldDeadline.Value=NetworkManager.ServerTime.Time+saved.HoldRemaining;p.CookProgress.Value=saved.Cooking;
+            p.Holding.Value=saved.Holding;p.HoldDeadline.Value=now+saved.HoldRemaining;p.CookProgress.Value=saved.Cooking;
+            p.ShellSafeUntil=now+saved.ShellSafetyRemaining;
             p.CompletedStation.Value = saved.CompletedStationKey - 1;
             Votes[i]=data.Votes[i];
         }

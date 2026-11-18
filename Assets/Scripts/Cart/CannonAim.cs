@@ -30,7 +30,7 @@ public sealed class CannonAim : MonoBehaviour
         float scale = game.WorldPerWebUnit;
         double tick = System.Math.Floor(time * 30);
         float wave = .105f*Sin(tick*.105) + .045f*Sin(tick*.21+.9);
-        float shake = Mathf.Clamp01(1f-(float)(time-game.LastShockTime.Value)/.45f);
+        float shake = game.WorkShakeAt(time, out float shakePhase);
         float roll = .017f*Sin(tick*.28) + .012f*Sin(tick*.53);
         if (game.IsFiring)
         {
@@ -38,14 +38,15 @@ public sealed class CannonAim : MonoBehaviour
             double lit = tick-end+75;
             roll += Mathf.Clamp01((float)lit/8f)*(.23f*Sin(lit*.31+end*.618)+.085f*Sin(lit*.67-end*.618));
         }
-        float motion = .9f*(roll+shake*.18f*Sin(tick*.53))*Mathf.Pow(.78f,game.Stabilizer.Value);
+        float motion = .9f*(roll+shake*.18f*Sin(tick*.53+shakePhase))*Mathf.Pow(.78f,game.Stabilizer.Value);
         accuracy = Mathf.Clamp(.86f+wave-Mathf.Abs(motion)*.6f-shake*.2f,.32f,.98f);
         float miss = (1f-accuracy)/.68f;
         spread = new Vector2(12+38*miss,9+34*miss)*scale;
         float x = 225+Mathf.Clamp(cursor.x,-1,1)*107;
-        float angle = Mathf.Clamp(Mathf.Atan2(Mathf.Clamp(cursor.y,-1,1)*154,x)+motion,-1.1f,1.1f);
+        float originShake = shake * Sin(tick * .37 * 3) * 3f;
+        float angle = Mathf.Clamp(Mathf.Atan2(Mathf.Clamp(cursor.y,-1,1)*154 - originShake,x)+motion,-1.1f,1.1f);
         float edge = game.Cart.LateralLimit+134*scale-spread.y-6*scale;
-        return new Vector2(origin.x+x*scale,Mathf.Clamp(origin.y+Mathf.Tan(angle)*x*scale,-edge,edge));
+        return new Vector2(origin.x+x*scale,Mathf.Clamp(origin.y+(originShake+Mathf.Tan(angle)*x)*scale,-edge,edge));
     }
 
     private static float Sin(double radians) => (float)System.Math.Sin(radians);
