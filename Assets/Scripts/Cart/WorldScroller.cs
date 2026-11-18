@@ -4,12 +4,7 @@ using UnityEngine;
 // 배경·장애물은 이 오브젝트의 자식으로 두면 같이 흐른다.
 public class WorldScroller : MonoBehaviour
 {
-    [SerializeField] CartMotion cart; // 비우면 씬에서 찾는다(프리팹끼리 합칠 때 연결 생략용)
-
-    void Awake()
-    {
-        if (cart == null) cart = FindAnyObjectByType<CartMotion>();
-    }
+    [SerializeField] CartMotion cart; // 씬에서 Cart 프리팹 인스턴스를 연결
 
     void Update() => transform.position += Vector3.right * (cart.Speed * Time.deltaTime);
 }
