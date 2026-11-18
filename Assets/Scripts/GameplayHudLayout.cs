@@ -16,13 +16,22 @@ public sealed class GameplayHudLayout : MonoBehaviour
     [SerializeField] private RectTransform movementPreview, movementBase, movementHandle, aimHandle;
     [SerializeField] private CatapultStrike catapult;
     [SerializeField] private Image[] catapultIcons;
+    [SerializeField] private Image[] pursuitIcons, pursuitGlows;
+    [SerializeField] private RectTransform[] topRightControls;
 
     private Canvas canvas;
+    private CameraRig primaryRig, secondaryRig;
+    private readonly Vector3[] controlCorners = new Vector3[4];
     private Rect previousArea, previousPane;
     private float previousScale;
     private bool previousMenu;
 
-    private void Awake() => canvas = GetComponent<Canvas>();
+    private void Awake()
+    {
+        canvas = GetComponent<Canvas>();
+        primaryRig = primary.GetComponent<CameraRig>();
+        if (secondary != null) secondaryRig = secondary.GetComponent<CameraRig>();
+    }
 
     private void LateUpdate()
     {
@@ -39,7 +48,10 @@ public sealed class GameplayHudLayout : MonoBehaviour
             previousMenu = menuOpen;
             Layout(safe, pane, scale, menuOpen);
         }
-        ShowCatapultIcons();
+        Vector3 landing = default;
+        bool danger = catapult != null && catapult.TryGetWarning(out landing);
+        ShowWarnings(0, primary, primaryRig, safe, danger, landing);
+        ShowWarnings(1, secondary, secondaryRig, safe, danger, landing);
     }
 
     private void Layout(Rect safe, Rect pane, float scale, bool menuOpen)
@@ -139,25 +151,76 @@ public sealed class GameplayHudLayout : MonoBehaviour
         rect.sizeDelta = pixels / scale;
     }
 
-    private void ShowCatapultIcons()
+    private void ShowWarnings(int index, Camera view, CameraRig rig, Rect safe, bool danger, Vector3 landing)
     {
-        if (catapult == null) return;
-        bool visible = catapult.TryGetWarning(out var point);
-        float size = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .042f, 26f, 44f);
-        ProjectIcon(catapultIcons[0], primary, visible, point, size);
-        if (secondary != null) ProjectIcon(catapultIcons[1], secondary, visible, point, size);
+        var actor = rig != null ? rig.FollowedActor : null;
+        bool onRoad = view != null && view.enabled && actor != null && !actor.InCellar && CartStations.Running;
+        if (catapultIcons != null && index < catapultIcons.Length)
+            ShowCatapultIcon(catapultIcons[index], view, onRoad && danger, landing);
+
+        if (pursuitIcons == null || index >= pursuitIcons.Length || pursuitGlows == null || index >= pursuitGlows.Length) return;
+        var icon = pursuitIcons[index];
+        var glow = pursuitGlows[index];
+        if (icon == null || glow == null) return;
+        Vector3 closest = default;
+        bool free = onRoad && !actor.Carrying.Value && !actor.Holding.Value && !actor.Timing.HasStationAccess
+            && !CartStations.Instance.IsPostShotGunner(actor);
+        bool show = onRoad && (free || actor.Timing.IsCannonFocus || actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
+            && TryGetPursuer(view, out closest);
+        icon.enabled = glow.enabled = show;
+        if (!show) return;
+
+        var pane = view.pixelRect;
+        var target = view.WorldToScreenPoint(closest);
+        float radius = 2f * Mathf.Clamp(pane.height * .05f, 14f, 22f);
+        float inset = Mathf.Min(radius * 1.4f + 4f, Mathf.Min(pane.width, pane.height) * .5f);
+        float x = Mathf.Min(safe.xMax - inset, pane.xMax - Mathf.Clamp(pane.xMax - target.x, inset, Mathf.Max(inset, pane.width * .28f)));
+        float yMax = Mathf.Min(safe.yMax, pane.yMax) - inset;
+        foreach (var control in topRightControls ?? System.Array.Empty<RectTransform>())
+        {
+            if (control == null || !control.gameObject.activeInHierarchy) continue;
+            control.GetWorldCorners(controlCorners);
+            var left = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, controlCorners[0]);
+            if (x + inset >= left.x) yMax = Mathf.Min(yMax, left.y - inset);
+        }
+
+        var point = new Vector2(x, Mathf.Clamp(target.y, Mathf.Max(safe.yMin, pane.yMin) + inset,
+            Mathf.Max(Mathf.Max(safe.yMin, pane.yMin) + inset, yMax)));
+        float time = (float)actor.NetworkManager.ServerTime.Time;
+        float pulse = .5f + .5f * Mathf.Sin(time * 5.7f);
+        Place(glow.rectTransform, point + Vector2.down * (radius / 20f), Vector2.one * ((46f + 10f * pulse) * radius / 20f), canvas.scaleFactor);
+        Place(icon.rectTransform, point + Vector2.up * (radius * .15f), Vector2.one * (2.25f * radius), canvas.scaleFactor);
     }
 
-    private void ProjectIcon(Image icon, Camera camera, bool visible, Vector3 point, float size)
+    private static bool TryGetPursuer(Camera view, out Vector3 closest)
     {
-        Vector3 projected = camera.WorldToScreenPoint(point);
-        var pane = camera.pixelRect;
-        pane.xMin += size * .5f;
-        pane.xMax -= size * .5f;
-        pane.yMin += size * .5f;
-        pane.yMax -= size * .5f;
-        bool show = visible && camera.enabled && projected.z > 0f && pane.Contains(projected);
+        closest = default;
+        float unit = CartStations.Instance.WorldPerWebUnit;
+        float span = 2f * view.orthographicSize * view.aspect;
+        float start = view.transform.position.x + span * .5f - Mathf.Min(100f * unit, span * .1f);
+        float nearestX = float.PositiveInfinity;
+        foreach (var enemy in Enemy.Active)
+        {
+            if (enemy == null || !enemy.IsApproaching) continue;
+            Vector3 position = enemy.transform.position + Vector3.right * (CavalryArtwork.RiderOffset * unit);
+            if (position.x < start || position.x >= nearestX) continue;
+            closest = position;
+            nearestX = position.x;
+        }
+        return !float.IsPositiveInfinity(nearestX);
+    }
+
+    private void ShowCatapultIcon(Image icon, Camera view, bool danger, Vector3 landing)
+    {
+        if (icon == null) return;
+        var projected = danger ? view.WorldToScreenPoint(landing) : Vector3.zero;
+        var pane = danger ? view.pixelRect : default;
+        bool show = danger && projected.z > 0f && pane.Contains(projected);
         icon.enabled = show;
-        if (show) Place(icon.rectTransform, projected, Vector2.one * size, canvas.scaleFactor);
+        if (!show) return;
+        float size = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .042f, 26f, 44f);
+        if (icon.transform.parent.TryGetComponent(out RectMask2D mask))
+            Place(mask.rectTransform, pane.center, pane.size, canvas.scaleFactor);
+        Place(icon.rectTransform, projected, Vector2.one * size, canvas.scaleFactor);
     }
 }

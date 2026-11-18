@@ -995,7 +995,6 @@ MonoBehaviour:
   player: {fileID: 913201231}
   stations: {fileID: 1783970916}
   cannonAim: {fileID: 309749404}
-  smoothness: 8
   secondSeat: {fileID: 599134222}
   secondary: 1
   matchWebFraming: 1
@@ -1413,6 +1412,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 286523526}
   m_CullTransparentMesh: 1
+--- !u!114 &287221431 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4884423464891453680, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+  m_PrefabInstance: {fileID: 5381469913316116323}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!114 &287221432 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1467412996328957054, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+  m_PrefabInstance: {fileID: 5381469913316116323}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!114 &287221433 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 478708150909150712, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+  m_PrefabInstance: {fileID: 5381469913316116323}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!114 &287221434 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 447534956338466877, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+  m_PrefabInstance: {fileID: 5381469913316116323}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &292898607
 GameObject:
   m_ObjectHideFlags: 0
@@ -1848,21 +1891,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 666775790}
     - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
-      propertyPath: repairFill
-      value: 
-      objectReference: {fileID: 1414280686}
-    - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
       propertyPath: repairRect
       value: 
       objectReference: {fileID: 1074314585}
-    - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
-      propertyPath: statusAlert
-      value: 
-      objectReference: {fileID: 561630749}
-    - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
-      propertyPath: statusPanel
-      value: 
-      objectReference: {fileID: 1701475469}
     - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
       propertyPath: upgradePanel
       value: 
@@ -1883,10 +1914,6 @@ PrefabInstance:
       propertyPath: distanceMarker
       value: 
       objectReference: {fileID: 1773548702}
-    - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
-      propertyPath: repairProgress
-      value: 
-      objectReference: {fileID: 2146754899}
     - target: {fileID: 7600556567212233195, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
       propertyPath: interactionAreas
       value: 
@@ -4586,17 +4613,6 @@ MonoBehaviour:
   m_FlexibleWidth: 1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!114 &561630749 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3677846172479849039, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &568349906
 GameObject:
   m_ObjectHideFlags: 0
@@ -5253,6 +5269,7 @@ MonoBehaviour:
   namePanel: {fileID: 479395889}
   nameLabel: {fileID: 613861616}
   body: {fileID: 1218423141}
+  carriedItem: {fileID: 0}
   crewSprites: {fileID: 11400000, guid: 11485d4d8da12014ead037585088bb7e, type: 2}
   timing: {fileID: 599134219}
   cannon: {fileID: 599134218}
@@ -7316,11 +7333,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2084693561859381386, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
   m_PrefabInstance: {fileID: 5381469913316116323}
   m_PrefabAsset: {fileID: 0}
---- !u!224 &857826261 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 6296721765601681816, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
-  m_PrefabAsset: {fileID: 0}
 --- !u!224 &857826262 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3067119431728732379, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
@@ -7329,11 +7341,6 @@ RectTransform:
 --- !u!224 &857826263 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7390894148079497988, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
-  m_PrefabAsset: {fileID: 0}
---- !u!224 &857826264 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 921384554006952191, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
   m_PrefabInstance: {fileID: 5381469913316116323}
   m_PrefabAsset: {fileID: 0}
 --- !u!224 &857826265 stripped
@@ -7774,6 +7781,7 @@ MonoBehaviour:
   namePanel: {fileID: 309749406}
   nameLabel: {fileID: 309749405}
   body: {fileID: 1283276293}
+  carriedItem: {fileID: 0}
   crewSprites: {fileID: 11400000, guid: 11485d4d8da12014ead037585088bb7e, type: 2}
   timing: {fileID: 913201231}
   cannon: {fileID: 309749404}
@@ -8716,7 +8724,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1021542903
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8961,7 +8969,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1033624706
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10350,7 +10358,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1175109978
 RectTransform:
   m_ObjectHideFlags: 0
@@ -16908,6 +16916,7 @@ MonoBehaviour:
   namePanel: {fileID: 732785219}
   nameLabel: {fileID: 684744230}
   body: {fileID: 1246537458}
+  carriedItem: {fileID: 0}
   crewSprites: {fileID: 11400000, guid: 11485d4d8da12014ead037585088bb7e, type: 2}
   timing: {fileID: 1283759474}
   cannon: {fileID: 1283759472}
@@ -17831,7 +17840,6 @@ MonoBehaviour:
   player: {fileID: 913201231}
   stations: {fileID: 1783970916}
   cannonAim: {fileID: 309749404}
-  smoothness: 8
   secondSeat: {fileID: 599134222}
   secondary: 0
   matchWebFraming: 1
@@ -17977,17 +17985,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1387870381}
   m_CullTransparentMesh: 1
---- !u!114 &1414280686 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 949220116518606274, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &1424184148
 GameObject:
   m_ObjectHideFlags: 0
@@ -18467,6 +18464,7 @@ MonoBehaviour:
   namePanel: {fileID: 1734529956}
   nameLabel: {fileID: 453190844}
   body: {fileID: 1832337362}
+  carriedItem: {fileID: 0}
   crewSprites: {fileID: 11400000, guid: 11485d4d8da12014ead037585088bb7e, type: 2}
   timing: {fileID: 1430940668}
   cannon: {fileID: 1430940667}
@@ -20108,7 +20106,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1548787606
 RectTransform:
   m_ObjectHideFlags: 0
@@ -21125,11 +21123,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1676634886}
   m_CullTransparentMesh: 1
---- !u!1 &1701475469 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5267213515748663210, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1710630613
 GameObject:
   m_ObjectHideFlags: 0
@@ -21848,6 +21841,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartStations
   ShowTopMostFoldoutHeaderGroup: 1
+  PostShotEndsAt:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
   waveSpawner: {fileID: 1509529287}
   royalVisuals:
   - {fileID: 2140083648}
@@ -22544,6 +22542,8 @@ MonoBehaviour:
   impactAudio: {fileID: 1279328008}
   cannonSound: {fileID: 8300000, guid: fd1f776759935b949a8e663483f6ff2f, type: 3}
   hitSound: {fileID: 8300000, guid: 0aa6d65ea337c734abe4786542850791, type: 3}
+  music: {fileID: 0}
+  stageMusic: []
   secondCamera: {fileID: 162087382}
   cart: {fileID: 1783970911}
   obstacles: {fileID: 641157252}
@@ -22590,6 +22590,7 @@ MonoBehaviour:
       Cushion: 0
       Horse: 0
       Precision: 0
+      CleaningTaps: 0
       Flow: 0
       Loaded: 0
       Firing: 0
@@ -24494,11 +24495,9 @@ MonoBehaviour:
   - {fileID: 857826267}
   - {fileID: 857826266}
   - {fileID: 857826265}
-  - {fileID: 857826264}
   - {fileID: 857826263}
   - {fileID: 857826262}
   - {fileID: 2048916894}
-  - {fileID: 857826261}
   - {fileID: 793645534}
   - {fileID: 884220467}
   - {fileID: 220724396}
@@ -24543,6 +24542,15 @@ MonoBehaviour:
   catapultIcons:
   - {fileID: 584073178}
   - {fileID: 60180276}
+  pursuitIcons:
+  - {fileID: 287221431}
+  - {fileID: 287221433}
+  pursuitGlows:
+  - {fileID: 287221432}
+  - {fileID: 287221434}
+  topRightControls:
+  - {fileID: 2019375353}
+  - {fileID: 1966281379}
 --- !u!1 &2049998189
 GameObject:
   m_ObjectHideFlags: 0
@@ -25085,11 +25093,6 @@ Transform:
 Transform:
   m_CorrespondingSourceObject: {fileID: 8298320765252825254, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
   m_PrefabInstance: {fileID: 1783970910}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &2146754899 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7561749510816378353, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-  m_PrefabInstance: {fileID: 5381469913316116323}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5212153089541199987
 PrefabInstance:
@@ -25752,14 +25755,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Panel | Upgrade Selection
       objectReference: {fileID: 0}
-    - target: {fileID: 3677846172479849039, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
-    - target: {fileID: 3677846172479849039, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 4219438431964211326, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
     - target: {fileID: 3771189597122057721, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_SizeDelta.x
       value: 280
@@ -25900,14 +25895,6 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 460
       objectReference: {fileID: 0}
-    - target: {fileID: 7561749510816378353, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_Name
-      value: Bar | Tire Repair
-      objectReference: {fileID: 0}
-    - target: {fileID: 7561749510816378353, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7691179081304191043, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: player
       value: 
@@ -25916,14 +25903,6 @@ PrefabInstance:
       propertyPath: stations
       value: 
       objectReference: {fileID: 1783970916}
-    - target: {fileID: 7691179081304191043, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: statusAlert
-      value: 
-      objectReference: {fileID: 561630749}
-    - target: {fileID: 7691179081304191043, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: statusPanel
-      value: 
-      objectReference: {fileID: 1701475469}
     - target: {fileID: 7691179081304191043, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: stationStatus
       value: 
@@ -26120,6 +26099,22 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: CrewControls, Assembly-CSharp
       objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_Name
+      value: Bar | Tire Repair
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_fontAsset
+      value:
+      objectReference: {fileID: 11400000, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
+    - target: {fileID: 0}
+      propertyPath: m_sharedMaterial
+      value:
+      objectReference: {fileID: 4219438431964211326, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

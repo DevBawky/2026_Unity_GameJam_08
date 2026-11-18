@@ -15,6 +15,7 @@ public struct CavalryPose : INetworkSerializeByMemcpy, IEquatable<CavalryPose>
 
 public sealed class CavalryArtwork : MonoBehaviour
 {
+    internal const float RiderOffset = 40f;
     [SerializeField] private SpriteRenderer rider, shadow, spear;
     [SerializeField] private Transform visualRoot, grip;
     [SerializeField] private SortingGroup group;
@@ -39,7 +40,7 @@ public sealed class CavalryArtwork : MonoBehaviour
         int runFrame = ((int)enemy.NetworkObjectId % 8 + Mathf.Max(0, Mathf.FloorToInt((float)time * 16f))) % 8;
         int hoof = dead ? 4 : enemy.Knocked ? 0 : runFrame;
         var ground = transform.position;
-        Vector3 origin = ground + Vector3.right * (40f * unit);
+        Vector3 origin = ground + Vector3.right * (RiderOffset * unit);
         visualRoot.position = origin;
         visualRoot.rotation = transform.rotation;
 

@@ -34,6 +34,8 @@ public class Enemy : NetworkBehaviour
     private Vector2 knockVelocity;
     private float knockLeft;
     public bool Knocked => airborne.Value;
+    public bool IsApproaching => IsSpawned && !Knocked && Health.Value > 0f &&
+        VisualPose.Value.StrikeAt < 0d && (rope == null || !rope.Attached);
     public void KnockAway(Vector2 velocity)
     {
         if (!IsServer || !IsSpawned || Knocked) return;
@@ -169,6 +171,8 @@ public class Enemy : NetworkBehaviour
         }
         else if (Unit.arrowPrefab != null)
         {
+            if (VisualPose.Value.StrikeAt < 0d)
+                VisualPose.Value = new CavalryPose { StrikeAt = NetworkManager.ServerTime.Time, DeathAt = -1d, Target = goal };
             var shot=Instantiate(Unit.arrowPrefab,pos,Quaternion.identity);
             shot.GetComponent<Arrow>().Launch(goal,Unit.arrowSpeed,attack);
             shot.GetComponent<NetworkObject>().Spawn(true);

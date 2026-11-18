@@ -30,6 +30,7 @@ public sealed class CameraRig : MonoBehaviour
     private Vector3 transitionPosition, shotPosition;
     private float transitionSize, transitionAge, shotSize;
     private bool wasPostShot;
+    private bool primaryWasInCellar, secondWasInCellar;
     private Camera cam;
     private int defaultLayers, cellarBackdropLayer;
     private Vector3 homePosition;
@@ -39,7 +40,14 @@ public sealed class CameraRig : MonoBehaviour
     private float shakeDuration = 0.01f;
     private float shakeStrength;
 
-    public void Bind(NetworkPlayer actor) { player=actor.Timing; cannonAim=actor.Cannon; }
+    public NetworkPlayer FollowedActor { get; private set; }
+
+    public void Bind(NetworkPlayer actor)
+    {
+        FollowedActor = actor;
+        player = actor.Timing;
+        cannonAim = actor.Cannon;
+    }
 
     public Vector3 ShakeOffset => lastShakeOffset;
     public bool CameraActive => cam != null && cam.enabled;
@@ -73,8 +81,13 @@ public sealed class CameraRig : MonoBehaviour
     {
         if (NetworkPlayer.LocalPlayer == null) return;
         var primary = NetworkPlayer.LocalPlayer;
-        bool split = LobbySession.LocalSeats == 2 && secondSeat != null && secondSeat.Assigned.Value
-            && (primary.InCellar != secondSeat.InCellar || NeedsTaskView(primary) || NeedsTaskView(secondSeat)
+        bool duo = LobbySession.LocalSeats == 2 && secondSeat != null && secondSeat.Assigned.Value;
+        bool primaryInCellar = primary.InCellar;
+        bool secondInCellar = duo && secondSeat.InCellar;
+        bool floorChanged = primaryInCellar != primaryWasInCellar || secondInCellar != secondWasInCellar;
+        primaryWasInCellar = primaryInCellar;
+        secondWasInCellar = secondInCellar;
+        bool split = duo && (primaryInCellar != secondInCellar || NeedsTaskView(primary) || NeedsTaskView(secondSeat)
                 || stations.IsPostShotGunner(primary) || stations.IsPostShotGunner(secondSeat));
         if (secondary) cam.enabled = split;
         if (secondary && !split) return;
@@ -82,9 +95,9 @@ public sealed class CameraRig : MonoBehaviour
         var follow = secondary ? secondSeat : primary;
         int visibleLayers = follow.InCellar ? defaultLayers | cellarBackdropLayer : defaultLayers & ~cellarBackdropLayer;
         if (cam.cullingMask != visibleLayers) cam.cullingMask = visibleLayers;
-        if (player != follow.Timing) Bind(follow);
+        if (FollowedActor != follow) Bind(follow);
         Vector3 currentPosition = transform.position - lastShakeOffset;
-        bool postShot = stations.IsPostShotGunner(follow);
+        bool postShot = !follow.InCellar && stations.IsPostShotGunner(follow);
         if (postShot && !wasPostShot)
         {
             shotPosition = currentPosition;
@@ -136,6 +149,13 @@ public sealed class CameraRig : MonoBehaviour
         }
 
         var nextView = (split, inCellar, carrying, station, aiming);
+        if (view.Cellar != inCellar || (view.Split != split && floorChanged))
+        {
+            view = nextView;
+            transitionAge = TransitionSeconds;
+            ApplyView(destination, targetSize);
+            return;
+        }
         if (postShot)
         {
             view = nextView;

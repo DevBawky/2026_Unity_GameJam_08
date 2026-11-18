@@ -47,20 +47,21 @@ public sealed class TeamEmotes : MonoBehaviour
         var safe = Screen.safeArea;
         float height = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .11f, 66f, 88f);
         float width = Mathf.Min(760f, safe.width - 20f);
-        float gap = 10f;
-        float emoteOffset = 0f;
-        if (aiming && showEmote && Screen.width > Screen.height && Screen.width is >= 400 and <= 750)
-        {
-            gap = 4f;
-            width = (Mathf.Min(760f, safe.width - 32f) - gap) * .5f;
-            emoteOffset = (width + gap) * -.5f;
-        }
         float top = Mathf.Min(Screen.height * .78f + height, safe.yMax - 6f);
         if (campaign != null)
         {
             Vector2 lower = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera,
                 campaign.TransformPoint(new Vector3(0, campaign.rect.yMin, 0)));
             top = Mathf.Min(top, lower.y - 6f);
+        }
+        float gap = 10f;
+        float emoteOffset = 0f;
+        float room = safe.width * Mathf.Max(1f, top - safe.yMin);
+        if (aiming && showEmote && Screen.width > Screen.height && width * (height * 2f + gap) > room * .4f)
+        {
+            gap = 4f;
+            width = (Mathf.Min(760f, safe.width - 32f) - gap) * .5f;
+            emoteOffset = (width + gap) * -.5f;
         }
         if (aiming)
         {

@@ -15,6 +15,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
         public Image background, fill;
         public TMP_Text hint, progressName, percent;
         public TMP_Text princeStatus, princessStatus;
+        [NonSerialized] public Vector2 DefaultBubbleSize;
+        [NonSerialized] public int? HintKey;
     }
 
     [SerializeField] private Camera primary, secondary;
@@ -27,7 +29,17 @@ public sealed class PlayerWorkHud : MonoBehaviour
     // 문구·글자 크기·폭이 바뀐 프레임에만 문자열과 크기를 다시 구한다(매 프레임 문자열 할당 방지).
     private readonly Dictionary<TMP_Text, (int key, Vector2 size)> measured = new();
 
-    private void Awake() => canvas = GetComponent<Canvas>();
+    private void Awake()
+    {
+        canvas = GetComponent<Canvas>();
+        foreach (var seat in seats)
+        {
+            seat.DefaultBubbleSize = seat.bubble.rect.size;
+            seat.hint.enableAutoSizing = true;
+            seat.hint.textWrappingMode = TextWrappingModes.Normal;
+            seat.hint.overflowMode = TextOverflowModes.Ellipsis;
+        }
+    }
 
     private void LateUpdate()
     {
@@ -69,31 +81,35 @@ public sealed class PlayerWorkHud : MonoBehaviour
         float vmin = Mathf.Min(Screen.width, Screen.height);
         float font = Mathf.Clamp(vmin * .023f, 12f, 17f);
         float subFont = Mathf.Clamp(vmin * .017f, 10f, 13f);
-        hud.hint.fontSize = font / scale;
+        hud.hint.fontSizeMin = 10f / scale;
+        hud.hint.fontSizeMax = font / scale;
         hud.progressName.fontSize = hud.percent.fontSize = subFont / scale;
         hud.hint.color = ready ? new Color32(25, 41, 31, 255) : new Color32(255, 247, 239, 255);
         hud.background.color = ready ? new Color32(189, 242, 153, 255) : new Color32(41, 40, 49, 238);
 
         var pane = view.pixelRect;
-        float widthLimit = pane.width - 12f;
-        if (widthLimit < 32f) { Show(hud.bubble, false); return; }
+        var safe = Screen.safeArea;
+        float campaignBottom = campaign == null ? pane.yMax - 52f
+            : ScreenPoint(campaign, new Vector2(0, campaign.rect.yMin)).y - 4f;
+        var bounds = Rect.MinMaxRect(Mathf.Max(pane.xMin, safe.xMin) + 6f, Mathf.Max(pane.yMin, safe.yMin) + 4f,
+            Mathf.Min(pane.xMax, safe.xMax) - 6f, Mathf.Min(Mathf.Min(pane.yMax, safe.yMax), campaignBottom));
+        Vector2 size = Vector2.Min(hud.DefaultBubbleSize, new Vector2(bounds.width, bounds.height * .28f));
+        if (size.x < 64f || size.y < 24f) { Show(hud.bubble, false); return; }
+
         int tenths = guide.Seconds >= 0f ? Mathf.RoundToInt(guide.Seconds * 10f) : -1;
-        int key = HashCode.Combine(HashCode.Combine(result, timed, ready, guide.Action, guide.Hint, tenths), font, widthLimit, scale);
-        if (!measured.TryGetValue(hud.hint, out var cached) || cached.key != key)
+        int key = HashCode.Combine(result, timed, ready, guide.Action, guide.Hint, tenths);
+        if (hud.HintKey != key)
         {
             string text = result ?? (timed ? (ready ? "지금! " : "초록 구간에서 ") + guide.Action : guide.Hint);
             if (tenths >= 0) text += $" · {tenths / 10f:0.0}초";
             hud.hint.text = text;
-            cached = (key, hud.hint.GetPreferredValues(text) * scale);
-            measured[hud.hint] = cached;
+            hud.HintKey = key;
         }
-        var preferred = cached.size;
         bool progress = guide.HasProgress && !timed;
-        float width = Mathf.Min(widthLimit, Mathf.Max(preferred.x + 20f, progress ? 165f : 32f));
-        float textHeight = Mathf.Max(font * 1.25f, preferred.y);
-        float height = textHeight + (progress ? 31f : 14f);
-        hud.hint.rectTransform.sizeDelta = new Vector2(-20f, textHeight) / scale;
-        hud.hint.rectTransform.anchoredPosition = Vector2.down * (6f / scale);
+        float progressHeight = progress ? Mathf.Min(16f, size.y * .32f) : 0f;
+        float verticalPadding = Mathf.Min(6f, size.y * .12f);
+        hud.hint.rectTransform.sizeDelta = new Vector2(-20f, size.y - 2f * verticalPadding - progressHeight) / scale;
+        hud.hint.rectTransform.anchoredPosition = Vector2.down * (verticalPadding / scale);
         Show(hud.progressRow, progress);
         if (progress)
         {
@@ -102,14 +118,19 @@ public sealed class PlayerWorkHud : MonoBehaviour
             hud.fill.color = hud.percent.color = hud.progressName.color = guide.Color;
             hud.percent.SetText("{0:0}%", Mathf.Floor(value * 100f));
             hud.progressName.text = guide.ProgressName ?? "";
+            float rowWidth = size.x - 20f;
+            float nameWidth = !string.IsNullOrEmpty(guide.ProgressName) && rowWidth >= 110f ? 40f : 0f;
+            float percentWidth = Mathf.Min(34f, rowWidth * .4f);
+            Show(hud.progressName, nameWidth > 0f);
             var bar = (RectTransform)hud.fill.transform.parent;
-            float barHeight = Mathf.Clamp(vmin * .017f, 8f, 12f) / scale;
-            hud.progressRow.sizeDelta = new Vector2(-20f, 16f) / scale;
-            hud.progressRow.anchoredPosition = Vector2.up * (6f / scale);
-            bar.offsetMin = new Vector2(string.IsNullOrEmpty(guide.ProgressName) ? 0f : 42f / scale, -barHeight * .5f);
-            bar.offsetMax = new Vector2(-38f / scale, barHeight * .5f);
-            hud.percent.rectTransform.sizeDelta = new Vector2(34f, 16f) / scale;
-            hud.progressName.rectTransform.sizeDelta = new Vector2(40f, 16f) / scale;
+            float barHeight = Mathf.Min(progressHeight, Mathf.Clamp(vmin * .017f, 8f, 12f)) / scale;
+            hud.progressRow.sizeDelta = new Vector2(-20f, progressHeight) / scale;
+            hud.progressRow.anchoredPosition = Vector2.up * (verticalPadding / scale);
+            bar.offsetMin = new Vector2(nameWidth > 0f ? (nameWidth + 2f) / scale : 0f, -barHeight * .5f);
+            bar.offsetMax = new Vector2(-(percentWidth + 4f) / scale, barHeight * .5f);
+            hud.percent.fontSize = Mathf.Min(subFont, percentWidth * .4f) / scale;
+            hud.percent.rectTransform.sizeDelta = new Vector2(percentWidth, progressHeight) / scale;
+            hud.progressName.rectTransform.sizeDelta = new Vector2(nameWidth, progressHeight) / scale;
         }
 
         Vector3 projected = view.WorldToScreenPoint(actor.transform.position);
@@ -117,14 +138,12 @@ public sealed class PlayerWorkHud : MonoBehaviour
             projected = new Vector3(pane.center.x, pane.yMin + pane.height * .38f);
         float offset = Mathf.Clamp(pane.height * worldUnit * 28f / (2f * view.orthographicSize), 23f, 75f);
         if (timed) offset = Mathf.Max(offset, pane.height * worldUnit * 29f / (2f * view.orthographicSize) + 5f);
-        float inset = Mathf.Min(width * .5f + 6f, pane.width * .5f);
-        float x = Mathf.Clamp(projected.x, pane.xMin + inset, pane.xMax - inset);
-        float campaignBottom = campaign == null ? pane.yMax - 52f
-            : ScreenPoint(campaign, new Vector2(0, campaign.rect.yMin)).y - 4f;
-        float y = projected.y + offset + height * .5f;
-        if (y + height * .5f > campaignBottom) y = projected.y - offset - height * .5f;
-        y = Mathf.Clamp(y, pane.yMin + height * .5f + 4f, campaignBottom - height * .5f);
-        Place(hud.bubble, new Vector2(x, y), new Vector2(width, height));
+        Vector2 half = size * .5f;
+        float x = Mathf.Clamp(projected.x, bounds.xMin + half.x, bounds.xMax - half.x);
+        float y = projected.y + offset + half.y;
+        if (y + half.y > bounds.yMax) y = projected.y - offset - half.y;
+        y = Mathf.Clamp(y, bounds.yMin + half.y, bounds.yMax - half.y);
+        Place(hud.bubble, new Vector2(x, y), size);
     }
 
     private void UpdateRoyalWatch(SeatHud hud, NetworkPlayer viewer, NetworkPlayer sharedViewer, CartStations game, Camera view)

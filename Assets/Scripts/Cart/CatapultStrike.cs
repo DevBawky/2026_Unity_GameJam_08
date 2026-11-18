@@ -23,18 +23,22 @@ public sealed class CatapultStrike : NetworkBehaviour
     [SerializeField] private ObstacleSpawner obstacles;
 
     [Header("Visual (프리팹 자식)")]
-    [SerializeField] private SpriteRenderer warning;
     [SerializeField] private SpriteRenderer shadow;
     [SerializeField] private SpriteRenderer rock;
     [SerializeField] private SpriteRenderer shockwave;
+    [SerializeField] private Sprite approachShadow;
     [SerializeField] private Sprite dangerShadow;
     [SerializeField] private SpriteSequence impactSequence;
     private Sprite safeShadow;
 
     public bool TryGetWarning(out Vector3 point)
     {
-        point = warning.transform.position;
-        return warning.enabled && warning.gameObject.activeInHierarchy;
+        point = default;
+        if (!IsSpawned || !CartStations.Running) return false;
+        CatapultState strike = State.Value;
+        if (!strike.Active || strike.Landed || !IsLocked(strike)) return false;
+        point = new Vector3(GroundX(strike), strike.Y, 0f);
+        return HitsCart(point.x, point.y);
     }
 
     [Header("Timing (초)")]
@@ -86,22 +90,18 @@ public sealed class CatapultStrike : NetworkBehaviour
     private float stageTime;
     private float nextLaunch;
     private bool shown = true;
-    private Color warningColor;
     private Color shadowColor;
     private Color rockColor;
     private Color shockwaveColor;
     // 스프라이트마다 원래 크기가 달라서(원 1, 링 2.5) 지름을 줄 때 이 값을 곱해 맞춘다.
-    private float warningUnit;
     private float shockwaveUnit;
 
     private void Awake()
     {
-        warningColor = warning.color;
         shadowColor = shadow.color;
         safeShadow = shadow.sprite;
         rockColor = rock.color;
         shockwaveColor = shockwave.color;
-        warningUnit = Unit(warning);
         shockwaveUnit = Unit(shockwave);
         SetVisible(false);
     }
@@ -231,6 +231,8 @@ public sealed class CatapultStrike : NetworkBehaviour
     private float GroundX(CatapultState s) => HullRight + 3f * stations.WorldPerWebUnit
         + (stations.Cart.Distance - s.TargetDistance) * CatapultUnitsPerMeter * stations.WorldPerWebUnit;
 
+    private bool IsLocked(CatapultState strike) => strike.Time + .0001f >= lockTime;
+
     private void Draw(CatapultState s)
     {
         SetVisible(s.Active);
@@ -245,27 +247,18 @@ public sealed class CatapultStrike : NetworkBehaviour
         }
 
         float approach = Mathf.Clamp01(s.Time / lockTime);
-        bool locked = s.Time + .0001f >= lockTime;
+        bool locked = IsLocked(s);
         // 고정 전에는 뒤(오른쪽)에서 다가오며 커진다.
         var ground = new Vector3(GroundX(s) + approachDistance * Mathf.Pow(1f - approach, 2f), s.Y, 0f);
-        float grow = Mathf.Lerp(0.63f, 1f, approach);
 
         shadow.enabled = true;
         shadow.transform.position = ground;
-        shadow.color = WithAlpha(shadowColor, Mathf.Lerp(0.28f, 0.52f, approach));
-
         bool danger = locked && HitsCart(ground.x, ground.y);
-        if (dangerShadow != null) shadow.sprite = danger ? dangerShadow : safeShadow;
-        SetShadowScale(marker, grow);
-        warning.enabled = danger;
-        if (danger)
-        {
-            warning.transform.position = ground;
-            warning.transform.localScale = dangerShadow != null
-                ? Vector3.one * (marker.y * warningUnit * .48f)
-                : marker * warningUnit;
-            warning.color = WithAlpha(warningColor, warningColor.a * (0.68f + 0.22f * Mathf.Sin(s.Time * 10f)));
-        }
+        shadow.sprite = !locked && approachShadow != null ? approachShadow : danger && dangerShadow != null ? dangerShadow : safeShadow;
+        shadow.color = locked ? Color.white : WithAlpha(shadowColor, Mathf.Lerp(.28f, .52f, approach));
+        marker.x *= Mathf.Lerp(22f / 35f, 1f, approach);
+        marker.y *= Mathf.Lerp(13f / 24f, 1f, approach);
+        SetShadowScale(marker, 1f);
 
         // 착탄 dropTime초 전부터 화면 밖 위에서 가속하며 떨어진다.
         float fall = 1f - (flightTime - s.Time) / dropTime;
@@ -283,7 +276,6 @@ public sealed class CatapultStrike : NetworkBehaviour
         float age = Mathf.Clamp01((s.Time - flightTime) / lingerTime);
         float fade = Mathf.Min(1f, (1f - age) * 3f);
         var ground = new Vector3(s.LandX, s.Y, 0f);
-        warning.enabled = false;
         if (impactSequence != null)
         {
             shadow.enabled = rock.enabled = false;
@@ -332,7 +324,6 @@ public sealed class CatapultStrike : NetworkBehaviour
     {
         if (shown == visible) return;
         shown = visible;
-        warning.gameObject.SetActive(visible);
         shadow.gameObject.SetActive(visible);
         rock.gameObject.SetActive(visible);
         shockwave.gameObject.SetActive(visible);
