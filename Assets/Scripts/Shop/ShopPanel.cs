@@ -24,6 +24,7 @@ public sealed class ShopPanel : MonoBehaviour
         {
             int index = i;
             slots[i].Button.onClick.AddListener(() => Select(index));
+            slots[i].HeartButton.onClick.AddListener(() => NetworkPlayer.LocalPlayer?.SendShopHeart(index));
         }
     }
 
@@ -41,6 +42,7 @@ public sealed class ShopPanel : MonoBehaviour
         // 진열·AP·선택이 바뀐 프레임에만 다시 그린다.
         int key = HashCode.Combine(stations.ShopPoints, selected, stations.ShopRound.Value, LocalizationTable.Current);
         for (int i = 0; i < stations.ShopOffer.Count; i++) key = HashCode.Combine(key, stations.ShopOffer[i]);
+        for (int i = 0; i < stations.ShopHearts.Count; i++) key = HashCode.Combine(key, stations.ShopHearts[i]);
         if (key == shownKey) return;
         shownKey = key;
         Refresh();
@@ -49,13 +51,13 @@ public sealed class ShopPanel : MonoBehaviour
     private void Refresh()
     {
         apLabel.text = LocalizationTable.F("보유 {0} AP", stations.ShopPoints);
+        bool canBuy = stations.CanBuyShopItems(NetworkPlayer.LocalPlayer);
         for (int i = 0; i < slots.Length; i++)
-            slots[i].Show(ItemAt(i), i == selected);
+            slots[i].Show(ItemAt(i), i == selected, i < stations.ShopHearts.Count ? stations.ShopHearts[i] : 0, !canBuy);
 
         var item = ItemAt(selected);
         if (item == null) selected = -1;
         descriptionLabel.text = item != null ? LocalizationTable.T(item.description) : LocalizationTable.T("상품을 골라 주세요.");
-        bool canBuy = stations.CanBuyShopItems(NetworkPlayer.LocalPlayer);
         buyButton.interactable = item != null && canBuy && stations.ShopPoints >= item.price;
         buyLabel.text = LocalizationTable.T(!canBuy ? "방장만 구매" : item != null && stations.ShopPoints < item.price ? "AP 부족" : "구매");
     }

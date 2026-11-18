@@ -225,6 +225,10 @@ public sealed class NetworkPlayer : NetworkBehaviour
                 sync.InLocalSpace ? transform.localRotation : transform.rotation, transform.localScale);
     }
 
+    public void SendShopHeart(int slot) { if (Local && CartStations.Instance != null) ShopHeartRpc(slot, CartStations.Instance.ShopRound.Value); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ShopHeartRpc(int slot, int round) => CartStations.Instance?.AddShopHeart(this, slot, round);
+
     public void SendEmote(int id) { if(Local) EmoteRpc(id); }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     private void EmoteRpc(int id)

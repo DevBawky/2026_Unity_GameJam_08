@@ -41,6 +41,8 @@ public sealed partial class CartStations
     public NetworkList<int> ShopOffer = new();
     // 산 영구 상품의 카탈로그 인덱스(산 순서대로).
     public NetworkList<int> PurchasedItems = new();
+    // 칸마다 구매자 아닌 사람이 누른 하트 수. 새로 진열할 때 0으로 돌아간다.
+    public NetworkList<int> ShopHearts = new();
     // 계단 전달 선반에 올려 둔 포탄 수(0/1), 비상 바퀴 꾸러미 대기 여부, 격려 깃발이 끝나는 서버 시간.
     public NetworkVariable<int> ShelfShells = new();
     public NetworkVariable<bool> SpareKitReady = new();
@@ -83,6 +85,8 @@ public sealed partial class CartStations
     {
         if (!IsServer || shopCatalog == null) return;
         ShopOffer.Clear();
+        ShopHearts.Clear();
+        for (int slot = 0; slot < ShopSlots; slot++) ShopHearts.Add(0);
         int count = shopCatalog.items.Length;
         // 이미 산 영구 상품을 뺀 후보에서 하나씩 뽑아 겹치지 않게 한다.
         var pool = new List<int>(count);
@@ -97,6 +101,14 @@ public sealed partial class CartStations
             ShopOffer.Add(pool[pick]);
             pool.RemoveAt(pick);
         }
+    }
+
+    // 구매자가 아닌 사람이 갖고 싶은 상품에 하트를 누른다. 누를 때마다 1씩 오른다.
+    public void AddShopHeart(NetworkPlayer actor, int slot, int round)
+    {
+        if (!IsServer || !ChoosingUpgrade || round != ShopRound.Value || CanBuyShopItems(actor)) return;
+        if (slot < 0 || slot >= ShopHearts.Count || slot >= ShopOffer.Count || ShopOffer[slot] == SoldOut) return;
+        ShopHearts[slot]++;
     }
 
     public void BuyShopItem(NetworkPlayer actor, int slot)
