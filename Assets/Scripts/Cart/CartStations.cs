@@ -43,7 +43,8 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField] private Sprite cannonReady, cannonFuse;
     [SerializeField] private SpriteRenderer muzzleVisual;
     [SerializeField] private SpriteSequence muzzleFlash;
-    [SerializeField] private Sprite looseWheelSprite;
+    [Tooltip("빠져서 굴러가는 바퀴 그림 프리팹")]
+    [SerializeField] private SpriteRenderer looseWheelPrefab;
     [SerializeField] private Sprite missingWheelSprite;
     private Sprite mountedWheelSprite;
     private float muzzleFlashStart = float.NegativeInfinity;

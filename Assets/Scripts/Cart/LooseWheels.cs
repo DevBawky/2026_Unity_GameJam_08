@@ -80,18 +80,15 @@ public sealed partial class CartStations
     {
         while (wheelVisuals.Count < LooseWheels.Count)
         {
-            var src=tires[LooseWheels[wheelVisuals.Count].Mount];
-            var copy=Instantiate(src,src.transform.position,Quaternion.identity);
-            copy.transform.localScale = looseWheelSprite != null ? Vector3.one * (WorldPerWebUnit * 100f) : src.transform.lossyScale;
-            copy.color=Color.white;
-            wheelVisuals.Add(copy);
+            var view=Instantiate(looseWheelPrefab);
+            view.transform.localScale=Vector3.one*(WorldPerWebUnit*100f);
+            wheelVisuals.Add(view);
         }
         for (int i=wheelVisuals.Count-1;i>=0;i--)
         {
             if (i>=LooseWheels.Count) {Destroy(wheelVisuals[i].gameObject);wheelVisuals.RemoveAt(i);continue;}
-            var w=LooseWheels[i];var view=wheelVisuals[i];
-            view.sprite = looseWheelSprite != null ? looseWheelSprite : tires[w.Mount].sprite;
-            view.transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
+            var w=LooseWheels[i];
+            wheelVisuals[i].transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
         }
     }
     private void ClearWheelVisuals()

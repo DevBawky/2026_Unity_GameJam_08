@@ -22066,7 +22066,7 @@ MonoBehaviour:
   cannonFuse: {fileID: 21300000, guid: 72491221cd00c0e439a15806fec7ee01, type: 3}
   muzzleVisual: {fileID: 2110243681}
   muzzleFlash: {fileID: 11400000, guid: 8037ff2314e3ab74a8bd3db749641382, type: 2}
-  looseWheelSprite: {fileID: 21300000, guid: b865ff5a62a718c46a3d4a8e15ed6af4, type: 3}
+  looseWheelPrefab: {fileID: 3004029427804254496, guid: 0abc3450bbf991648a9a1a1d9deceed5, type: 3}
   missingWheelSprite: {fileID: 21300000, guid: d7b0943f5d2e2144cb21ba7cf707406c, type: 3}
   stageNumber: 1
   baseStageGoal: 1000
