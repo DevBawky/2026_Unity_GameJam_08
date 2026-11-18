@@ -20,6 +20,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
     [SerializeField] private Camera primary, secondary;
     [SerializeField] private NetworkPlayer secondPlayer;
     [SerializeField] private RectTransform campaign;
+    [SerializeField] private bool useTopAimNotice;
     [SerializeField] private SeatHud[] seats;
 
     private Canvas canvas;
@@ -45,7 +46,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
 
     private void PresentHint(SeatHud hud, NetworkPlayer actor, CartStations game, Camera view)
     {
-        if (actor == null)
+        if (actor == null || useTopAimNotice && actor.Timing.IsCannonFocus)
         {
             Show(hud.bubble, false);
             return;

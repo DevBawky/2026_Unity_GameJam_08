@@ -40,7 +40,9 @@ public sealed partial class CartStations
             foreach (var actor in gameScene.Players) fedSoon |= actor.Assigned.Value && actor.Snack.Value;
             if (!fedSoon) return StationAction.Kitchen;
         }
-        if (loaded && BotCanTake(StationAction.Cannon,bot)) return StationAction.Cannon;
+        if (HasWork(StationAction.Cannon,bot) && BotCanTake(StationAction.Cannon,bot)) return StationAction.Cannon;
+        if (HasWork(StationAction.CannonCleaning, bot) && BotCanTake(StationAction.CannonCleaning, bot))
+            return StationAction.CannonCleaning;
         if (HasWork(StationAction.Reload,bot) && BotCanTake(StationAction.Reload,bot)) return StationAction.Reload;
         if (depositedShells < 2 && shellsInPile > 0 && BotCanTake(StationAction.ShellPile,bot)) return StationAction.ShellPile;
         if (!driverNeededElsewhere && BotCanTake(StationAction.Driver,bot)) return StationAction.Driver;
@@ -77,7 +79,8 @@ public sealed partial class CartStations
                 continue;
             }
             StationAction? choice;
-            if (bot == driver) choice = StationAction.Driver;
+            if (HoldsStation(StationAction.Cannon, bot) && HasWork(CannonAction, bot)) choice = CannonAction;
+            else if (bot == driver) choice = StationAction.Driver;
             else if (CarriedChild(bot, out _)) choice = IsCarrier(Prince.Value,bot) ? StationAction.RoyalFamily : StationAction.Princess;
             else choice = BotJob(bot, driver != null);
             botJobs[slot] = choice.HasValue ? (int)choice.Value : -1;
@@ -91,7 +94,7 @@ public sealed partial class CartStations
             var area = bot.Timing.AreaFor(action);
             if (area == null) continue;
             Vector2 dest = action == StationAction.WheelRepair && detachedTire != null ?
-                (Vector2)detachedTire.transform.position + Vector2.up * NetworkPlayer.CellarOffset : (Vector2)area.position;
+                (Vector2)WheelWorkPoint + Vector2.up * NetworkPlayer.CellarOffset : (Vector2)area.position;
             if (bot.CompletedStation.Value == (int)action)
             {
                 float sign = dest.x < cartBody.bounds.center.x ? 1 : -1;
@@ -119,7 +122,7 @@ public sealed partial class CartStations
             {
                 if (Enemy.Active.Count == 0) continue;
                 Vector2 offset = ((Vector2)Enemy.Active[0].transform.position - (Vector2)cannonMuzzle.position) / WorldPerWebUnit;
-                bot.Aim.Value = new Vector2(Mathf.Clamp((offset.x-225)/107,-1,1),Mathf.Clamp(offset.y/154,-1,1));
+                bot.Aim.Value = CannonAim.CursorForOffset(offset);
                 Ignite(bot);
             }
             else if (action == StationAction.ShellDeposit) Enter(action,bot);

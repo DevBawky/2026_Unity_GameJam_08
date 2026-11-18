@@ -147,7 +147,7 @@ public sealed class StageHud : MonoBehaviour
             AppendLine("마차 내구도 위험");
 
         CartMotion cart = stations.Cart;
-        if (Mathf.Abs(cart.Lane) == 2)
+        if (Mathf.Approximately(Mathf.Abs(cart.Lane), cart.LateralLimit))
             AppendLine(cart.Lane > 0 ? "위쪽 끝 차선" : "아래쪽 끝 차선");
     }
 

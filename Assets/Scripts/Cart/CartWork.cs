@@ -30,18 +30,25 @@ public sealed partial class CartStations
                 actor.Carrying.Value = true;
                 CompleteStation(action, actor);
                 break;
+            case StationAction.CannonCleaning:
+                if (!NeedsCleaning) break;
+                if (++cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
+                break;
             case StationAction.Reload:
-                if (depositedShells <= 0 || loaded || fuseLit) break;
+                if (!CanReload) break;
                 depositedShells--;
                 loaded = true;
-                CompleteStation(action, actor);
                 actor.ShowWorkResult(true);
                 break;
             case StationAction.WheelRepair:
                 if (!wheelDetached || (wheelRepairSteps == 0 && !actor.SpareWheel.Value)) break;
                 if (wheelRepairSteps == 0) actor.SpareWheel.Value = false;
                 wheelRepairSteps++;
-                if (wheelRepairSteps == 1) SetTireAlpha(detachedTireAlpha);
+                if (wheelRepairSteps == 1)
+                {
+                    WheelMount.Value = new WheelMountVisual { SlotKey = tires.IndexOf(detachedTire) + 1, Time = NetworkManager.ServerTime.Time };
+                    SetTireAlpha(detachedTireAlpha);
+                }
                 if (wheelRepairSteps >= WheelRepairStepsNeeded)
                 {
                     CompleteStation(action, actor);
@@ -65,8 +72,9 @@ public sealed partial class CartStations
             case StationAction.ShellPile: return actor.HandsFree && shellsInPile > 0;
             case StationAction.Kitchen: return actor.HandsFree;
             case StationAction.WheelRack: return wheelDetached && wheelRepairSteps == 0 && actor.HandsFree;
-            case StationAction.Reload: return depositedShells > 0 && !loaded && !fuseLit;
-            case StationAction.Cannon: return loaded && !fuseLit;
+            case StationAction.CannonCleaning: return NeedsCleaning && actor.HandsFree;
+            case StationAction.Reload: return CanReload && actor.HandsFree;
+            case StationAction.Cannon: return loaded && !fuseLit && actor.HandsFree;
             case StationAction.ShellDeposit: return actor.Carrying.Value;
             case StationAction.WheelRepair: return wheelDetached && (wheelRepairSteps > 0 || actor.SpareWheel.Value);
             default: return true;
@@ -75,7 +83,7 @@ public sealed partial class CartStations
 
     public bool HoldsStation(StationAction action, NetworkPlayer actor)
     {
-        int index = (int)action;
+        int index = TimingArea.IsCannon(action) ? (int)StationAction.Cannon : (int)action;
         return actor != null && actor.Assigned.Value && index >= 0 && index < StationOwners.Count
             && StationOwners[index] == actor.NetworkObjectId;
     }
@@ -90,12 +98,13 @@ public sealed partial class CartStations
     public void ReserveStation(NetworkPlayer actor, int requested)
     {
         if (!IsServer || !actor.Assigned.Value) return;
+        if (requested >= 0 && TimingArea.IsCannon((StationAction)requested)) requested = (int)StationAction.Cannon;
         ReleaseStations(actor.NetworkObjectId, requested);
         if (!Running || actor.Holding.Value || requested < 0 || requested >= StationCount) return;
         var action = (StationAction)requested;
-        if (actor.CompletedStation.Value == requested || TimingArea.IsRoyal(action) || !HasWork(action, actor) || !actor.Timing.IsInActionArea(action)) return;
-        if (!actor.Bot.Value && StationOwners[requested] != NoStationOwner &&
-            !(action == StationAction.Cannon && fuseLit))
+        if (action == StationAction.Stairs || actor.CompletedStation.Value == requested || TimingArea.IsRoyal(action)
+            || !(action == StationAction.Cannon ? actor.HandsFree : HasWork(action, actor)) || !actor.Timing.IsInActionArea(action)) return;
+        if (!actor.Bot.Value && action != StationAction.Cannon && StationOwners[requested] != NoStationOwner)
         {
             foreach (var other in gameScene.Players)
                 if (other.Bot.Value && StationOwners[requested] == other.NetworkObjectId)
@@ -110,8 +119,7 @@ public sealed partial class CartStations
         for (int i = 0; i < StationOwners.Count; i++)
         {
             if (StationOwners[i] != client || i == keep) continue;
-            // A lit cannon belongs to its gunner until the shot finishes, even after departure.
-            if (i == (int)StationAction.Cannon && fuseLit) continue;
+            if (i == (int)StationAction.Cannon && postShotRemaining > 0 && Gunner.Value == client) EndPostShot();
             StationOwners[i] = NoStationOwner;
         }
     }
@@ -121,13 +129,18 @@ public sealed partial class CartStations
         for (int i = 0; i < StationOwners.Count; i++)
         {
             ulong owner = StationOwners[i];
-            if (owner == NoStationOwner || (i == (int)StationAction.Cannon && fuseLit)) continue;
+            if (owner == NoStationOwner) continue;
             bool valid = false;
             if (Running)
                 foreach (var actor in gameScene.Players)
                     if (actor.Assigned.Value && actor.NetworkObjectId == owner && !actor.Holding.Value
-                        && HasWork((StationAction)i, actor) && actor.Timing.IsInActionArea((StationAction)i)) { valid = true; break; }
-            if (!valid) StationOwners[i] = NoStationOwner;
+                        && (i == (int)StationAction.Cannon ? actor.HandsFree : HasWork((StationAction)i, actor))
+                        && actor.Timing.IsInActionArea((StationAction)i)) { valid = true; break; }
+            if (!valid)
+            {
+                if (i == (int)StationAction.Cannon && postShotRemaining > 0 && Gunner.Value == owner) EndPostShot();
+                StationOwners[i] = NoStationOwner;
+            }
         }
     }
 
@@ -138,10 +151,9 @@ public sealed partial class CartStations
 
     public void Fail(StationAction action, NetworkPlayer actor)
     {
-        if (!IsServer || action != StationAction.Reload || depositedShells <= 0 || loaded || fuseLit) return;
+        if (!IsServer || action != StationAction.Reload || !CanReload) return;
         depositedShells--;
         lostShells++;
-        CompleteStation(action, actor);
         actor.ShowWorkResult(false);
         Refresh();
     }

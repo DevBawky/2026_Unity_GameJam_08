@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public sealed class CrewControls : MonoBehaviour
@@ -51,6 +52,13 @@ public sealed class CrewControls : MonoBehaviour
         var stations=CartStations.Instance;
         if(keys!=null)
         {
+            var focused = EventSystem.current?.currentSelectedGameObject;
+            if (keys.backquoteKey.wasPressedThisFrame && CartStations.Running && Time.timeScale > 0f
+                && !menu.activeSelf && (testSettingsPanel == null || !testSettingsPanel.activeInHierarchy)
+                && (focused == null || (focused.GetComponentInParent<TMP_InputField>() == null
+                    && focused.GetComponentInParent<InputField>() == null))
+                && !stations.IsPostShotGunner(local))
+                local.RequestStoredShell();
             if (keys.escapeKey.wasPressedThisFrame)
             {
                 var owner = local;

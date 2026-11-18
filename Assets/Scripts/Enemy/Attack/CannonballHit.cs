@@ -44,7 +44,11 @@ public class CannonballHit : NetworkBehaviour
             float t = delta.x / length;
             float width = halfWidth * Mathf.Min(1f, (.55f + .95f * Mathf.Sin(Mathf.PI * t)) * Mathf.Sqrt(1f-t));
             if (Mathf.Abs(delta.y) <= width && victims.Add(enemy))
-                enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+            {
+                if (enemy.TryGetComponent<CavalryArtwork>(out _)) enemy.TakeDamage(damage, blast: true);
+                if (enemy.Health.Value > 0f)
+                    enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+            }
         }
     }
 

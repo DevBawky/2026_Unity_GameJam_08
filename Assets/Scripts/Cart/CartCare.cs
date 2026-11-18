@@ -84,7 +84,7 @@ public sealed partial class CartStations
             if (carrier != null && carrier.Assigned.Value)
             {
                 // The carry sprites draw the child on the left, with feet below the crew pivot.
-                return carrier.transform.position + new Vector3(-13f, -16f, 0f) * WorldPerWebUnit;
+                return carrier.transform.position + new Vector3(carrier.FacingRight.Value ? 13f : -13f, -16f, 0f) * WorldPerWebUnit;
             }
         }
 
@@ -256,9 +256,15 @@ public sealed partial class CartStations
             cannonVisual.sprite = IsFiring ? cannonFuse : cannonReady;
         if (muzzleVisual != null)
         {
-            float age = Time.time - muzzleFlashStart;
-            muzzleVisual.enabled = muzzleFlash.PlayingAt(age);
-            if (muzzleVisual.enabled) muzzleVisual.sprite = muzzleFlash.FrameAt(age);
+            var shot = LastCannonShot.Value;
+            float age = shot.Time >= 0d && IsSpawned ? (float)(NetworkManager.ServerTime.Time - shot.Time) : Time.time - muzzleFlashStart;
+            muzzleVisual.enabled = muzzleFlash != null && muzzleFlash.PlayingAt(age);
+            if (muzzleVisual.enabled)
+            {
+                muzzleVisual.sprite = muzzleFlash.FrameAt(age);
+                muzzleVisual.transform.rotation = Quaternion.Euler(0f, 0f, shot.Angle);
+                muzzleVisual.transform.position = CannonPivot.position + muzzleVisual.transform.right * CannonBarrelLength;
+            }
         }
         if (IsSpawned)
         {
@@ -279,6 +285,15 @@ public sealed partial class CartStations
         var visual=royalVisuals[index];
         visual.position=cart.transform.TransformPoint(child.Position);
         var poses = index == 0 ? princePoses : princessPoses;
+        if (poses != null && poses.Length == 4 && visual.TryGetComponent(out SpriteRenderer newSprite))
+        {
+            newSprite.enabled = child.Pose != RiderPose.Carried;
+            newSprite.sortingOrder = WorldDepth.Order(visual.position, true);
+            bool seated = child.Pose == RiderPose.Seated;
+            if (seated) visual.position += Vector3.up * (15f * WorldPerWebUnit);
+            visual.localScale = Vector3.one * (WorldPerWebUnit * 100f * (seated ? 1.42f : 1f));
+            newSprite.sprite = poses[seated ? 0 : child.Bored ? 3 : child.Crying ? 2 : 1];
+        }
         if (poses != null && poses.Length == 5 && visual.TryGetComponent(out SpriteRenderer sprite))
         {
             sprite.enabled = child.Pose != RiderPose.Carried;
@@ -292,9 +307,14 @@ public sealed partial class CartStations
                     ? royalWalks[index].FrameAt(Time.time, true)
                     : poses[4];
         }
-        var target = child.Pose == RiderPose.Carried ? seats[index] : child.Position;
-        royalAreas[index].position=cart.transform.TransformPoint(target);
+        royalAreas[index].position = RoyalInteractionPosition(child, index);
     }
+
+    internal Vector3 RoyalInteractionPosition(StationAction action) => action == StationAction.Princess
+        ? RoyalInteractionPosition(Princess.Value, 1) : RoyalInteractionPosition(Prince.Value, 0);
+
+    private Vector3 RoyalInteractionPosition(RiderState child, int index) =>
+        cart.transform.TransformPoint(child.Pose == RiderPose.Carried ? seats[index] : child.Position);
 
     public CareAction AvailableCare(StationAction action, NetworkPlayer actor)
     {
