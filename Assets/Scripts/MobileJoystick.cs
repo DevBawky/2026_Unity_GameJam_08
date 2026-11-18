@@ -4,14 +4,15 @@ using UnityEngine.EventSystems;
 // 화면 조이스틱. 누른 손가락 하나만 따라가며 Direction(-1~1)을 낸다.
 public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
-    private const float FollowWidthRatio = .2f;
+    private const float FollowRadiusRatio = .3f;
     [SerializeField] private RectTransform handle;
     [SerializeField] private GameObject visuals;
     [SerializeField, Min(1f)] private float radius = 65f;
     [SerializeField] private bool floating;
     private RectTransform area;
     private Vector2 origin;
-    private Rect followBounds;
+    private Vector2 followVertex;
+    private float followRadiusPixels;
     private Vector2 pointerOffset;
     private Vector3 restingPosition;
     private bool acceptsInput = true;
@@ -46,20 +47,21 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
         if (floating && visuals != null)
         {
             restingPosition = visuals.transform.localPosition;
-            followBounds = GetFollowBounds((RectTransform)visuals.transform, eventData.pressEventCamera);
-            origin = ClampOrigin(point);
+            ConfigureFollowSector((RectTransform)visuals.transform, eventData.pressEventCamera);
+            origin = ClampOrigin(point, eventData.pressEventCamera);
             // The wider touch area should still start at neutral when pressed outside the follow range.
             pointerOffset = point - origin;
             visuals.transform.localPosition = origin;
         }
         pointerId = eventData.pointerId;
-        UpdatePointer(point);
+        UpdatePointer(point, eventData.pressEventCamera);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (eventData.pointerId == pointerId && RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            area, eventData.position, eventData.pressEventCamera, out Vector2 point)) UpdatePointer(point);
+            area, eventData.position, eventData.pressEventCamera, out Vector2 point))
+            UpdatePointer(point, eventData.pressEventCamera);
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -69,34 +71,32 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
 
     private void OnDisable() => ResetJoystick();
 
-    private Rect GetFollowBounds(RectTransform visual, Camera eventCamera)
+    private void ConfigureFollowSector(RectTransform visual, Camera eventCamera)
     {
-        var safe = Screen.safeArea;
-        var bottomLeft = RectTransformUtility.WorldToScreenPoint(eventCamera, visual.TransformPoint(visual.rect.min));
+        followVertex = RectTransformUtility.WorldToScreenPoint(eventCamera, visual.position);
         var topRight = RectTransformUtility.WorldToScreenPoint(eventCamera, visual.TransformPoint(visual.rect.max));
-        Vector2 halfSize = (topRight - bottomLeft) * .5f;
-        Vector2 center = bottomLeft + halfSize;
-        Vector2 min = safe.min + halfSize;
-        Vector2 max = safe.max - halfSize;
-        float side = Mathf.Max(0f, Mathf.Min(Screen.width * FollowWidthRatio, Mathf.Min(max.x - min.x, max.y - min.y)));
-        var start = new Vector2(Mathf.Clamp(center.x - side * .5f, min.x, Mathf.Max(min.x, max.x - side)),
-            Mathf.Clamp(center.y - side * .5f, min.y, Mathf.Max(min.y, max.y - side)));
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(area, start, eventCamera, out Vector2 localMin);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(area, start + Vector2.one * side, eventCamera, out Vector2 localMax);
-        return Rect.MinMaxRect(localMin.x, localMin.y, localMax.x, localMax.y);
+        Vector2 room = Screen.safeArea.max - topRight;
+        followRadiusPixels = Mathf.Max(0f, Mathf.Min(Screen.width * FollowRadiusRatio, Mathf.Min(room.x, room.y)));
     }
 
-    private Vector2 ClampOrigin(Vector2 point) => new(Mathf.Clamp(point.x, followBounds.xMin, followBounds.xMax),
-        Mathf.Clamp(point.y, followBounds.yMin, followBounds.yMax));
+    private Vector2 ClampOrigin(Vector2 point, Camera eventCamera)
+    {
+        // The two straight edges extend right and up from the resting position.
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, area.TransformPoint(point));
+        Vector2 displacement = Vector2.Max(screenPoint - followVertex, Vector2.zero);
+        Vector2 clamped = followVertex + Vector2.ClampMagnitude(displacement, followRadiusPixels);
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(area, clamped, eventCamera, out Vector2 local)
+            ? local : origin;
+    }
 
-    private void UpdatePointer(Vector2 point)
+    private void UpdatePointer(Vector2 point, Camera eventCamera)
     {
         point -= pointerOffset;
         Vector2 offset = Vector2.ClampMagnitude(point - origin, radius);
         if (floating && visuals != null)
         {
             // The handle moves first. The base follows the part of the drag beyond its radius.
-            origin = ClampOrigin(point - offset);
+            origin = ClampOrigin(point - offset, eventCamera);
             visuals.transform.localPosition = origin;
             offset = Vector2.ClampMagnitude(point - origin, radius);
         }
