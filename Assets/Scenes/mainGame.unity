@@ -250,7 +250,7 @@ GameObject:
   m_Component:
   - component: {fileID: 15981615}
   m_Layer: 0
-  m_Name: "\uD3EC\uD0C4 \uB354\uBBF8"
+  m_Name: Text | Shell Pile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1058,7 +1058,7 @@ GameObject:
   - component: {fileID: 220724398}
   - component: {fileID: 220724397}
   m_Layer: 0
-  m_Name: "\uD300 \uC694\uCCAD"
+  m_Name: Panel | Team Request
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3456,7 +3456,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1178191531}
     m_Modifications:
     - target: {fileID: 2225171475905570352, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_InScenePlaced
@@ -3476,7 +3476,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5003719082922170478, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_Name
-      value: CatapultStrike
+      value: Hazard | Catapult
       objectReference: {fileID: 0}
     - target: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3496,15 +3496,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3542,6 +3542,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4122958ed800ed44592a21a9c7d478a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatapultStrike
+--- !u!4 &485083625 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6100263745687983838, guid: 56fa48fb00de97d408917287c22032f0, type: 3}
+  m_PrefabInstance: {fileID: 485083623}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &488002390
 GameObject:
   m_ObjectHideFlags: 0
@@ -5607,7 +5612,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9080653818569119061, guid: 41e948467d11901448551fc28ee0267d, type: 3}
       propertyPath: m_Name
-      value: ObstacleSpawner
+      value: Spawner | Obstacle
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6284,7 +6289,7 @@ GameObject:
   - component: {fileID: 677422302}
   - component: {fileID: 677422301}
   m_Layer: 0
-  m_Name: Multiplayer | Spawn Points
+  m_Name: Group | Spawn Points
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6320,7 +6325,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 677422300}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6329,7 +6334,7 @@ Transform:
   - {fileID: 899086002}
   - {fileID: 1319177621}
   - {fileID: 1132903112}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1178191531}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &684744227
 GameObject:
@@ -8396,7 +8401,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1021542903}
   m_Layer: 0
-  m_Name: "\uC218\uB9AC Tire 4"
+  m_Name: Area | WheelRepair 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8433,7 +8438,7 @@ GameObject:
   - component: {fileID: 1025296260}
   - component: {fileID: 1025296261}
   m_Layer: 0
-  m_Name: Deposited Cannonball
+  m_Name: Sprite | Deposited Cannonball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8641,7 +8646,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1033624706}
   m_Layer: 0
-  m_Name: "\uC218\uB9AC Tire 2"
+  m_Name: Area | WheelRepair 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9025,11 +9030,11 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1805796791}
     m_Modifications:
     - target: {fileID: 6711531422009029711, guid: 438f84e36027d0c4eb9c4708f95c00fe, type: 3}
       propertyPath: m_Name
-      value: Canvas Emote UI
+      value: Canvas | Emote UI
       objectReference: {fileID: 0}
     - target: {fileID: 8818197901489003441, guid: 438f84e36027d0c4eb9c4708f95c00fe, type: 3}
       propertyPath: m_Pivot.x
@@ -9116,6 +9121,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 438f84e36027d0c4eb9c4708f95c00fe, type: 3}
+--- !u!224 &1089795195 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8818197901489003441, guid: 438f84e36027d0c4eb9c4708f95c00fe, type: 3}
+  m_PrefabInstance: {fileID: 1089795194}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1118984004 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 614598879809100134, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
@@ -9919,7 +9929,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1175109978}
   m_Layer: 0
-  m_Name: "\uC218\uB9AC Tire 1"
+  m_Name: Area | WheelRepair 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9980,6 +9990,8 @@ Transform:
   - {fileID: 1509529286}
   - {fileID: 641157251}
   - {fileID: 162087381}
+  - {fileID: 485083625}
+  - {fileID: 677422302}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1183457993
@@ -11316,7 +11328,7 @@ GameObject:
   - component: {fileID: 1279328009}
   - component: {fileID: 1279328008}
   m_Layer: 0
-  m_Name: Cart Impact
+  m_Name: FX | Cart Impact
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16660,7 +16672,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1294879926}
   m_Layer: 0
-  m_Name: "\uD300 \uC54C\uB9BC"
+  m_Name: Panel | Team Notice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17100,7 +17112,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1341998584}
   m_Layer: 0
-  m_Name: "\uC791\uC5C5 \uC548\uB0B4"
+  m_Name: Panel | Work Hint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17216,7 +17228,7 @@ GameObject:
   - component: {fileID: 1371732980}
   - component: {fileID: 1371732983}
   m_Layer: 0
-  m_Name: Main Camera
+  m_Name: Camera | P1
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18603,7 +18615,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7527424174696306366, guid: d0f5365756891b240b4b506a15cdab6c, type: 3}
       propertyPath: m_Name
-      value: "\uB9C8\uBD80 \uC870\uC900\uC810"
+      value: Sprite | Driver Cursor
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19107,7 +19119,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: cfd775a5579d56d4fb10c34851cc60b5, type: 2}
     - target: {fileID: 5159971967379551664, guid: c9417af2ff653d84db676cbe5d49222b, type: 3}
       propertyPath: m_Name
-      value: EnemySpawner
+      value: Spawner | Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 6009370823130690198, guid: c9417af2ff653d84db676cbe5d49222b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -19628,7 +19640,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1548787606}
   m_Layer: 0
-  m_Name: "\uC218\uB9AC Tire 3"
+  m_Name: Area | WheelRepair 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20448,7 +20460,7 @@ GameObject:
   - component: {fileID: 1663222633}
   - component: {fileID: 1663222632}
   m_Layer: 0
-  m_Name: Test settings
+  m_Name: Panel | Test Settings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21210,9 +21222,17 @@ PrefabInstance:
       propertyPath: m_LocalScale.x
       value: 1.2084593
       objectReference: {fileID: 0}
+    - target: {fileID: 4897686705390097380, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
+      propertyPath: m_Name
+      value: Point | Cannon Muzzle
+      objectReference: {fileID: 0}
     - target: {fileID: 5257094086597495536, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_Name
       value: Cart
+      objectReference: {fileID: 0}
+    - target: {fileID: 6057440074349489771, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
+      propertyPath: m_Name
+      value: Group | Visual
       objectReference: {fileID: 0}
     - target: {fileID: 6436978367310874294, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: steeringArea.x
@@ -21222,6 +21242,10 @@ PrefabInstance:
       propertyPath: steeringArea.width
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 7666804736341342733, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
+      propertyPath: m_Name
+      value: Group | Visual Interactable
+      objectReference: {fileID: 0}
     - target: {fileID: 7825500536871029672, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_LocalScale.x
       value: 2
@@ -21229,6 +21253,10 @@ PrefabInstance:
     - target: {fileID: 7825500536871029672, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_LocalPosition.x
       value: -7.5407853
+      objectReference: {fileID: 0}
+    - target: {fileID: 8209739891434976403, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
+      propertyPath: m_Name
+      value: Group | Cellar
       objectReference: {fileID: 0}
     - target: {fileID: 8298320765252825254, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_LocalPosition.y
@@ -21357,6 +21385,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartStations
   ShowTopMostFoldoutHeaderGroup: 1
+  LastShockTime:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: -100
   waveSpawner: {fileID: 1509529287}
   royalVisuals:
   - {fileID: 2140083648}
@@ -21469,6 +21502,10 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  Votes:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   RightWounds:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -21479,10 +21516,6 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  Votes:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
   driverCursor: {fileID: 1471225550}
   horseWhipZones:
   - {fileID: 1591619154}
@@ -22070,8 +22103,6 @@ MonoBehaviour:
   missingWheelSprite: {fileID: 21300000, guid: d7b0943f5d2e2144cb21ba7cf707406c, type: 3}
   stageNumber: 1
   baseStageGoal: 1000
-  failOnPassengerEscape: 0
-  escapingAnxiety: 0.75
   collisionAnxietyIncrease: 0.06
   shellHoldDamageThreshold: 6
   recoilAnxietyIncrease: 0.04
@@ -22199,11 +22230,6 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  LastShockTime:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -100
   LooseWheels:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -22375,6 +22401,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1790826649}
   m_CullTransparentMesh: 1
+--- !u!1 &1805796790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1805796791}
+  m_Layer: 0
+  m_Name: '##----UI----##'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1805796791
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1805796790}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2048916891}
+  - {fileID: 1089795195}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1832337361
 GameObject:
   m_ObjectHideFlags: 0
@@ -23533,7 +23592,7 @@ GameObject:
   - component: {fileID: 1966281377}
   - component: {fileID: 1966281376}
   m_Layer: 0
-  m_Name: "\uD14C\uC2A4\uD2B8 \uC124\uC815"
+  m_Name: Button | Test Settings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23677,7 +23736,7 @@ GameObject:
   - component: {fileID: 2019375355}
   - component: {fileID: 2019375354}
   m_Layer: 0
-  m_Name: "\uBC29 \uB098\uAC00\uAE30"
+  m_Name: Button | Leave Room
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -24525,7 +24584,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1805796791}
     m_Modifications:
     - target: {fileID: 8027501048530445, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_fontAsset
@@ -24535,6 +24594,14 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 4219438431964211326, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
+    - target: {fileID: 506783705439391810, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Panel | Campaign
+      objectReference: {fileID: 0}
+    - target: {fileID: 614598879809100134, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289650943
+      objectReference: {fileID: 0}
     - target: {fileID: 901135193417553171, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0.89
@@ -24555,6 +24622,10 @@ PrefabInstance:
       propertyPath: timing
       value: 
       objectReference: {fileID: 913201231}
+    - target: {fileID: 1021149034318028499, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Button | Exit
+      objectReference: {fileID: 0}
     - target: {fileID: 1344152031921345415, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -24623,6 +24694,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 4219438431964211326, guid: d17938f0bca3a1641971201e28661fd3, type: 2}
+    - target: {fileID: 2566461968485973377, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Bar | Distance
+      objectReference: {fileID: 0}
     - target: {fileID: 2578197077355331347, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -24646,6 +24721,14 @@ PrefabInstance:
     - target: {fileID: 2638856144486769853, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: floating
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3466520919969321586, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4293916671
+      objectReference: {fileID: 0}
+    - target: {fileID: 3484600927086067296, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Panel | Upgrade Selection
       objectReference: {fileID: 0}
     - target: {fileID: 3677846172479849039, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_fontAsset
@@ -24671,9 +24754,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 80
       objectReference: {fileID: 0}
+    - target: {fileID: 4496225285100329087, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Image | Catapult Alert P1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709713308587326958, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Group | Work Guides
+      objectReference: {fileID: 0}
     - target: {fileID: 4814866109069987400, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4953733549791050727, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Button | Emote
       objectReference: {fileID: 0}
     - target: {fileID: 5377133801473061482, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: primary
@@ -24687,6 +24782,14 @@ PrefabInstance:
       propertyPath: secondPlayer
       value: 
       objectReference: {fileID: 599134222}
+    - target: {fileID: 5463165467500195195, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Button | Restart
+      objectReference: {fileID: 0}
+    - target: {fileID: 5569867607772681269, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Image | Catapult Alert P2
+      objectReference: {fileID: 0}
     - target: {fileID: 5724209835808703400, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -24706,6 +24809,10 @@ PrefabInstance:
     - target: {fileID: 5971353236856534590, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 6357194752343415599, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Text | Station Status
       objectReference: {fileID: 0}
     - target: {fileID: 6464433917156039686, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_text
@@ -24739,6 +24846,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: -5778059889476999453, guid: 428d8fb5c9e730145bc2f6dcd50d4dc9, type: 2}
+    - target: {fileID: 6768855114142713668, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Text | Campaign Summary
+      objectReference: {fileID: 0}
     - target: {fileID: 7018096242200163728, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_Name
       value: Canvas | HUD
@@ -24766,6 +24877,10 @@ PrefabInstance:
     - target: {fileID: 7442260715666994747, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_SizeDelta.y
       value: 460
+      objectReference: {fileID: 0}
+    - target: {fileID: 7561749510816378353, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Bar | Tire Repair
       objectReference: {fileID: 0}
     - target: {fileID: 7561749510816378353, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_IsActive
@@ -24871,6 +24986,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 80
       objectReference: {fileID: 0}
+    - target: {fileID: 8088483044984438478, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Joystick | Move
+      objectReference: {fileID: 0}
     - target: {fileID: 8599670346711660745, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -24950,6 +25069,14 @@ PrefabInstance:
     - target: {fileID: 8599670346711660745, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8759167049367798903, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Group | Mobile Interactions
+      objectReference: {fileID: 0}
+    - target: {fileID: 8817443523763724115, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
+      propertyPath: m_Name
+      value: Bar | Cart Health
       objectReference: {fileID: 0}
     - target: {fileID: 9103347248307453291, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -25098,6 +25225,22 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2919701206174167429, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | WheelRack
+      objectReference: {fileID: 0}
+    - target: {fileID: 3145671450888821725, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | ShellPile
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715669901632687764, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Reload
+      objectReference: {fileID: 0}
+    - target: {fileID: 3777364077164688692, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | ShellDeposit
+      objectReference: {fileID: 0}
     - target: {fileID: 4095894912055479468, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -25178,22 +25321,54 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4132244187752349562, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Driver
+      objectReference: {fileID: 0}
+    - target: {fileID: 4333444403604114087, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Stairs Down
+      objectReference: {fileID: 0}
+    - target: {fileID: 4423333607290898081, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Kitchen
+      objectReference: {fileID: 0}
     - target: {fileID: 4811151976326442934, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: profile
       value: 
       objectReference: {fileID: 11400000, guid: da278104e63d72643861a780c57c129b, type: 2}
+    - target: {fileID: 5526620518815750737, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Princess
+      objectReference: {fileID: 0}
     - target: {fileID: 5539759327095408107, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6112022490218517002, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Cannon
       objectReference: {fileID: 0}
     - target: {fileID: 6212022342887672199, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Canvas | InGame
       objectReference: {fileID: 0}
+    - target: {fileID: 6692721860881595095, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | WheelRepair
+      objectReference: {fileID: 0}
+    - target: {fileID: 6837296573667854295, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | RoyalFamily
+      objectReference: {fileID: 0}
     - target: {fileID: 7864598587208255849, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: profile
       value: 
       objectReference: {fileID: 11400000, guid: 4cbd64f715be87b49931d29d041fab6e, type: 2}
+    - target: {fileID: 9061259304506196323, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_Name
+      value: Area | Stairs Up
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -25225,7 +25400,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1178191531}
   - {fileID: 1559609979}
-  - {fileID: 5381469913316116323}
-  - {fileID: 677422302}
-  - {fileID: 1089795194}
-  - {fileID: 485083623}
+  - {fileID: 1805796791}
