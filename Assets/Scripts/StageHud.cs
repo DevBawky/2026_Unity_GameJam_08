@@ -11,7 +11,7 @@ public sealed class StageHud : MonoBehaviour
     private static readonly string[] StageNames = { "THORNWOOD PASS", "ASHEN ROAD", "TWILIGHT BORDER" };
 
     [SerializeField] private CartStations stations;
-    [SerializeField] private PlayerTiming player;
+    private PlayerTiming player;
     [SerializeField] private TMP_Text stationStatus;
     [SerializeField] private GameObject restartButton;
     [SerializeField] private GameObject upgradePanel;

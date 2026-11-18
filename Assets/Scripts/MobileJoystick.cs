@@ -1,8 +1,7 @@
-using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-// 화면 조이스틱. 누른 손가락 하나만 따라가며 Direction(-1~1)을 내고, 손을 떼면 Released를 알린다.
+// 화면 조이스틱. 누른 손가락 하나만 따라가며 Direction(-1~1)을 낸다.
 // 에디터에서는 F6으로 모바일 모드를 켜고 끌 수 있다.
 public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
@@ -22,7 +21,6 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     }
     private int pointerId = int.MinValue;
 
-    public event Action Released;
     public Vector2 Direction { get; private set; }
     public bool IsMobileMode { get; private set; }
     public void SetRadius(float value) => radius = value;
@@ -71,7 +69,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (eventData.pointerId == pointerId) { ResetJoystick(); Released?.Invoke(); }
+        if (eventData.pointerId == pointerId) ResetJoystick();
     }
 
     private void OnDisable() => ResetJoystick();

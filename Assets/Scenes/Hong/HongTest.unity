@@ -21035,6 +21035,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartStations
   ShowTopMostFoldoutHeaderGroup: 1
+  LastShockTime:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: -100
   waveSpawner: {fileID: 1509529287}
   royalVisuals:
   - {fileID: 2140083648}
@@ -21135,6 +21140,10 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  Votes:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   RightWounds:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -21145,10 +21154,6 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  Votes:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
   driverCursor: {fileID: 1030496143}
   horseWhipZones:
   - {fileID: 1591619154}
@@ -21732,12 +21737,10 @@ MonoBehaviour:
   cannonFuse: {fileID: 0}
   muzzleVisual: {fileID: 0}
   muzzleFlash: {fileID: 0}
-  looseWheelSprite: {fileID: 0}
+  looseWheelPrefab: {fileID: 3004029427804254496, guid: 0abc3450bbf991648a9a1a1d9deceed5, type: 3}
   missingWheelSprite: {fileID: 0}
   stageNumber: 1
   baseStageGoal: 1000
-  failOnPassengerEscape: 1
-  escapingAnxiety: 0.75
   collisionAnxietyIncrease: 0.06
   shellHoldDamageThreshold: 6
   recoilAnxietyIncrease: 0.04
@@ -21865,11 +21868,6 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  LastShockTime:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -100
   LooseWheels:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0

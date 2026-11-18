@@ -2,7 +2,6 @@ using UnityEngine;
 
 // 메인 카메라 연출. 평소엔 시작 위치·크기를 유지하고,
 // 스테이션에 들어가거나 포탄을 들면 플레이어 쪽으로 확대, 대포 조준 중엔 조준선과 마차 오른쪽이 보이게 맞춘다.
-// 충격(Shake)은 흔들림과 함께 타이밍 핀 흔들림 세기(ShakeAmount)로도 쓰인다.
 [RequireComponent(typeof(Camera))]
 public sealed class CameraRig : MonoBehaviour
 {
@@ -40,7 +39,6 @@ public sealed class CameraRig : MonoBehaviour
 
     public Vector3 ShakeOffset => lastShakeOffset;
     public bool CameraActive => cam != null && cam.enabled;
-    public float ShakeAmount => shakeRemaining > 0f ? shakeRemaining / shakeDuration : 0f;
 
     private void Awake()
     {
@@ -79,7 +77,7 @@ public sealed class CameraRig : MonoBehaviour
         carrying &= zooming;
         bool driving = player.HasStationAccess && player.IsAt(StationAction.Driver);
         float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f) * (driving ? DriverViewRange : 1f);
-        bool inCellar = player.GetComponent<NetworkPlayer>().InCellar;
+        bool inCellar = follow.InCellar;
         Vector3 destination = inCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z)
             : new Vector3(convoyCenterX - (ConvoyScreenX - 0.5f) * 2f * targetSize * cam.aspect, homePosition.y, homePosition.z);
         if (matchWebFraming)

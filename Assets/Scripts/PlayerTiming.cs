@@ -58,7 +58,6 @@ public sealed class PlayerTiming : MonoBehaviour
     public bool CanInteract => actor.Holding.Value
         || (NearbyRoyal is StationAction royal && stations.CanUse(royal, actor))
         || (inside && currentSettings != null && stations.CanUse(currentSettings.Action,actor));
-    public bool IsInside => inside;
     public bool HasStationAccess => inside && currentSettings != null && stations.HoldsStation(currentSettings.Action,actor);
     public bool IsAt(StationAction action) => inside && currentSettings != null && currentSettings.Action == action;
     public StationAction? CurrentAction => inside && currentSettings != null ? currentSettings.Action : null;

@@ -13,8 +13,56 @@ public struct LooseWheelState : INetworkSerializeByMemcpy, IEquatable<LooseWheel
         && Angle.Equals(other.Angle) && Mount == other.Mount;
 }
 
+// 바퀴 빠짐·수리와, 빠져서 굴러가는 바퀴(적을 튕겨냄).
 public sealed partial class CartStations
 {
+    private void SetTireAlpha(float alpha)
+    {
+        if (detachedTire == null) return;
+        Color color = detachedTire.color;
+        if (missingWheelSprite != null)
+        {
+            bool missing = alpha <= 0f;
+            detachedTire.sprite = missing ? missingWheelSprite : mountedWheelSprite;
+            alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
+        }
+        color.a = alpha;
+        detachedTire.color = color;
+    }
+
+    public bool IsInsideDetachedTire(Vector3 position)
+    {
+        if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
+        Vector3 local = detachedTire.transform.InverseTransformPoint(position);
+        Bounds spriteBounds = detachedTire.sprite.bounds;
+        return local.x >= spriteBounds.min.x && local.x <= spriteBounds.max.x
+            && local.y >= spriteBounds.min.y && local.y <= spriteBounds.max.y;
+    }
+
+    private void DetachWheel()
+    {
+        if (wheelDetached || tires.Count == 0) return;
+        detachedTire = tires[(int)(Sample()*tires.Count)];
+        detachedTireAlpha = detachedTire.color.a;
+        LaunchWheel(detachedTire);
+        wheelDetached = true;
+        wheelEverDetached = true;
+        wheelRepairSteps = 0;
+        SetTireAlpha(0f);
+        cart.SpeedMultiplier = wheelLossSpeedMultiplier;
+        AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f);
+        Publish();
+    }
+
+    private void RepairWheel()
+    {
+        SetTireAlpha(detachedTireAlpha);
+        detachedTire = null;
+        wheelDetached = false;
+        cart.SpeedMultiplier = 1f;
+        Publish();
+    }
+
     public NetworkList<LooseWheelState> LooseWheels = new();
     private readonly List<SpriteRenderer> wheelVisuals = new();
 
@@ -33,18 +81,15 @@ public sealed partial class CartStations
     {
         while (wheelVisuals.Count < LooseWheels.Count)
         {
-            var src=tires[LooseWheels[wheelVisuals.Count].Mount];
-            var copy=Instantiate(src,src.transform.position,Quaternion.identity);
-            copy.transform.localScale = looseWheelSprite != null ? Vector3.one * (WorldPerWebUnit * 100f) : src.transform.lossyScale;
-            copy.color=Color.white;
-            wheelVisuals.Add(copy);
+            var view=Instantiate(looseWheelPrefab);
+            view.transform.localScale=Vector3.one*(WorldPerWebUnit*100f);
+            wheelVisuals.Add(view);
         }
         for (int i=wheelVisuals.Count-1;i>=0;i--)
         {
             if (i>=LooseWheels.Count) {Destroy(wheelVisuals[i].gameObject);wheelVisuals.RemoveAt(i);continue;}
-            var w=LooseWheels[i];var view=wheelVisuals[i];
-            view.sprite = looseWheelSprite != null ? looseWheelSprite : tires[w.Mount].sprite;
-            view.transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
+            var w=LooseWheels[i];
+            wheelVisuals[i].transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
         }
     }
     private void ClearWheelVisuals()

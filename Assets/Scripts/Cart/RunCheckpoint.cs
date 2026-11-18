@@ -62,7 +62,7 @@ public sealed partial class CartStations
     public RunCheckpoint Capture(string[] keys)
     {
         Publish();
-        var enemies=FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        var enemies=Enemy.Active.ToArray();
         double now = NetworkManager.ServerTime.Time;
         float shock = WorkShakeAt(now, out float phase);
         return new RunCheckpoint {

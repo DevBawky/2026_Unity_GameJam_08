@@ -2,14 +2,6 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 
-public enum HorseMood : byte { Normal, Angry, Runaway, Tired }
-[Serializable]
-public struct HorseCondition : INetworkSerializeByMemcpy
-{
-    public HorseMood Mood;
-    public int Remaining;
-}
-
 public enum CareAction { None, Soothe, Reseat, Feed, PickUp, Attend }
 public enum RiderPose : byte { Seated, Wandering, Fallen, Carried }
 
@@ -32,8 +24,6 @@ public struct RiderState : INetworkSerializeByMemcpy
 public sealed partial class CartStations
 {
     private const float Step = 1f / 30f;
-    internal const int RunawayHits = 8, RunawayTicks = 36;
-    internal const float RunawaySteeringSpeed = 176f;
     private double accumulator;
     [SerializeField] private EnemySpawner waveSpawner;
     public Bounds PursuerEntryBounds => waveSpawner.SpawnBounds;
@@ -47,18 +37,7 @@ public sealed partial class CartStations
     public NetworkVariable<int> Waves = new(), Affection = new(), ShopRound = new(), Report = new(-1);
     public NetworkVariable<int> Barrel = new(), Stabilizer = new(), Porter = new(), Hull = new();
     public NetworkVariable<int> PrincePoints = new(), PrincessPoints = new();
-    public NetworkVariable<int> RightWounds = new(), LeftWounds = new();
     public NetworkList<int> Votes = new();
-    [SerializeField] private SpriteRenderer driverCursor;
-    [SerializeField] private HorseWhipZone[] horseWhipZones;
-    public NetworkVariable<HorseCondition> LeftHorse = new(), RightHorse = new();
-    private readonly int[] nextHorseRest = new int[2];
-    private HorseWhipZone WhipZone(Vector2 aim) => horseWhipZones[aim.y >= 0f ? 1 : 0];
-    public bool AimsAtSteeringZone(Vector2 aim)
-    {
-        var zone = WhipZone(aim);
-        return zone.SteersAt(HorseWhipZone.CursorUV(aim));
-    }
     private int careTicks;
     private readonly int[] seated = new int[2], crying = new int[2], ignoreWanderUntil = new int[2];
     private readonly double[] attentionSum = new double[2];
@@ -72,14 +51,6 @@ public sealed partial class CartStations
     public float SpeedLimit => StageGoal / (stageNumber == 1 ? 52.5f : stageNumber == 2 ? 59.5f : 63.5f);
     public bool ChapterComplete => flow == StageFlow.Complete;
     public float Capacity => MaxDurability + CartRules.Active.hull.amount * Hull.Value;
-    public NetworkVariable<Unity.Collections.FixedString512Bytes> KingReply = new();
-    public const int Departure = 8;
-    public bool CanBuy(int choice)
-    {
-        var card = CartRules.Active.GetCard(choice);
-        return Affection.Value >= card.price && (choice == 0 ? durability < Capacity || wheelDetached : CardLevel(choice) < card.maxLevel);
-    }
-    public static readonly string[] Reports = { "왕족 돌봄", "마차 피해", "포탄 보급" };
     public bool IsCarryingChild(NetworkPlayer p) => IsCarrier(Prince.Value,p) || IsCarrier(Princess.Value,p);
     private static bool IsCarrier(RiderState child, NetworkPlayer p) => child.Pose == RiderPose.Carried && child.CarrierSlot == p.Slot.Value;
 
@@ -378,155 +349,4 @@ public sealed partial class CartStations
         child.Soothing=0;
         field.Value=child;
     }
-
-    private void ShowDriverAim()
-    {
-        if (driverCursor == null) return;
-        if (IsSpawned && Running && horseWhipZones != null && horseWhipZones.Length == 2)
-        {
-            foreach (var player in gameScene.Players)
-            {
-                if (!HoldsStation(StationAction.Driver, player)) continue;
-                Vector2 aim = player.DriverAim.Value;
-                var zone = WhipZone(aim);
-                Vector2 uv = HorseWhipZone.CursorUV(aim);
-                driverCursor.transform.position = zone.transform.TransformPoint(zone.LocalPoint(uv));
-                driverCursor.color = zone.SteersAt(uv) ? new Color(.62f, 1f, .66f) : new Color(1f, .46f, .42f);
-                if (!driverCursor.gameObject.activeSelf) driverCursor.gameObject.SetActive(true);
-                return;
-            }
-        }
-        if (driverCursor.gameObject.activeSelf) driverCursor.gameObject.SetActive(false);
-    }
-    public int RunawayDirection => RightHorse.Value.Mood == HorseMood.Runaway ? 1 :
-        LeftHorse.Value.Mood == HorseMood.Runaway ? -1 : 0;
-    public float FatigueRate => (LeftHorse.Value.Mood == HorseMood.Tired ? .78f : 1f) *
-        (RightHorse.Value.Mood == HorseMood.Tired ? .78f : 1f);
-
-    private void AdvanceHorse(bool right)
-    {
-        int side = right ? 1 : 0;
-        var status = right ? RightHorse : LeftHorse;
-        var wounds = right ? RightWounds : LeftWounds;
-        var state = status.Value;
-        if (state.Mood == HorseMood.Normal)
-        {
-            if (wounds.Value > 0 && careTicks >= nextHorseRest[side])
-            {
-                wounds.Value--;
-                nextHorseRest[side] = careTicks + 24;
-            }
-            return;
-        }
-        state.Remaining--;
-        if (state.Mood == HorseMood.Tired) wounds.Value = Mathf.CeilToInt(RunawayHits * state.Remaining / 120f);
-        if (state.Remaining <= 0)
-        {
-            if (state.Mood == HorseMood.Runaway)
-            {
-                cart.ResetHorsePace(right);
-                state = new HorseCondition { Mood = HorseMood.Tired, Remaining = 120 };
-            }
-            else state = default;
-        }
-        status.Value = state;
-    }
-
-    internal void StrikeHorse(Vector2 aim)
-    {
-        if (!IsServer || !float.IsFinite(aim.x) || !float.IsFinite(aim.y) ||
-            Mathf.Abs(aim.x) > 1f || Mathf.Abs(aim.y) > 1f) return;
-        bool right = aim.y >= 0f;
-        var state = right ? RightHorse : LeftHorse;
-        if (state.Value.Mood != HorseMood.Normal) return;
-        if (AimsAtSteeringZone(aim)) WhipRump(right);
-        else
-        {
-            cart.ResetHorsePace(right);
-            state.Value = new HorseCondition { Mood = HorseMood.Angry, Remaining = 90 };
-        }
-    }
-
-    private void WhipRump(bool right)
-    {
-        var wounds = right ? RightWounds : LeftWounds;
-        var state = right ? RightHorse : LeftHorse;
-        if (state.Value.Mood != HorseMood.Normal || (wounds.Value == RunawayHits - 1 && RunawayDirection != 0)) return;
-        nextHorseRest[right ? 1 : 0] = careTicks + 90;
-        wounds.Value++;
-        cart.BoostHorse(right);
-        if (wounds.Value == RunawayHits)
-            state.Value = new HorseCondition { Mood = HorseMood.Runaway, Remaining = RunawayTicks };
-    }
-
-    private void FinishCare()
-    {
-        PrincePoints.Value=CarePoints(0);
-        PrincessPoints.Value=CarePoints(1);
-        Affection.Value+=PrincePoints.Value+PrincessPoints.Value;
-        ShopRound.Value++;
-    }
-    private int CarePoints(int i)
-    {
-        int n=Mathf.Max(1,careTicks);
-        int seatPercent = Mathf.FloorToInt(100f * seated[i] / n + .5f);
-        int attention = Mathf.FloorToInt((float)(attentionSum[i] / n) + .5f);
-        int score = Mathf.FloorToInt((seatPercent * .6f + attention * .4f) / 10f + .5f);
-        int penalty=crying[i]==0 ? 0 : Mathf.Clamp(Mathf.FloorToInt(4f*crying[i]/n + .5f),1,4);
-        return Mathf.Max(0,score-penalty);
-    }
-    public void ReceiveChoice(NetworkPlayer actor,int choice,int round,int stage)
-    {
-        if(!IsServer || !ChoosingUpgrade || !actor.Assigned.Value || round!=ShopRound.Value || stage!=stageNumber) return;
-        if(Report.Value<0)
-        {
-            if(actor.OwnerClientId!=NetworkManager.ServerClientId || choice<0 || choice>=Reports.Length) return;
-            string reply = choice switch {
-                0 => crying[0]+crying[1]>0 ? "울었던 시간만큼 감점했다. 놀라면 안고 걷고, 배고프면 간식을 주어라." :
-                    PrincePoints.Value+PrincessPoints.Value>=14 ? "두 아이를 잘 돌봤군." : "자리를 비운 아이는 자기 좌석으로 데려다주어라.",
-                1 => $"내구도 {Mathf.RoundToInt(durability)}/{Capacity:0}. " + (wheelDetached ? "빠진 바퀴를 수리할지 상의해라." : "수리와 보강 중 무엇이 필요한지 상의해라."),
-                _ => $"남은 포탄 {shellsInPile+depositedShells+(loaded?1:0)}발, 분실 {lostShells}발. 장전수와 운반 담당이 연락하게 해라."
-            };
-            KingReply.Value = new Unity.Collections.FixedString512Bytes(reply);
-            Report.Value=choice; ShopRound.Value++; return;
-        }
-        if(choice<0 || choice>Departure) return;
-        if(choice<Departure && !CanBuy(choice)) return;
-        Votes[actor.Slot.Value]=choice;
-        TallyChoices();
-    }
-
-    public void TallyChoices()
-    {
-        if(!IsServer || !ChoosingUpgrade || Report.Value<0) return;
-        int humans=0;
-        foreach(var p in gameScene.Players) if(p.Assigned.Value && !p.Bot.Value) humans++;
-        if(humans==0) return;
-        for(int choice=0;choice<=Departure;choice++)
-        {
-            int votes=0;
-            foreach(var p in gameScene.Players) if(p.Assigned.Value && !p.Bot.Value && Votes[p.Slot.Value]==choice) votes++;
-            if(votes<=humans/2) continue;
-            ShopRound.Value++;
-            for(int i=0;i<Votes.Count;i++) Votes[i]=-1;
-            if(choice==Departure) { NextStage(); return; }
-            var card = CartRules.Active.GetCard(choice);
-            Affection.Value -= card.price;
-            switch(choice)
-            {
-                case 0: durability=Mathf.Min(Capacity,durability+card.amount); if(wheelDetached) RepairWheel(); break;
-                case 1: precisionLevel++; break;
-                case 2: Stabilizer.Value++; break;
-                case 3: Barrel.Value++; break;
-                case 4: Hull.Value++; durability+=card.amount; break;
-                case 5: Porter.Value++; break;
-                case 6: cushionAxleLevel++; break;
-                case 7: horseLevel++; break;
-            }
-            Publish();
-            return;
-        }
-    }
-    private int CardLevel(int i) => i switch {1=>precisionLevel,2=>Stabilizer.Value,3=>Barrel.Value,4=>Hull.Value,5=>Porter.Value,6=>cushionAxleLevel,7=>horseLevel,_=>0};
 }
-
