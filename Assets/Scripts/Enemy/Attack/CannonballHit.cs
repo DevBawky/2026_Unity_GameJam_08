@@ -15,7 +15,12 @@ public class CannonballHit : NetworkBehaviour
     private Collider2D shape;
     private void Awake() => shape = GetComponent<Collider2D>();
 
-    public int[] HitIndices(Enemy[] enemies) => System.Array.FindAll(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Range(0,enemies.Length)),i=>victims.Contains(enemies[i]));
+    public int[] HitIndices(Enemy[] enemies)
+    {
+        var indices = new List<int>();
+        for (int i = 0; i < enemies.Length; i++) if (victims.Contains(enemies[i])) indices.Add(i);
+        return indices.ToArray();
+    }
     public void RestoreHits(int[] indices,Enemy[] enemies)
     {
         if (indices==null) return;

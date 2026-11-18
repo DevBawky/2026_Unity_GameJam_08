@@ -72,9 +72,7 @@ public sealed class PlayerMovement : MonoBehaviour
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Cannon) && !actor.Carrying.Value) return;
 
         input = Vector2.ClampMagnitude(input, 1f);
-        float speed = moveSpeed * stations.WalkRate * (actor.Carrying.Value ? carrySpeedMultiplier * stations.PorterMultiplier :
-            actor.SpareWheel.Value ? 110f / 165f : stations.IsCarryingChild(actor) ? 125f / 165f : 1f);
-        Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (speed * Time.deltaTime);
+        Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (WalkSpeed * Time.deltaTime);
         if (!actor.InCellar && input.sqrMagnitude > 0f)
         {
             desired = SlidePastChild(desired, stations.Prince.Value);
@@ -99,7 +97,7 @@ public sealed class PlayerMovement : MonoBehaviour
 
     public Vector2 StairPoint(bool cellar) => (cellar ? cellarStairs : deckStairs).position;
 
-    private float BotWalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
+    private float WalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
         ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 110f/165f
         : stations.IsCarryingChild(actor) ? 125f/165f : 1f);
 
@@ -108,7 +106,7 @@ public sealed class PlayerMovement : MonoBehaviour
         Vector2 pos = transform.position;
         float distance = actor.InCellar ? Vector2.Distance(pos, StairPoint(true)) +
             Vector2.Distance(StairPoint(false), point) : Vector2.Distance(pos, point);
-        return distance / Mathf.Max(.01f, BotWalkSpeed);
+        return distance / Mathf.Max(.01f, WalkSpeed);
     }
 
     public void WalkBot(Vector2 destination, bool cellar, float dt)
@@ -116,7 +114,7 @@ public sealed class PlayerMovement : MonoBehaviour
         bool cross = actor.InCellar != cellar;
         if (cross) destination = StairPoint(actor.InCellar);
         Vector2 pos = transform.position;
-        var next = Vector2.MoveTowards(pos, destination, BotWalkSpeed * dt);
+        var next = Vector2.MoveTowards(pos, destination, WalkSpeed * dt);
         transform.position = ClampToCartBody(new Vector3(next.x, next.y, transform.position.z));
         if (cross && Vector2.Distance(next, destination) < .08f)
             transform.position += (Vector3)(StairPoint(cellar) - StairPoint(!cellar));
