@@ -127,7 +127,9 @@ public sealed class CrewControls : MonoBehaviour
             case StationAction.Driver:
                 var right=p.DriverAim.Value.y>=0;
                 int marks=right?game.RightWounds.Value:game.LeftWounds.Value;
-                return $"{(right?"오른말 ↑":"왼말 ↓")} · {CartStations.HorseZone(p.DriverAim.Value.x)} · 말 {game.Cart.LeftStep}:{game.Cart.RightStep} · 목표 Y {game.Cart.Lane} · 상처 {marks} {(marks>=8?"화남":marks>=5?"피로":"")}   {exit} 이탈";
+                string controls = p.SecondLocal ? "방향키 조준 · Enter 채찍질"
+                    : Application.isMobilePlatform ? "스틱 조준 · 행동 버튼 채찍질" : "WASD 조준 · Space 채찍질";
+                return $"{controls} · {(right?"오른말 ↑":"왼말 ↓")} · {(game.AimsAtSteeringZone(p.DriverAim.Value)?"조향":"감속")} · 말 {game.Cart.LeftStep}:{game.Cart.RightStep} · 목표 Y {game.Cart.Lane} · 상처 {marks} {(marks>=8?"화남":marks>=5?"피로":"")}   {exit} 이탈";
         }
         if(p.SpareWheel.Value) return "예비 바퀴 · 고장 난 모서리로";
         if(p.Snack.Value) return "간식 · 갑판 좌석으로";

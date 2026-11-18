@@ -31,9 +31,14 @@ public sealed partial class CartStations
     public NetworkVariable<int> RightWounds = new(), LeftWounds = new();
     public NetworkList<int> Votes = new();
     [SerializeField] private SpriteRenderer driverCursor;
-    [SerializeField] private SpriteRenderer[] horseTargets;
+    [SerializeField] private HorseWhipZone[] horseWhipZones;
     private readonly int[] nextHorseRest = new int[2];
-    public static string HorseZone(float x) => x>0.15f ? "엉덩이" : x>-.25f ? "허리" : x>-.65f ? "목" : "머리";
+    private HorseWhipZone WhipZone(Vector2 aim) => horseWhipZones[aim.y >= 0f ? 1 : 0];
+    public bool AimsAtSteeringZone(Vector2 aim)
+    {
+        var zone = WhipZone(aim);
+        return zone.SteersAt(HorseWhipZone.CursorUV(aim));
+    }
     private int careTicks;
     private readonly int[] seated = new int[2], crying = new int[2], ignoreWanderUntil = new int[2];
     private readonly double[] attentionSum = new double[2];
@@ -213,29 +218,34 @@ public sealed partial class CartStations
 
     private void ShowDriverAim()
     {
-        if(driverCursor==null || horseTargets==null || horseTargets.Length!=2) return;
+        if(driverCursor==null || horseWhipZones==null || horseWhipZones.Length!=2) return;
         driverCursor.enabled=false;
         foreach(var p in gameScene.Players)
         {
             if(!HoldsStation(StationAction.Driver,p)) continue;
-            var aim=p.DriverAim.Value;var bounds=horseTargets[aim.y>=0?1:0].bounds;
-            driverCursor.transform.position=bounds.center + Vector3.right*(bounds.extents.x*aim.x);
-            driverCursor.color=aim.x>0.15f ? Color.green : Color.red;driverCursor.enabled=true;break;
+            Vector2 aim = p.DriverAim.Value;
+            var zone = WhipZone(aim);
+            Vector2 uv = HorseWhipZone.CursorUV(aim);
+            driverCursor.transform.position = zone.transform.TransformPoint(zone.LocalPoint(uv));
+            driverCursor.color = zone.SteersAt(uv) ? Color.green : Color.red;
+            driverCursor.enabled = true;
+            break;
         }
     }
     private void RestHorse(int i,NetworkVariable<int> wounds)
     {
         if(wounds.Value>0 && careTicks>=nextHorseRest[i]) { wounds.Value--;nextHorseRest[i]=careTicks+24; }
     }
-    private void StrikeHorse(NetworkPlayer actor)
+    internal void StrikeHorse(Vector2 aim)
     {
-        Vector2 aim=actor.DriverAim.Value;
+        if (!IsServer || !float.IsFinite(aim.x) || !float.IsFinite(aim.y)
+            || Mathf.Abs(aim.x) > 1f || Mathf.Abs(aim.y) > 1f) return;
         bool right=aim.y>=0;
         var wounds=right?RightWounds:LeftWounds;
         int side=right?1:0;
         if(wounds.Value>=8 && careTicks<nextHorseRest[side]) return;
         nextHorseRest[side]=careTicks+90;
-        if(aim.x<=0.15f) {cart.SpookHorse(right);return;}
+        if(!AimsAtSteeringZone(aim)) {cart.SpookHorse(right);return;}
         wounds.Value=Mathf.Min(8,wounds.Value+1);
         if(wounds.Value==8) cart.SpookHorse(right);
         else cart.BoostHorse(right,wounds.Value>=5?1f/3f:1f);

@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 // 플레이어 이동. 모바일 조이스틱·WASD·게임패드. 마차 몸체 밖으로는 못 나간다.
 // 포탄을 들면 느려지고, 버티기 판정 중엔 멈춘다.
+[DefaultExecutionOrder(-10)]
 public sealed class PlayerMovement : MonoBehaviour
 {
     [SerializeField, Min(0f)] private float moveSpeed = 4f;
@@ -14,6 +15,23 @@ public sealed class PlayerMovement : MonoBehaviour
     private NetworkPlayer actor;
     [SerializeField] private RectTransform deckStairs, cellarStairs;
     private bool stairLocked;
+    [Tooltip("마부석 조준점이 1초에 지나가는 말 스프라이트의 폭")]
+    [SerializeField, Min(.1f)] private float whipAimSpeed = 1.2f;
+    private Vector2 approachInput;
+
+    private void AimWhip(Vector2 input)
+    {
+        // A key held while walking onto the seat should not sweep the cursor across the horse.
+        if (approachInput.sqrMagnitude > .01f && input.sqrMagnitude > .01f
+            && Vector2.Dot(approachInput.normalized, input.normalized) > .98f) return;
+        approachInput = Vector2.zero;
+        if (input.sqrMagnitude <= .01f) return;
+        var delta = Vector2.ClampMagnitude(input, 1f) * (whipAimSpeed * Time.deltaTime);
+        var aim = actor.DriverAim.Value;
+        aim.x = Mathf.Clamp(aim.x + delta.x * 2f, -1f, 1f);
+        aim.y = Mathf.Clamp(aim.y + delta.y, -1f, 1f);
+        actor.DriverAim.Value = aim;
+    }
 
     private void CrossStairs()
     {
@@ -45,12 +63,13 @@ public sealed class PlayerMovement : MonoBehaviour
         if (actor.SecondLocal) input = keyboard == null ? Vector2.zero : new Vector2((keyboard.rightArrowKey.isPressed?1:0)-(keyboard.leftArrowKey.isPressed?1:0),(keyboard.upArrowKey.isPressed?1:0)-(keyboard.downArrowKey.isPressed?1:0));
         else if (Gamepad.current != null) input += Gamepad.current.leftStick.ReadValue();
         // At the two aiming seats the movement stick controls aim. Other work areas are walk-through.
-        if (actor.Timing.HasStationAccess && !actor.Carrying.Value
-            && (actor.Timing.IsAt(StationAction.Driver) || actor.Timing.IsAt(StationAction.Cannon)))
+        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
         {
-            if (actor.Timing.IsAt(StationAction.Driver) && input.sqrMagnitude>0.01f) actor.DriverAim.Value = Vector2.ClampMagnitude(input,1f);
+            AimWhip(input);
             return;
         }
+        approachInput = input;
+        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Cannon) && !actor.Carrying.Value) return;
 
         input = Vector2.ClampMagnitude(input, 1f);
         float speed = moveSpeed * (actor.Carrying.Value ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 2f/3f : 1f);

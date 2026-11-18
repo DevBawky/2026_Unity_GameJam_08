@@ -592,21 +592,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f31e38b8ee1453345a041730694f0eda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartMotion
+  ShowTopMostFoldoutHeaderGroup: 1
   cruiseSpeed: 13
-  speedPerHorseLevel: 3
   maxBoostAboveBase: 5
   acceleration: 3
   speedGain: 1
-  turnRate: 0.75
-  maxHeading: 25
+  laneChangeSpeed: 5
   scrollScale: 5
-  lateralScale: 0.25
-  lateralLimit: 3.1
   leftHorseVisual: {fileID: 7825500536871029672}
   rightHorseVisual: {fileID: 4813575460516833142}
   horseAdvancePerSpeed: 0.18
   maximumHorseAdvance: 1
   horseVisualMoveSpeed: 3
+  State:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      Speed: 0
+      Target: 0
+      Distance: 0
+      Left: 0
+      Right: 0
+      Multiplier: 0
+      Scroll: 0
+      LeftStep: 0
+      RightStep: 0
+      Lane: 0
 --- !u!1 &5632297902906293167
 GameObject:
   m_ObjectHideFlags: 0
@@ -873,6 +885,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7825500536871029672}
   - component: {fileID: 3483006109710518226}
+  - component: {fileID: 2003875592693472745}
+  - component: {fileID: 2462071105443871447}
   m_Layer: 0
   m_Name: Horse_Left
   m_TagString: Untagged
@@ -954,6 +968,83 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &2003875592693472745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7797628013951264954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ec60e2bdd0b2ca4e93b31860c7f1c48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HorseWhipZone
+  steeringArea:
+    serializedVersion: 2
+    x: 0.575
+    y: 0
+    width: 0.425
+    height: 1
+--- !u!331 &2462071105443871447
+SpriteMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7797628013951264954}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 15d0c3709176029428a0da2f8cecf0b5, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 0}
+  m_MaskAlphaCutoff: 0.2
+  m_FrontSortingLayerID: 0
+  m_BackSortingLayerID: 0
+  m_FrontSortingLayer: 0
+  m_BackSortingLayer: 0
+  m_FrontSortingOrder: 46
+  m_BackSortingOrder: 44
+  m_IsCustomRangeActive: 1
+  m_SpriteSortPoint: 0
+  m_MaskSource: 1
 --- !u!1 &8266064653196965535
 GameObject:
   m_ObjectHideFlags: 0
@@ -1055,6 +1146,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4813575460516833142}
   - component: {fileID: 4889551776352056055}
+  - component: {fileID: 6436978367310874294}
+  - component: {fileID: 1181250127404341417}
   m_Layer: 0
   m_Name: Horse_Right
   m_TagString: Untagged
@@ -1136,6 +1229,83 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &6436978367310874294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8948659552171787232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ec60e2bdd0b2ca4e93b31860c7f1c48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HorseWhipZone
+  steeringArea:
+    serializedVersion: 2
+    x: 0.575
+    y: 0
+    width: 0.425
+    height: 1
+--- !u!331 &1181250127404341417
+SpriteMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8948659552171787232}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 15d0c3709176029428a0da2f8cecf0b5, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 0}
+  m_MaskAlphaCutoff: 0.2
+  m_FrontSortingLayerID: 0
+  m_BackSortingLayerID: 0
+  m_FrontSortingLayer: 0
+  m_BackSortingLayer: 0
+  m_FrontSortingOrder: 46
+  m_BackSortingOrder: 44
+  m_IsCustomRangeActive: 1
+  m_SpriteSortPoint: 0
+  m_MaskSource: 1
 --- !u!1 &9074468057016280640
 GameObject:
   m_ObjectHideFlags: 0

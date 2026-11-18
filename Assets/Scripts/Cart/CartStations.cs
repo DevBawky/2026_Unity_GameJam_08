@@ -209,7 +209,6 @@ public sealed partial class CartStations : NetworkBehaviour
         if (!IsServer) return;
         switch (action)
         {
-            case StationAction.Driver: StrikeHorse(actor); break;
             case StationAction.RoyalFamily: CareFor(Prince, actor, 0); break;
             case StationAction.Princess: CareFor(Princess, actor, 1); break;
             case StationAction.WheelRack:

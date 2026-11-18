@@ -22,7 +22,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<FixedString64Bytes> Nickname = new();
     public NetworkVariable<bool> Carrying = new(false);
     public NetworkVariable<bool> CookingHeld = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public NetworkVariable<Vector2> DriverAim = new(Vector2.right, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<Vector2> DriverAim = new(new Vector2(.6f, .5f), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<int> Emote = new();
     public NetworkVariable<double> EmoteTime = new(-10);
     public bool SecondLocal => Local && LobbySession.LocalSeats == 2 && Slot.Value == 1;
@@ -152,10 +152,10 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (!hold) nextRequestTime = Time.unscaledTime + 0.12f;
         var stations = CartStations.Instance;
         var care = TimingArea.IsRoyal(action) ? stations.AvailableCare(action, this) : CareAction.None;
-        ActionRpc(action, success, hold, stations.StageNumber, care);
+        ActionRpc(action, success, hold, stations.StageNumber, care, DriverAim.Value);
     }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void ActionRpc(StationAction action, bool success, bool hold, int stage, CareAction care)
+    private void ActionRpc(StationAction action, bool success, bool hold, int stage, CareAction care, Vector2 whipAim)
     {
         var stations = CartStations.Instance;
         if (!Assigned.Value || stations == null || stage != stations.StageNumber || !CartStations.Running) return;
@@ -167,6 +167,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         lastActionTime = now;
         if (action == StationAction.ShellDeposit) stations.Enter(action,this);
         else if (action == StationAction.Cannon) stations.Ignite(this);
+        else if (success && action == StationAction.Driver) stations.StrikeHorse(whipAim);
         else if (success) stations.Succeed(action,this);
         else stations.Fail(action);
     }

@@ -10,6 +10,7 @@ public struct SeatCheckpoint
     public int CompletedStationKey; // Zero also means no completed station in older saves.
     public Vector3 Position;
     public Vector2 Aim, DriverAim;
+    public bool HasWhipAim;
     public bool Shell, Wheel, Snack, Holding;
     public float HoldRemaining, Cooking;
 }
@@ -61,7 +62,7 @@ public sealed partial class CartStations
             Prince=Prince.Value, Princess=Princess.Value, PrincePoints=PrincePoints.Value, PrincessPoints=PrincessPoints.Value,
             CareTicks=careTicks, RandomState=randomState, Seated=seated, Crying=crying, Grace=ignoreWanderUntil, HorseRest=nextHorseRest, Attention=attentionSum,
             Votes=Enumerable.Range(0,4).Select(i=>Votes[i]).ToArray(), SeatKeys=keys, Seats=gameScene.Players.Select(p=>new SeatCheckpoint {
-                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
+                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
                 Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-NetworkManager.ServerTime.Time),Cooking=p.CookProgress.Value, CompletedStationKey=p.CompletedStation.Value+1
             }).ToArray(), Enemies=enemies.Select(e=>e.Capture()).ToArray(),
             Shots=FindObjectsByType<Projectile>(FindObjectsSortMode.None).Select(p=>p.Capture(enemies)).ToArray()
@@ -88,7 +89,7 @@ public sealed partial class CartStations
             if (p.IsOwner)
             {
                 if (saved.Aim != Vector2.zero) p.Aim.Value = saved.Aim;
-                if (saved.DriverAim != Vector2.zero) p.DriverAim.Value = saved.DriverAim;
+                if (saved.HasWhipAim || saved.DriverAim != Vector2.zero) p.DriverAim.Value = saved.DriverAim;
             }
             p.transform.localPosition=saved.Position;p.Carrying.Value=saved.Shell;p.SpareWheel.Value=saved.Wheel;p.Snack.Value=saved.Snack;
             p.Holding.Value=saved.Holding;p.HoldDeadline.Value=NetworkManager.ServerTime.Time+saved.HoldRemaining;p.CookProgress.Value=saved.Cooking;
