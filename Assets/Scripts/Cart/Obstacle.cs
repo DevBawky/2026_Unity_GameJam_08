@@ -9,6 +9,7 @@ public sealed class Obstacle : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] private float slowFactor = 0.7f;
     [Tooltip("감속이 유지되는 시간(초)")]
     [SerializeField, Min(0f)] private float slowSeconds = 1f;
+    [Tooltip("마차 차선과의 충돌 판정 반폭 (웹 단위)")]
     [SerializeField, Min(0f)] private float hitHalfWidth = 31f;
 
     public float Damage => damage;

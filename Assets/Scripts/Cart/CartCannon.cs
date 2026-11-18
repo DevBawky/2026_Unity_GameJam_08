@@ -38,9 +38,11 @@ public sealed partial class CartStations
 
     private bool CanReload => !NeedsCleaning && depositedShells > 0 && !loaded && !fuseLit;
 
+    // ` 키 바로 적재: 포탄 더미에 남은 탄이 있을 때만 하나를 옮긴다.
     internal void AddStoredShell(NetworkPlayer actor, int stage)
     {
-        if (!IsServer || !Running || stage != stageNumber || !actor.Assigned.Value || actor.Bot.Value) return;
+        if (!IsServer || !Running || stage != stageNumber || !actor.Assigned.Value || actor.Bot.Value || shellsInPile <= 0) return;
+        shellsInPile--;
         depositedShells++;
         Refresh();
     }

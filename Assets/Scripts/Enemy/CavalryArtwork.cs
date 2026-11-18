@@ -13,6 +13,7 @@ public struct CavalryPose : INetworkSerializeByMemcpy, IEquatable<CavalryPose>
         && Target == other.Target && DeathKind == other.DeathKind;
 }
 
+// 기병 그림 연출: 달리기·피격·폭발 프레임, 말발굽 그림자, 창 찌르기 동작과 깊이 정렬.
 public sealed class CavalryArtwork : MonoBehaviour
 {
     internal const float RiderOffset = 40f;

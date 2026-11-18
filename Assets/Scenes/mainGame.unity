@@ -25949,6 +25949,22 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 1.0561934
       objectReference: {fileID: 0}
+    - target: {fileID: 2319278364992776372, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: crew
+      value: 
+      objectReference: {fileID: 677422301}
+    - target: {fileID: 2319278364992776372, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: rigs.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2319278364992776372, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: 'rigs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1371732983}
+    - target: {fileID: 2319278364992776372, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: 'rigs.Array.data[1]'
+      value: 
+      objectReference: {fileID: 162087382}
     - target: {fileID: 2569872708874875772, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4292801791

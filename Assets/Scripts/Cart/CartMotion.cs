@@ -37,7 +37,7 @@ public sealed class CartMotion : NetworkBehaviour
     private Vector3 rightHorseStart;
 
     public float BaseSpeed => baseSpeed;
-    public float LateralLimit => 100f * CartStations.Instance.WorldPerWebUnit;
+    public float LateralLimit => CartStations.Instance != null ? 100f * CartStations.Instance.WorldPerWebUnit : 0f;
 
     public float Speed { get; private set; }
     public float TargetSpeed { get; private set; }

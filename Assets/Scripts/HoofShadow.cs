@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// 말 스프라이트 프레임의 발굽 위치에 맞춰 그림자 위치·크기를 잡는다.
 internal static class HoofShadow
 {
     internal static void Place(SpriteRenderer shadow, SpriteRenderer horse, Vector3 hoof,

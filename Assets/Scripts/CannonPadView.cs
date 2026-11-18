@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 대포 발판 표시: 대포 상태(청소·장전·포수)에 맞춰 아이콘과 라벨을 바꾼다.
 public sealed class CannonPadView : MonoBehaviour
 {
     [SerializeField] private Image marker;

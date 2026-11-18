@@ -52,7 +52,8 @@ public sealed class CrewControls : MonoBehaviour
         var stations=CartStations.Instance;
         if(keys!=null)
         {
-            var focused = EventSystem.current?.currentSelectedGameObject;
+            var eventSystem = EventSystem.current;
+            var focused = eventSystem != null ? eventSystem.currentSelectedGameObject : null;
             if (keys.backquoteKey.wasPressedThisFrame && CartStations.Running && Time.timeScale > 0f
                 && !menu.activeSelf && (testSettingsPanel == null || !testSettingsPanel.activeInHierarchy)
                 && (focused == null || (focused.GetComponentInParent<TMP_InputField>() == null

@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 지하층 바퀴 수리 표시: 빠진 바퀴 위치에 수리 원과 라벨을 띄우고, 다른 사람이 작업 중이면 회색으로 바꾼다.
 [DefaultExecutionOrder(55)]
 public sealed class WheelRepairMarker : MonoBehaviour
 {
@@ -10,14 +11,16 @@ public sealed class WheelRepairMarker : MonoBehaviour
     [SerializeField] private TMP_Text label;
     [SerializeField] private Sprite inactiveTool, busyPad, busyLabel;
 
+    [Tooltip("로컬 플레이어 목록 (씬의 MultiplayerGameScene)")]
+    [SerializeField] private MultiplayerGameScene crew;
+    [Tooltip("라벨 크기를 맞출 카메라들 (1P·2P 화면)")]
+    [SerializeField] private CameraRig[] rigs;
+
     private Sprite availableTool, availablePad, availableLabel;
-    private MultiplayerGameScene crew;
     private (CameraRig Rig, Camera View)[] views;
 
     private void Awake()
     {
-        crew = FindFirstObjectByType<MultiplayerGameScene>();
-        var rigs = FindObjectsByType<CameraRig>(FindObjectsSortMode.None);
         views = new (CameraRig, Camera)[rigs.Length];
         for (int i = 0; i < rigs.Length; i++) views[i] = (rigs[i], rigs[i].GetComponent<Camera>());
         availablePad = pad.sprite;

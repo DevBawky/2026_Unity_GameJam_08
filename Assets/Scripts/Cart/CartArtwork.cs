@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// 마차 그림 연출: 등불·깃발 프레임, 대포 포신 크기·각도·도화선, 바퀴 회전·먼지·장착 애니메이션.
 public sealed class CartArtwork : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer frontLight, rearLight, flag;
@@ -36,7 +37,8 @@ public sealed class CartArtwork : MonoBehaviour
         Vector2 scale = BarrelScale(game.IsFiring, (float)((game.FuseDeadline.Value - now) * 30d), recoil);
         float caliber = 1f + .17f * game.Barrel.Value;
         barrel.localScale = Vector3.Scale(barrelScale, new Vector3(scale.x * caliber, scale.y * caliber, 1f));
-        var aim = game.CannonOperator?.Aim.Value ?? Vector2.zero;
+        var cannonOperator = game.CannonOperator;
+        var aim = cannonOperator != null ? cannonOperator.Aim.Value : Vector2.zero;
         var origin = game.CannonPivot.position;
         Vector2 target = CannonAim.AimPoint(aim, origin, game, now, out _, out _);
         float angle = !game.IsLoaded && recoil >= 0f && recoil < 12f ? lastShot.Angle :

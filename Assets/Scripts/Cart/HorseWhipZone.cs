@@ -34,7 +34,7 @@ public sealed class HorseWhipZone : MonoBehaviour
             HorseMood.Runaway => 2.05f,
             _ => 1f
         };
-        if (v12Walk != null && v12Walk.Length == 8)
+        if (v12Walk != null && v12Walk.Length == 8 && CartStations.Instance != null)
         {
             int frame = running ? Mathf.Max(0, Mathf.FloorToInt(time * 14f * rate) + walkOffset) % 8 : 3;
             gallopVisual.sprite = v12Walk[frame];
