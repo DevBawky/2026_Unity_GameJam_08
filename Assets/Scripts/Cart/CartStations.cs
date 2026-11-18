@@ -478,7 +478,9 @@ public sealed class CartStations : NetworkBehaviour
         if (!IsHost || flow != StageFlow.Failed) return;
         flow = StageFlow.Waiting;
         Publish();
-        if (!FindFirstObjectByType<LobbySession>().ReloadGame()) { flow = StageFlow.Failed; Publish(); }
+        // 솔로 테스트(로비 없음)에서는 재시작 불가 → Failed 유지, Play를 다시 누른다.
+        var lobby = FindFirstObjectByType<LobbySession>();
+        if (lobby == null || !lobby.ReloadGame()) { flow = StageFlow.Failed; Publish(); }
     }
 
     public override void OnDestroy()
