@@ -18,6 +18,9 @@ public sealed class CannonAim : MonoBehaviour
     [SerializeField, Min(1f)] private float lineLength = 8f;
 
     private PlayerTiming timing;
+    private NetworkPlayer actor;
+    private Vector2 sentAim=Vector2.right;
+    private float nextAimSend;
     private Vector2 direction = Vector2.right;
     private Vector2 displayedDirection = Vector2.right;
     private float impactTime;
@@ -31,6 +34,7 @@ public sealed class CannonAim : MonoBehaviour
     private void Awake()
     {
         timing = GetComponent<PlayerTiming>();
+        actor = GetComponent<NetworkPlayer>();
         if (gameCamera == null) gameCamera = Camera.main;
     }
 
@@ -43,7 +47,8 @@ public sealed class CannonAim : MonoBehaviour
 
     private void Update()
     {
-        bool aiming = timing.IsCannonFocus && muzzle != null;
+        bool active=actor!=null && actor.IsSpawned && actor.Assigned.Value;
+        bool aiming=active && CartStations.Running && (actor.Local ? timing.IsCannonFocus : (actor.TaskState.Value.Action==(int)StationAction.Cannon && CartStations.Instance.HoldsStation(StationAction.Cannon,actor)) || (CartStations.Instance.IsFiring && CartStations.Instance.Gunner.Value==actor.OwnerClientId)) && muzzle!=null;
         if (aimLine != null) aimLine.enabled = aiming;
         if (crosshair != null) crosshair.enabled = aiming;
         if (!aiming)
@@ -53,11 +58,16 @@ public sealed class CannonAim : MonoBehaviour
             return;
         }
 
-        ReadInput();
+        if (actor.Local) ReadInput();
+        else direction=actor.Aim.Value;
         float jitter = impactTime > 0f ? Random.Range(-impactDegrees, impactDegrees) * (impactTime / impactDuration) : 0f;
         displayedDirection = Quaternion.Euler(0f, 0f, jitter) * direction;
         impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
 
+        if (actor.Local && Time.unscaledTime>=nextAimSend && (sentAim-displayedDirection).sqrMagnitude>0.0001f)
+        {
+            sentAim=displayedDirection; actor.Aim.Value=displayedDirection; nextAimSend=Time.unscaledTime+1f/60f;
+        }
         Vector3 origin = muzzle.position;
         if (aimLine != null)
         {

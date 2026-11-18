@@ -10,13 +10,14 @@ public sealed class PlayerMovement : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float carrySpeedMultiplier = 0.3f;
     [SerializeField] private MobileJoystick joystick;
 
-    private CartStations stations;
+    [SerializeField] private CartStations stations;
+    private NetworkPlayer actor;
 
-    private void Awake() => stations = GetComponent<CartStations>();
+    private void Awake() => actor = GetComponent<NetworkPlayer>();
 
     private void Update()
     {
-        if (stations.IsHoldingShell) return;
+        if (actor == null || !actor.Local || !CartStations.Running || actor.Holding.Value) return;
         Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && (joystick == null || !joystick.IsMobileMode))
@@ -27,7 +28,7 @@ public sealed class PlayerMovement : MonoBehaviour
         if (Gamepad.current != null) input += Gamepad.current.leftStick.ReadValue();
 
         input = Vector2.ClampMagnitude(input, 1f);
-        float speed = moveSpeed * (stations.IsCarrying ? carrySpeedMultiplier : 1f);
+        float speed = moveSpeed * (actor.Carrying.Value ? carrySpeedMultiplier : 1f);
         Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (speed * Time.deltaTime);
         transform.position = ClampToCartBody(desired);
     }

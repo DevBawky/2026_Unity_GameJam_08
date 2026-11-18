@@ -13,9 +13,16 @@ public sealed class MobileInteractionUI : MonoBehaviour
     {
         if (timing != null && !timing.IsCannonFocus) timing.TriggerInteraction();
     }
+    public void TriggerInteraction()
+    {
+        if (NetworkPlayer.LocalPlayer!=null) NetworkPlayer.LocalPlayer.Timing.TriggerInteraction();
+    }
 
     private void Update()
     {
+        var local=NetworkPlayer.LocalPlayer;
+        if (local==null) { actionButton.SetActive(false); aimJoystick.gameObject.SetActive(false); return; }
+        timing=local.Timing;
         bool mobile = movementJoystick != null && movementJoystick.IsMobileMode;
         if (actionButton != null) actionButton.SetActive(mobile && timing != null && timing.CanInteract);
         if (aimJoystick != null)

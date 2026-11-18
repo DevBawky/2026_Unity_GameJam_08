@@ -1,4 +1,6 @@
 using UnityEngine;
+using Unity.Netcode;
+using Unity.Collections;
 using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.InputSystem;
@@ -9,7 +11,7 @@ using UnityEngine.SceneManagement;
 // 말 강화, 왕족 달래기, 포탄 운반·장전·발사, 바퀴 수리 결과를 처리하고
 // 내구도·왕족 불안·바퀴 빠짐·스테이지 완료(업그레이드 선택)·실패를 관리한다.
 // 장애물은 ObstacleSpawner, 카메라 흔들림은 CameraRig, 화면 문구·경고는 StageHud가 맡는다.
-public sealed class CartStations : MonoBehaviour
+public sealed class CartStations : NetworkBehaviour
 {
     public const float MaxDurability = 100f;
     public const int WheelRepairStepsNeeded = 2;
@@ -22,7 +24,6 @@ public sealed class CartStations : MonoBehaviour
     [SerializeField] private CartMotion cart;
     [SerializeField] private ObstacleSpawner obstacles;
     [SerializeField] private CameraRig cameraRig;
-    [SerializeField] private GameObject carriedShell;
     [SerializeField] private GameObject storedShell;
     [SerializeField] private GameObject shellPrefab;
     [SerializeField] private Transform cannonMuzzle;
@@ -70,8 +71,19 @@ public sealed class CartStations : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float precisionPerLevel = 0.027f;
 
     private readonly List<SpriteRenderer> tires = new();
-    private PlayerTiming playerTiming;
-    private CannonAim cannonAim;
+    private readonly List<float> tireAlphas = new();
+    [SerializeField] private MultiplayerGameScene gameScene;
+    public static CartStations Instance { get; private set; }
+    public NetworkVariable<CartNetworkState> State = new();
+    public NetworkVariable<FixedString64Bytes> Failure = new();
+    private bool ready;
+    private NetworkPlayer gunner;
+    public NetworkVariable<ulong> Gunner = new(ulong.MaxValue);
+    // Indexed by StationAction. Only the server grants or releases a workstation.
+    public NetworkList<ulong> StationOwners = new();
+    private const int StationCount = 8;
+    public const ulong NoStationOwner = ulong.MaxValue;
+    public static bool Running => Instance != null && Instance.IsSpawned && Instance.ready && !Instance.failed && !Instance.choosingUpgrade;
     private SpriteRenderer cartBody;
     private SpriteRenderer detachedTire;
     private float detachedTireAlpha;
@@ -79,14 +91,11 @@ public sealed class CartStations : MonoBehaviour
     private float princeAnxiety;
     private float princessAnxiety;
     private float stageStartDistance;
-    private float holdTimeRemaining;
     private bool failed;
     private bool choosingUpgrade;
     private bool wheelDetached;
     private bool wheelEverDetached;
-    private bool carrying;
     private bool loaded;
-    private bool holdingShell;
     private bool fuseLit;
     private int wheelRepairSteps;
     private int depositedShells;
@@ -118,8 +127,6 @@ public sealed class CartStations : MonoBehaviour
     public int PrecisionLevel => precisionLevel;
     public float PrecisionPerLevel => precisionPerLevel;
     public float TimingBonusDegrees => precisionLevel * 360f * precisionPerLevel;
-    public bool IsCarrying => carrying;
-    public bool IsHoldingShell => holdingShell;
     public bool IsLoaded => loaded;
     public bool IsDeposited => depositedShells > 0;
     public int DepositedShells => depositedShells;
@@ -129,18 +136,23 @@ public sealed class CartStations : MonoBehaviour
 
     private void Awake()
     {
-        cannonAim = GetComponent<CannonAim>();
-        playerTiming = GetComponent<PlayerTiming>();
+        Instance = this;
         foreach (SpriteRenderer renderer in cart.GetComponentsInChildren<SpriteRenderer>(true))
         {
             if (renderer.name == "CartBody") cartBody = renderer;
-            else if (renderer.name.StartsWith("Tire ") && renderer.sprite != null) tires.Add(renderer);
+            else if (renderer.name.StartsWith("Tire ") && renderer.sprite != null)
+            {
+                tires.Add(renderer);
+                tireAlphas.Add(renderer.color.a);
+            }
         }
         ResetStageState();
     }
 
     private void Update()
     {
+        if (!IsSpawned || !IsServer || !ready) return;
+        ReconcileStations();
         if (failed)
         {
             if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)) Restart();
@@ -164,11 +176,6 @@ public sealed class CartStations : MonoBehaviour
             FailStage("PASSENGER ESCAPED");
             return;
         }
-        if (holdingShell)
-        {
-            holdTimeRemaining -= Time.deltaTime;
-            if (holdTimeRemaining <= 0f) ResolveShellHold(false);
-        }
         Refresh();
     }
 
@@ -188,23 +195,24 @@ public sealed class CartStations : MonoBehaviour
         }
     }
 
-    public void Enter(StationAction action)
+    public void Enter(StationAction action, NetworkPlayer actor)
     {
-        if (action != StationAction.ShellDeposit || !carrying) return;
-        carrying = false;
+        if (!IsServer || action != StationAction.ShellDeposit || !actor.Carrying.Value) return;
+        actor.Carrying.Value = false;
         depositedShells++;
         Refresh();
     }
 
-    public void Succeed(StationAction action)
+    public void Succeed(StationAction action, NetworkPlayer actor)
     {
+        if (!IsServer) return;
         switch (action)
         {
             case StationAction.RightHorse: cart.BoostHorse(true); break;
             case StationAction.LeftHorse: cart.BoostHorse(false); break;
             case StationAction.RoyalFamily: CalmRoyalFamily(); break;
             case StationAction.ShellPile:
-                if (!carrying && shellsInPile > 0) { shellsInPile--; carrying = true; }
+                if (!actor.Carrying.Value && shellsInPile > 0) { shellsInPile--; actor.Carrying.Value = true; }
                 break;
             case StationAction.Reload:
                 if (depositedShells > 0 && !loaded && !fuseLit) { depositedShells--; loaded = true; }
@@ -228,22 +236,72 @@ public sealed class CartStations : MonoBehaviour
             princessAnxiety = Mathf.Clamp01(princessAnxiety - (PrincessEscaping ? royalReliefEscaping : royalRelief));
     }
 
-    public bool CanUse(StationAction action)
+    public bool CanUse(StationAction action, NetworkPlayer actor)
     {
+        if (!HoldsStation(action, actor)) return false;
         switch (action)
         {
-            case StationAction.ShellPile: return !carrying && shellsInPile > 0;
+            case StationAction.ShellPile: return !actor.Carrying.Value && shellsInPile > 0;
             case StationAction.Reload: return depositedShells > 0 && !loaded && !fuseLit;
             case StationAction.Cannon: return loaded && !fuseLit;
-            case StationAction.ShellDeposit: return carrying;
+            case StationAction.ShellDeposit: return actor.Carrying.Value;
             case StationAction.WheelRepair: return wheelDetached;
             default: return true;
         }
     }
 
+    public bool HoldsStation(StationAction action, NetworkPlayer actor)
+    {
+        int index = (int)action;
+        return actor != null && actor.Assigned.Value && index >= 0 && index < StationOwners.Count
+            && StationOwners[index] == actor.OwnerClientId;
+    }
+
+    public void ReserveStation(NetworkPlayer actor, int requested)
+    {
+        if (!IsServer || !actor.Assigned.Value) return;
+        ReleaseStations(actor.OwnerClientId, requested);
+        if (!Running || actor.Holding.Value || requested < 0 || requested >= StationCount) return;
+        var action = (StationAction)requested;
+        if (!actor.Timing.IsInActionArea(action)) return;
+        if (StationOwners[requested] == NoStationOwner) StationOwners[requested] = actor.OwnerClientId;
+    }
+
+    public void ReleaseStations(ulong client, int keep = -1)
+    {
+        if (!IsServer) return;
+        for (int i = 0; i < StationOwners.Count; i++)
+        {
+            if (StationOwners[i] != client || i == keep) continue;
+            // A lit cannon belongs to its gunner until the shot finishes, even after departure.
+            if (i == (int)StationAction.Cannon && fuseLit) continue;
+            StationOwners[i] = NoStationOwner;
+        }
+    }
+
+    private void ReconcileStations()
+    {
+        for (int i = 0; i < StationOwners.Count; i++)
+        {
+            ulong owner = StationOwners[i];
+            if (owner == NoStationOwner || (i == (int)StationAction.Cannon && fuseLit)) continue;
+            bool valid = false;
+            if (Running)
+                foreach (var actor in gameScene.Players)
+                    if (actor.Assigned.Value && actor.OwnerClientId == owner && !actor.Holding.Value
+                        && actor.Timing.IsInActionArea((StationAction)i)) { valid = true; break; }
+            if (!valid) StationOwners[i] = NoStationOwner;
+        }
+    }
+
+    private void ClearStations()
+    {
+        for (int i = 0; i < StationOwners.Count; i++) StationOwners[i] = NoStationOwner;
+    }
+
     public void Fail(StationAction action)
     {
-        if (action != StationAction.Reload || !CanUse(action)) return;
+        if (!IsServer || action != StationAction.Reload || depositedShells <= 0 || loaded || fuseLit) return;
         depositedShells--;
         lostShells++;
         Refresh();
@@ -252,46 +310,56 @@ public sealed class CartStations : MonoBehaviour
     // 큰 충격(발사 반동, 장애물·몬스터 충돌) 때 포탄을 든 플레이어에게 버티기 판정을 건다.
     public void ApplyImpact()
     {
-        if (!carrying) return;
-        holdingShell = true;
-        holdTimeRemaining = HoldDuration;
+        if (!IsServer) return;
+        foreach (var actor in gameScene.Players)
+        {
+            if (!actor.Assigned.Value || !actor.Carrying.Value) continue;
+            actor.Holding.Value = true;
+            actor.HoldDeadline.Value = NetworkManager.ServerTime.Time + HoldDuration;
+        }
     }
 
-    public void ResolveShellHold(bool success)
+    public void ResolveShellHold(NetworkPlayer actor, bool success)
     {
-        if (!holdingShell) return;
-        holdingShell = false;
-        if (!success)
-        {
-            carrying = false;
-            lostShells++;
-        }
+        if (!IsServer || !actor.Holding.Value) return;
+        actor.Holding.Value = false;
+        if (!success) { actor.Carrying.Value = false; lostShells++; }
         Refresh();
     }
 
-    public void Ignite()
+    public void Ignite(NetworkPlayer actor)
     {
-        if (loaded && !fuseLit && shellPrefab != null && cannonMuzzle != null) StartCoroutine(Fire());
+        if (!IsServer || !Running || !loaded || fuseLit || shellPrefab == null || cannonMuzzle == null) return;
+        gunner = actor;
+        Gunner.Value = actor.OwnerClientId;
+        StartCoroutine(Fire());
     }
-
     private IEnumerator Fire()
     {
         fuseLit = true;
-        yield return new WaitForSeconds(fuseDelay);
+        float remaining = fuseDelay;
+        while (remaining > 0f)
+        {
+            yield return null;
+            if (Running) remaining -= Time.deltaTime;
+        }
         loaded = false;
         fuseLit = false;
+        Gunner.Value = ulong.MaxValue;
+        StationOwners[(int)StationAction.Cannon] = NoStationOwner;
         ApplyImpact();
         AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength);
         GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position, cannonMuzzle.rotation);
+        shot.GetComponent<NetworkObject>().Spawn(true);
         if (shot.TryGetComponent(out Projectile projectile))
-            projectile.Launch(cannonAim != null ? (Vector3)cannonAim.Direction : cannonMuzzle.right, projectileSpeed);
+            projectile.Launch(gunner != null ? (Vector3)gunner.Aim.Value : cannonMuzzle.right, projectileSpeed);
         Refresh();
     }
 
     // 장애물·몬스터 공격이 마차에 닿았을 때.
     public void ReceiveCollision(float damage)
     {
-        if (failed) return;
+        if (!IsServer || !Running) return;
         durability = Mathf.Max(0f, durability - Mathf.Max(0f, damage));
         if (damage >= shellHoldDamageThreshold) ApplyImpact();
         AddImpactEffects(collisionAnxietyIncrease, impactShakeStrength);
@@ -304,7 +372,7 @@ public sealed class CartStations : MonoBehaviour
         if (failed) return;
         FailureReason = reason;
         failed = true;
-        Time.timeScale = 0f;
+        Publish();
     }
 
     private void AddImpactEffects(float anxiety, float shake)
@@ -312,8 +380,7 @@ public sealed class CartStations : MonoBehaviour
         float multiplier = Mathf.Pow(cushionImpactFactor, cushionAxleLevel);
         princeAnxiety = Mathf.Clamp01(princeAnxiety + anxiety * multiplier);
         princessAnxiety = Mathf.Clamp01(princessAnxiety + anxiety * multiplier);
-        cameraRig.Shake(shake * multiplier, shakeDuration);
-        if (cannonAim != null) cannonAim.ApplyImpact(aimJitterDegrees * multiplier, shakeDuration);
+        ImpactRpc(shake * multiplier, aimJitterDegrees * multiplier, shakeDuration);
     }
 
     private void SetTireAlpha(float alpha)
@@ -343,7 +410,7 @@ public sealed class CartStations : MonoBehaviour
         wheelRepairSteps = 0;
         SetTireAlpha(0f);
         cart.SpeedMultiplier = wheelLossSpeedMultiplier;
-        playerTiming.SetWheelRepairActive(true);
+        Publish();
     }
 
     private void RepairWheel()
@@ -352,18 +419,18 @@ public sealed class CartStations : MonoBehaviour
         detachedTire = null;
         wheelDetached = false;
         cart.SpeedMultiplier = 1f;
-        playerTiming.SetWheelRepairActive(false);
+        Publish();
     }
 
     private void BeginUpgradeSelection()
     {
         choosingUpgrade = true;
-        Time.timeScale = 0f;
+        Publish();
     }
 
     public void ChooseUpgrade(int upgrade)
     {
-        if (!choosingUpgrade || upgrade < 0 || upgrade > 2) return;
+        if (!IsHost || !choosingUpgrade || upgrade < 0 || upgrade > 2) return;
         switch (upgrade)
         {
             case 0: cushionAxleLevel++; break;
@@ -371,6 +438,9 @@ public sealed class CartStations : MonoBehaviour
             case 2: precisionLevel++; break;
         }
         StopAllCoroutines();
+        Gunner.Value = ulong.MaxValue;
+        ClearStations();
+        foreach (var actor in gameScene.Players) { actor.Carrying.Value = false; actor.Holding.Value = false; }
         if (wheelDetached) RepairWheel();
         stageNumber++;
         stageStartDistance = cart.Distance;
@@ -378,7 +448,7 @@ public sealed class CartStations : MonoBehaviour
         ResetStageState();
         obstacles.ResetForStage();
         choosingUpgrade = false;
-        Time.timeScale = 1f;
+
         Refresh();
     }
 
@@ -387,38 +457,90 @@ public sealed class CartStations : MonoBehaviour
         durability = MaxDurability;
         princeAnxiety = StartPrinceAnxiety;
         princessAnxiety = StartPrincessAnxiety;
-        carrying = false;
         depositedShells = StartDepositedShells;
         loaded = true;
         shellsInPile = StartShellsInPile;
         lostShells = 0;
         fuseLit = false;
-        holdingShell = false;
         wheelEverDetached = false;
         wheelRepairSteps = 0;
         Refresh();
     }
 
-    // 빌드 목록에 없는 테스트 씬에서도 재시작되도록 에디터에서는 경로로 다시 연다.
+    // Keep networking alive while NGO reloads the same authored scene on every peer.
     public void Restart()
     {
-        Time.timeScale = 1f;
-        Scene scene = SceneManager.GetActiveScene();
-#if UNITY_EDITOR
-        UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
-#else
-        SceneManager.LoadScene(scene.buildIndex);
-#endif
+        if (!IsHost || !failed || !ready) return;
+        ready = false;
+        Publish();
+        if (!FindFirstObjectByType<LobbySession>().ReloadGame()) { ready = true; Publish(); }
     }
 
-    private void OnDestroy()
+    public override void OnDestroy()
     {
-        if (failed || choosingUpgrade) Time.timeScale = 1f;
+        if (Instance == this) Instance = null;
+        base.OnDestroy();
     }
 
+    public void Begin()
+    {
+        if (!IsServer) return;
+        ready = true;
+        obstacles.ResetForStage();
+        Publish();
+    }
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+            for (int i = 0; i < StationCount; i++) StationOwners.Add(NoStationOwner);
+        State.OnValueChanged += Changed;
+        Failure.OnValueChanged += FailureChanged;
+        NetworkManager.NetworkTickSystem.Tick += Publish;
+        if (IsServer) Publish(); else Apply(State.Value);
+    }
+    public override void OnNetworkDespawn()
+    {
+        State.OnValueChanged -= Changed;
+        Failure.OnValueChanged -= FailureChanged;
+        NetworkManager.NetworkTickSystem.Tick -= Publish;
+    }
+    private void Changed(CartNetworkState before, CartNetworkState after) { if (!IsServer) Apply(after); }
+    private void FailureChanged(FixedString64Bytes before, FixedString64Bytes after) => FailureReason = after.ToString();
+    private void Publish()
+    {
+        if (!IsSpawned || !IsServer) return;
+        State.Value = new CartNetworkState { Ready=ready, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
+            StageStart=stageStartDistance, Stage=stageNumber, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
+            RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1,
+            Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel, Failed=failed, Upgrade=choosingUpgrade,
+            Loaded=loaded, Firing=fuseLit, Wheel=wheelDetached, EverWheel=wheelEverDetached };
+        Failure.Value = new FixedString64Bytes(FailureReason);
+    }
+    private void Apply(CartNetworkState v)
+    {
+        ready=v.Ready; durability=v.Durability; princeAnxiety=v.Prince; princessAnxiety=v.Princess;
+        stageStartDistance=v.StageStart; stageNumber=Mathf.Max(1,v.Stage); depositedShells=v.Stored; shellsInPile=v.Pile; lostShells=v.Lost;
+        wheelRepairSteps=v.RepairSteps; cushionAxleLevel=v.Cushion; horseLevel=v.Horse; precisionLevel=v.Precision;
+        failed=v.Failed; choosingUpgrade=v.Upgrade; loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
+        for (int i = 0; i < tires.Count; i++)
+        {
+            var color = tires[i].color;
+            color.a = tireAlphas[i];
+            tires[i].color = color;
+        }
+        detachedTire=v.Tire>=0 && v.Tire<tires.Count ? tires[v.Tire] : null;
+        if (detachedTire != null) SetTireAlpha(wheelRepairSteps==0 ? 0f : tireAlphas[v.Tire]);
+        Refresh();
+    }
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ImpactRpc(float shake, float aim, float duration)
+    {
+        cameraRig.Shake(shake,duration);
+        if (NetworkPlayer.LocalPlayer != null) NetworkPlayer.LocalPlayer.Cannon.ApplyImpact(aim,duration);
+    }
     private void Refresh()
     {
-        if (carriedShell != null) carriedShell.SetActive(carrying);
+        Publish();
         if (storedShell != null) storedShell.SetActive(depositedShells > 0);
         if (princeAnxietyBar != null) princeAnxietyBar.fillAmount = princeAnxiety;
         if (princessAnxietyBar != null) princessAnxietyBar.fillAmount = princessAnxiety;
