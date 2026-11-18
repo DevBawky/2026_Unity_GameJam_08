@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55f9fbbef479b0a41a65524890e76b3b, type: 3}
+  m_Name: CartRules
+  m_EditorClassIdentifier: Assembly-CSharp::CartRules
+  repair:
+    title: "\uC218\uB9AC"
+    price: 3
+    amount: 35
+    maxLevel: 3
+  precision:
+    title: "\uC815\uBC00 \uB3C4\uAD6C"
+    price: 4
+    amount: 0.027
+    maxLevel: 3
+  stabilizer:
+    title: "\uB300\uD3EC \uACE0\uC815\uB300"
+    price: 4
+    amount: 1
+    maxLevel: 3
+  barrel:
+    title: "\uB300\uAD6C\uACBD \uD3EC\uC2E0"
+    price: 6
+    amount: 0.25
+    maxLevel: 3
+  hull:
+    title: "\uAC15\uD654 \uCC28\uCCB4"
+    price: 6
+    amount: 20
+    maxLevel: 3
+  porter:
+    title: "\uC6B4\uBC18 \uC7A5\uAD6C"
+    price: 4
+    amount: 0.2
+    maxLevel: 3
+  cushion:
+    title: "\uC644\uCDA9 \uCC28\uCD95"
+    price: 5
+    amount: 0.78
+    maxLevel: 3
+  horses:
+    title: "\uAE38\uB4E4\uC778 \uAD70\uB9C8"
+    price: 5
+    amount: 3
+    maxLevel: 3
+  cookSeconds: 3
+  fuseSeconds: 2.5
+  shellHoldSeconds: 1.6

@@ -10,6 +10,15 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     [SerializeField] private GameObject visuals;
     [SerializeField, Min(1f)] private float radius = 65f;
     private RectTransform area;
+    private Vector2 origin;
+    [SerializeField] private bool floating;
+    private bool acceptsInput = true;
+    public void SetInputActive(bool active)
+    {
+        if (acceptsInput == active) return;
+        acceptsInput = active;
+        if (!active) ResetJoystick();
+    }
     private int pointerId = int.MinValue;
 
     public event Action Released;
@@ -34,12 +43,17 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     {
         IsMobileMode = enabled;
         ResetJoystick();
-        if (visuals != null) visuals.SetActive(enabled);
+        if (visuals != null) visuals.SetActive(enabled && !floating);
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (pointerId != int.MinValue) return;
+        if (!acceptsInput || !IsMobileMode || pointerId != int.MinValue) return;
+        if (floating && RectTransformUtility.ScreenPointToLocalPointInRectangle(area,eventData.position,eventData.pressEventCamera,out origin))
+        {
+            visuals.SetActive(true);
+            visuals.transform.localPosition=origin;
+        }
         pointerId = eventData.pointerId;
         UpdatePointer(eventData);
     }
@@ -59,7 +73,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private void UpdatePointer(PointerEventData eventData)
     {
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(area, eventData.position, eventData.pressEventCamera, out Vector2 point)) return;
-        Vector2 offset = Vector2.ClampMagnitude(point - area.rect.center, radius);
+        Vector2 offset = Vector2.ClampMagnitude(point - (floating ? origin : area.rect.center), radius);
         Direction = offset / radius;
         if (handle != null) handle.anchoredPosition = offset;
     }
@@ -67,6 +81,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private void ResetJoystick()
     {
         pointerId = int.MinValue;
+        if(floating && visuals != null) visuals.SetActive(false);
         Direction = Vector2.zero;
         if (handle != null) handle.anchoredPosition = Vector2.zero;
     }
