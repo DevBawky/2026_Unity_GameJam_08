@@ -13,6 +13,14 @@ public class EnemySpawner : MonoBehaviour
     private float elapsed;
     private int nextWave;
     private int stageNumber;
+    private float baseScreenRightX;
+
+    // 대포 조준 등으로 카메라가 움직이기 전, 기본 화면의 오른쪽 끝 (궁수 정지 기준)
+    private void Awake()
+    {
+        Camera cam = Camera.main;
+        baseScreenRightX = cam.transform.position.x + cam.orthographicSize * cam.aspect;
+    }
 
     private void OnEnable()
     {
@@ -55,7 +63,7 @@ public class EnemySpawner : MonoBehaviour
             {
                 var offset = new Vector3(Random.Range(-0.5f, 0.5f) * areaSize.x, Random.Range(-0.5f, 0.5f) * areaSize.y);
                 var go = Instantiate(s.unit.prefab, transform.position + offset, Quaternion.identity, transform);
-                go.GetComponent<Enemy>().Init(s.unit, wave, cartBody);
+                go.GetComponent<Enemy>().Init(s.unit, wave, cartBody, baseScreenRightX);
             }
     }
 
