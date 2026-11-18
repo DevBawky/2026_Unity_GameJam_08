@@ -35,11 +35,13 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField] private ParticleSystem impactDust;
     [SerializeField] private AudioSource impactAudio;
     [SerializeField] private AudioClip cannonSound, hitSound;
+    [SerializeField] private AudioSource music;
+    [SerializeField] private AudioClip[] stageMusic;
     [SerializeField] private CameraRig secondCamera;
     private uint impactSequence, lastPlayedImpact;
 
     private const int StartShellsInPile = 17;
-    private const int StartDepositedShells = 1;
+    private const int StartDepositedShells = 3;
     private const float ObstacleShock = .98f;
     private const float PursuerShock = 1.32f;
     private const float CatapultShock = 1.42f;
@@ -62,7 +64,6 @@ public sealed partial class CartStations : NetworkBehaviour
     [Tooltip("빠져서 굴러가는 바퀴 그림 프리팹")]
     [SerializeField] private SpriteRenderer looseWheelPrefab;
     [SerializeField] private Sprite missingWheelSprite;
-    private Sprite mountedWheelSprite;
     private float muzzleFlashStart = float.NegativeInfinity;
 
     [Header("Stage")]
@@ -88,6 +89,7 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField, Min(0)] private int cushionAxleLevel;
 
     private readonly List<SpriteRenderer> tires = new();
+    private readonly List<Sprite> tireSprites = new();
     private readonly List<float> tireAlphas = new();
     [SerializeField] private MultiplayerGameScene gameScene;
     public static CartStations Instance { get; private set; }
@@ -100,7 +102,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public NetworkVariable<ulong> Gunner = new(ulong.MaxValue);
     // Indexed by StationAction. Only the server grants or releases a workstation.
     public NetworkList<ulong> StationOwners = new();
-    private const int StationCount = (int)StationAction.Stairs;
+    private const int StationCount = (int)StationAction.CannonCleaning + 1;
     public const ulong NoStationOwner = ulong.MaxValue;
     public static bool Running => Instance != null && Instance.IsSpawned && Instance.flow == StageFlow.Running;
     private SpriteRenderer cartBody;
@@ -165,7 +167,7 @@ public sealed partial class CartStations : NetworkBehaviour
             {
                 tires.Add(renderer);
                 tireAlphas.Add(renderer.color.a);
-                if (mountedWheelSprite == null) mountedWheelSprite = renderer.sprite;
+                tireSprites.Add(renderer.sprite);
             }
         }
         ResetStageState();
@@ -173,6 +175,7 @@ public sealed partial class CartStations : NetworkBehaviour
 
     private void Update()
     {
+        UpdateMusic();
         if (!IsSpawned || !IsServer || flow == StageFlow.Waiting) return;
         if (flow == StageFlow.Complete) return;
         ReconcileStations();
@@ -192,11 +195,30 @@ public sealed partial class CartStations : NetworkBehaviour
         }
     }
 
+    private void UpdateMusic()
+    {
+        if (music == null || stageMusic == null || stageMusic.Length == 0) return;
+        if (!IsSpawned || flow is not (StageFlow.Running or StageFlow.ChoosingUpgrade))
+        {
+            if (music.isPlaying) music.Stop();
+            return;
+        }
+        AudioClip track = stageMusic[(stageNumber - 1) % stageMusic.Length];
+        if (music.clip == track && music.isPlaying) return;
+        music.clip = track;
+        music.Play();
+    }
+
     public static event System.Action<float> SimulationStep;
     private void AdvanceGame()
     {
+        foreach (var player in gameScene.Players)
+            if (player.Assigned.Value && player.Carrying.Value && !player.Holding.Value
+                && player.Timing.IsInActionArea(StationAction.ShellDeposit)) Enter(StationAction.ShellDeposit, player);
         AdvanceBots();
         cart.Advance(Step);
+        if (obstacles != null) obstacles.Advance(Step);
+        if (!Running) return;
         if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
         AdvanceFuse();
         waveSpawner.Advance(Step);
@@ -239,7 +261,6 @@ public sealed partial class CartStations : NetworkBehaviour
     private void NextStage()
     {
         StopAllCoroutines();
-        Gunner.Value = ulong.MaxValue;
         ClearStations();
         foreach (var actor in gameScene.Players)
         {
@@ -272,10 +293,17 @@ public sealed partial class CartStations : NetworkBehaviour
         if (stageNumber == 1) durability = MaxDurability;
         princeAnxiety = princessAnxiety = 0;
         depositedShells = StartDepositedShells;
-        loaded = true;
+        loaded = false;
+        cleaningTaps = 0;
         shellsInPile = StartShellsInPile;
         lostShells = 0;
         fuseLit = false;
+        if (IsSpawned && IsServer)
+        {
+            ResetGunner();
+            LastCannonShot.Value = new CannonShotVisual { Time = -1d };
+            WheelMount.Value = default;
+        }
         wheelEverDetached = wheelDetached;
         if (!wheelDetached) wheelRepairSteps = 0;
         Refresh();

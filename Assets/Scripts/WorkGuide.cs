@@ -64,7 +64,12 @@ internal readonly struct WorkGuide
                     return new WorkGuide("길게 눌러 만들기", "행동을 길게 눌러 간식을 만드세요", Sand,
                         progress: player.CookProgress.Value / CartRules.Active.cookSeconds);
                 case StationAction.WheelRack: return new WorkGuide("예비 바퀴 들기", "예비 바퀴를 드세요", Sand);
-                case StationAction.Reload: return new WorkGuide("장전", color: Green, timed: true);
+                case StationAction.CannonCleaning:
+                    return new WorkGuide("청소하기", $"포신 청소 {game.CleaningTaps}/{CartStations.CleaningTapsRequired}", Orange,
+                        progress: (float)game.CleaningTaps / CartStations.CleaningTapsRequired);
+                case StationAction.Reload:
+                    return game.IsDeposited ? new WorkGuide("장전", color: Green, timed: true)
+                        : new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
                 case StationAction.ShellPile: return new WorkGuide("포탄 들기", color: Blue, timed: true);
                 case StationAction.WheelRepair:
                     string step = game.WheelRepairSteps == 0 ? "바퀴 끼우기" : "차축 핀 고정";
@@ -73,8 +78,12 @@ internal readonly struct WorkGuide
         }
         if (player.SpareWheel.Value)
             return new WorkGuide(hint: player.InCellar ? "고장 난 바퀴의 수리 원으로 이동하세요" : "계단으로 지하층에 내려가세요", color: Sand);
-        if (timing.NearbyStation == StationAction.Reload && !game.IsDeposited && !game.IsLoaded)
-            return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
+        if (timing.NearbyStation == StationAction.Reload)
+        {
+            if (game.NeedsCleaning) return new WorkGuide("장전 대기", "포신을 먼저 청소하세요", Orange);
+            if (!game.IsDeposited && !game.IsLoaded)
+                return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
+        }
         if (timing.NearbyStation == StationAction.WheelRepair && game.WheelDetached && game.WheelRepairSteps == 0)
             return new WorkGuide(hint: "12시 방향에서 예비 바퀴를 가져오세요", color: Sand);
         return default;

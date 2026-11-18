@@ -1,12 +1,54 @@
 using Unity.Netcode;
 using UnityEngine;
 
+public struct CannonShotVisual : INetworkSerializeByMemcpy, System.IEquatable<CannonShotVisual>
+{
+    public double Time;
+    public float Angle;
+    public readonly bool Equals(CannonShotVisual other) => Time == other.Time && Angle == other.Angle;
+}
+
 // 대포 점화·도화선·발사.
 public sealed partial class CartStations
 {
+    public const int CleaningTapsRequired = 12;
+    private const int PostShotTicks = 75;
+    public const float PostShotReturnSeconds = .5f;
+    private int cleaningTaps;
+    private int postShotRemaining;
+    public int CleaningTaps => cleaningTaps;
+    public bool NeedsCleaning => !loaded && cleaningTaps < CleaningTapsRequired;
+    public NetworkVariable<double> PostShotEndsAt = new();
+    public StationAction CannonAction => NeedsCleaning ? StationAction.CannonCleaning : loaded ? StationAction.Cannon : StationAction.Reload;
+    public Transform CannonPivot => cannonMuzzle;
+    public readonly NetworkVariable<CannonShotVisual> LastCannonShot = new(new CannonShotVisual { Time = -1d });
+    public float CannonBarrelLength => 44f * WorldPerWebUnit * (1f + .17f * Barrel.Value);
+    public NetworkPlayer CannonOperator
+    {
+        get
+        {
+            foreach (var player in gameScene.Players)
+                if (HoldsStation(StationAction.Cannon, player)) return player;
+            return null;
+        }
+    }
+
+    public bool IsPostShotGunner(NetworkPlayer actor) => Running && actor != null
+        && PostShotEndsAt.Value > 0d && Gunner.Value == actor.NetworkObjectId;
+
+    private bool CanReload => !NeedsCleaning && depositedShells > 0 && !loaded && !fuseLit;
+
+    internal void AddStoredShell(NetworkPlayer actor, int stage)
+    {
+        if (!IsServer || !Running || stage != stageNumber || !actor.Assigned.Value || actor.Bot.Value) return;
+        depositedShells++;
+        Refresh();
+    }
+
     public void Ignite(NetworkPlayer actor)
     {
-        if (!IsServer || !Running || !loaded || fuseLit || shellPrefab == null || cannonMuzzle == null) return;
+        if (!IsServer || !Running || !CanUse(StationAction.Cannon, actor) || shellPrefab == null || cannonMuzzle == null) return;
+        EndPostShot();
         gunner = actor;
         Gunner.Value = actor.NetworkObjectId;
         StartFuse();
@@ -21,6 +63,7 @@ public sealed partial class CartStations
 
     private void AdvanceFuse()
     {
+        if (postShotRemaining > 0 && --postShotRemaining == 0) EndPostShot();
         if (!fuseLit) return;
         fuseRemaining -= Step;
         if (fuseRemaining > 0.00001f) return;
@@ -33,19 +76,47 @@ public sealed partial class CartStations
         seed = unchecked(seed*1664525u+1013904223u);
         float radius = Mathf.Sqrt(seed/4294967296f);
         target += Vector2.Scale(spread, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle))) * radius;
+        Vector2 direction = (target - (Vector2)cannonMuzzle.position).normalized;
+        float angleDegrees = Vector2.SignedAngle(Vector2.right, direction);
+        LastCannonShot.Value = new CannonShotVisual { Time = NetworkManager.ServerTime.Time, Angle = angleDegrees };
         loaded = false;
+        cleaningTaps = 0;
         fuseLit = false;
-        Gunner.Value = ulong.MaxValue;
-        CompleteStation(StationAction.Cannon, gunner);
-        StationOwners[(int)StationAction.Cannon] = NoStationOwner;
+        FuseDeadline.Value = 0d;
+        if (gunner != null && !gunner.Bot.Value && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(PostShotTicks);
+        else EndPostShot();
         AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength, CannonShock, .25f, cannon: true);
-        Vector2 direction = target - (Vector2)cannonMuzzle.position;
-        var rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
-        GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position, rotation);
+        var rotation = Quaternion.Euler(0f, 0f, angleDegrees);
+        GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position + (Vector3)direction * CannonBarrelLength, rotation);
         shot.GetComponent<Projectile>().SetCaliber(Barrel.Value);
         shot.GetComponent<NetworkObject>().Spawn(true);
         if (shot.TryGetComponent(out Projectile projectile))
             projectile.Launch(target, 1750f * WorldPerWebUnit);
         Refresh();
+    }
+
+    private void StartPostShot(int ticks)
+    {
+        postShotRemaining = ticks;
+        PostShotEndsAt.Value = NetworkManager.ServerTime.Time + ticks * (double)Step;
+    }
+
+    private void EndPostShot()
+    {
+        postShotRemaining = 0;
+        PostShotEndsAt.Value = 0d;
+        if (fuseLit) return;
+        gunner = null;
+        Gunner.Value = NoStationOwner;
+    }
+
+    private void ResetGunner()
+    {
+        gunner = null;
+        Gunner.Value = NoStationOwner;
+        FuseDeadline.Value = 0d;
+        PostShotEndsAt.Value = 0d;
+        fuseRemaining = 0f;
+        postShotRemaining = 0;
     }
 }

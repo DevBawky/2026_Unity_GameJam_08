@@ -50,7 +50,8 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (actor == null || !actor.Local || !CartStations.Running || actor.Holding.Value) return;
+        if (actor == null || !actor.Local || !CartStations.Running || actor.Holding.Value
+            || stations.HoldsStation(StationAction.Cannon, actor)) return;
         CrossStairs();
 
         Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
@@ -69,7 +70,6 @@ public sealed class PlayerMovement : MonoBehaviour
             return;
         }
         approachInput = input;
-        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Cannon) && !actor.Carrying.Value) return;
 
         input = Vector2.ClampMagnitude(input, 1f);
         Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (WalkSpeed * Time.deltaTime);

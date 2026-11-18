@@ -14,8 +14,22 @@ public struct LooseWheelState : INetworkSerializeByMemcpy, IEquatable<LooseWheel
 }
 
 // 바퀴 빠짐·수리와, 빠져서 굴러가는 바퀴(적을 튕겨냄).
+[Serializable]
+public struct WheelMountVisual : INetworkSerializeByMemcpy, IEquatable<WheelMountVisual>
+{
+    public int SlotKey;
+    public double Time;
+    public readonly bool Equals(WheelMountVisual other) => SlotKey == other.SlotKey && Time == other.Time;
+}
+
 public sealed partial class CartStations
 {
+    public readonly NetworkVariable<WheelMountVisual> WheelMount = new();
+    public SpriteRenderer TireAt(int index) => index >= 0 && index < tires.Count ? tires[index] : null;
+    public Vector3 WheelWorkPoint => detachedTire == null ? cart.transform.position
+        : detachedTire.transform.position + Vector3.up * (IsUpperWheel(detachedTire) ? -29f : 31f) * WorldPerWebUnit;
+    public bool IsUpperWheel(SpriteRenderer tire) => tire.transform.position.y > cart.transform.position.y;
+
     private void SetTireAlpha(float alpha)
     {
         if (detachedTire == null) return;
@@ -23,7 +37,7 @@ public sealed partial class CartStations
         if (missingWheelSprite != null)
         {
             bool missing = alpha <= 0f;
-            detachedTire.sprite = missing ? missingWheelSprite : mountedWheelSprite;
+            detachedTire.sprite = missing ? missingWheelSprite : tireSprites[tires.IndexOf(detachedTire)];
             alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
         }
         color.a = alpha;
@@ -33,10 +47,8 @@ public sealed partial class CartStations
     public bool IsInsideDetachedTire(Vector3 position)
     {
         if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
-        Vector3 local = detachedTire.transform.InverseTransformPoint(position);
-        Bounds spriteBounds = detachedTire.sprite.bounds;
-        return local.x >= spriteBounds.min.x && local.x <= spriteBounds.max.x
-            && local.y >= spriteBounds.min.y && local.y <= spriteBounds.max.y;
+        float radius = 28f * WorldPerWebUnit;
+        return ((Vector2)(position - WheelWorkPoint)).sqrMagnitude <= radius * radius;
     }
 
     private void DetachWheel()
@@ -68,7 +80,7 @@ public sealed partial class CartStations
 
     private void LaunchWheel(SpriteRenderer tire)
     {
-        Vector2 pos = tire.transform.position;
+        Vector2 pos = tire.transform.position + Vector3.up * (IsUpperWheel(tire) ? 2f : 0f) * WorldPerWebUnit;
         bool rear = pos.x >= cartBody.bounds.center.x;
         float side = pos.y >= cartBody.bounds.center.y ? 1 : -1;
         LooseWheels.Add(new LooseWheelState {

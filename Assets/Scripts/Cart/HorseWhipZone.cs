@@ -9,6 +9,15 @@ public sealed class HorseWhipZone : MonoBehaviour
     [SerializeField] private SpriteSequence gallop;
     [SerializeField] private SpriteSequence woundedGallop;
     [SerializeField] private float gallopOffset;
+    [SerializeField] private Sprite[] v12Walk;
+    [SerializeField] private SpriteRenderer hoofShadow, hitchStrap;
+    [SerializeField] private Transform hitchPoint;
+    [SerializeField] private int walkOffset;
+    private static readonly Vector3[] Hooves =
+    {
+        new(30,84,77), new(29,87,82), new(23,101,83), new(20,103,82),
+        new(14,101,82), new(19,105,82), new(39,87,81), new(39,87,81)
+    };
     private float phase;
     private float lastFrame;
     private SpriteRenderer horse;
@@ -25,6 +34,22 @@ public sealed class HorseWhipZone : MonoBehaviour
             HorseMood.Runaway => 2.05f,
             _ => 1f
         };
+        if (v12Walk != null && v12Walk.Length == 8)
+        {
+            int frame = running ? Mathf.Max(0, Mathf.FloorToInt(time * 14f * rate) + walkOffset) % 8 : 3;
+            gallopVisual.sprite = v12Walk[frame];
+            float unit = CartStations.Instance.WorldPerWebUnit;
+            hoofShadow.enabled = true;
+            HoofShadow.Place(hoofShadow, gallopVisual, Hooves[frame], 128f, 84f, unit, 8f);
+            float start = transform.position.x - 15f * unit;
+            hitchStrap.transform.position = new Vector3((start + hitchPoint.position.x) * .5f,
+                transform.position.y - 8f * unit, transform.position.z);
+            Vector3 parent = hitchStrap.transform.parent.lossyScale;
+            Vector3 native = hitchStrap.sprite.bounds.size;
+            hitchStrap.transform.localScale = new Vector3(Mathf.Abs(hitchPoint.position.x - start) / (native.x * Mathf.Abs(parent.x)),
+                26f * unit / (native.y * Mathf.Abs(parent.y)), 1f);
+            return;
+        }
         if (running) phase += Mathf.Clamp(time - lastFrame, 0f, .1f) * rate;
         lastFrame = time;
         gallopVisual.sprite = sequence.FrameAt(phase + gallopOffset, true);

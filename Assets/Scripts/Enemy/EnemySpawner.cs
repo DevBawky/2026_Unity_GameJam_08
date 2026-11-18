@@ -8,8 +8,8 @@ using Random = UnityEngine.Random;
 // 다음 스테이지로 넘어가면 웨이브를 처음부터 다시 돌린다.
 public class EnemySpawner : MonoBehaviour
 {
-    [Tooltip("모든 스테이지가 이 웨이브 구성을 쓴다 (Stage_01)")]
     [SerializeField] private StageSO stage;
+    [SerializeField] private StageSO[] laterStages;
     public int SpawnedWaves => nextWave;
     [SerializeField] private SpriteRenderer cartBody;
     [SerializeField] private CartStations cartStations;
@@ -23,6 +23,13 @@ public class EnemySpawner : MonoBehaviour
     // 씬이 바뀔 때 CartStations가 먼저 파괴되면 cartStations != null 검사가 false라 해제를 못 한다.
     // 구독한 델리게이트를 들고 있다가 그대로 뺀다.
     private Action<float> cartHit;
+
+    private StageSO StageFor(int number)
+    {
+        int index = number - 2;
+        return laterStages != null && index >= 0 && index < laterStages.Length && laterStages[index] != null
+            ? laterStages[index] : stage;
+    }
 
     // 대포 조준 등으로 카메라가 움직이기 전, 기본 화면의 오른쪽 끝 (궁수 정지 기준)
     private void Awake()
@@ -55,7 +62,9 @@ public class EnemySpawner : MonoBehaviour
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
         elapsed += dt;
-        var waves = stage.waves;
+        var setup = StageFor(stageNumber);
+        if (setup == null) return;
+        var waves = setup.waves;
         if (waves.Count == 0) return;
         while (cartStations.Endless.Value || nextWave < waves.Count)
         {
@@ -99,7 +108,7 @@ public class EnemySpawner : MonoBehaviour
         for(int i=0;i<saved.Length;i++)
         {
             var entry=saved[i];
-            foreach(var setup in stage.waves)
+            foreach (var setup in StageFor(number).waves)
             {
                 var match=setup.spawns.Find(s=>s.unit.name==entry.Unit);
                 if(match.unit==null) continue;

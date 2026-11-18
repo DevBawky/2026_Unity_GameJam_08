@@ -576,11 +576,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CartStations
   ShowTopMostFoldoutHeaderGroup: 1
-  LastShockTime:
+  PostShotEndsAt:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -100
+    m_InternalValue: 0
   waveSpawner: {fileID: 0}
   royalVisuals: []
   royalWalks: []
@@ -1259,6 +1259,8 @@ MonoBehaviour:
   impactAudio: {fileID: 0}
   cannonSound: {fileID: 0}
   hitSound: {fileID: 0}
+  music: {fileID: 0}
+  stageMusic: []
   secondCamera: {fileID: 0}
   cart: {fileID: 0}
   obstacles: {fileID: 0}
@@ -1277,12 +1279,10 @@ MonoBehaviour:
   stageNumber: 1
   baseStageGoal: 1000
   collisionAnxietyIncrease: 0.06
-  shellHoldDamageThreshold: 6
   recoilAnxietyIncrease: 0.04
   impactShakeStrength: 0.3
   recoilShakeStrength: 0.2
   shakeDuration: 0.45
-  aimJitterDegrees: 6
   wheelLossChance: 0.25
   wheelLossMinDistance: 110
   forcedWheelLossDistance: 155
@@ -1307,6 +1307,7 @@ MonoBehaviour:
       Cushion: 0
       Horse: 0
       Precision: 0
+      CleaningTaps: 0
       Flow: 0
       Loaded: 0
       Firing: 0
@@ -1620,8 +1621,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: PLAYER
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 98882e439e8cd2d4da3401c9ba0f7065, type: 2}
+  m_sharedMaterial: {fileID: -8622524328822482495, guid: 98882e439e8cd2d4da3401c9ba0f7065, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

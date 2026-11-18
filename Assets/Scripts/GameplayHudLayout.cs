@@ -20,6 +20,7 @@ public sealed class GameplayHudLayout : MonoBehaviour
     private Canvas canvas;
     private Rect previousArea, previousPane;
     private float previousScale;
+    private bool previousMenu;
 
     private void Awake() => canvas = GetComponent<Canvas>();
 
@@ -29,17 +30,19 @@ public sealed class GameplayHudLayout : MonoBehaviour
         var safe = Screen.safeArea;
         var pane = primary.pixelRect;
         float scale = canvas.scaleFactor;
-        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale))
+        bool menuOpen = emoteMenu.gameObject.activeSelf;
+        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale) || menuOpen != previousMenu)
         {
             previousArea = safe;
             previousPane = pane;
             previousScale = scale;
-            Layout(safe, pane, scale);
+            previousMenu = menuOpen;
+            Layout(safe, pane, scale, menuOpen);
         }
         ShowCatapultIcons();
     }
 
-    private void Layout(Rect safe, Rect pane, float scale)
+    private void Layout(Rect safe, Rect pane, float scale, bool menuOpen)
     {
         float width = Screen.width;
         float height = Screen.height;
@@ -76,17 +79,26 @@ public sealed class GameplayHudLayout : MonoBehaviour
         float diameter = Mathf.Min(limit, landscape ? Mathf.Clamp(height * .26f, 88f, 208f) : stick);
         float support = diameter * 2f / 3f;
         float step = diameter + controlGap;
+        float menuHeight = Mathf.Clamp(height * .12f, 102f, 126f);
+        Place(emoteMenu, new Vector2((left + right) * .5f, bottom + menuHeight * .5f),
+            new Vector2(Mathf.Min(1120f, right - left), menuHeight), scale);
+        if (emoteMenu.TryGetComponent(out GridLayoutGroup grid))
+        {
+            float padding = Mathf.Clamp(vmin * .01f, 4f, 9f);
+            float gap = Mathf.Clamp(width * .0075f, 3f, 9f);
+            int insetPixels = Mathf.RoundToInt(padding / scale);
+            grid.padding = new RectOffset(insetPixels, insetPixels, insetPixels, insetPixels);
+            grid.spacing = Vector2.one * (gap / scale);
+            grid.cellSize = new Vector2((Mathf.Min(1120f, right - left) - 2f * padding - 6f * gap) / 7f,
+                menuHeight - 2f * padding) / scale;
+        }
+        if (menuOpen) bottom += menuHeight + 8f;
         float paneRight = Mathf.Min(right, pane.xMax - (pane.width < width ? 8f : 0f)) - inset;
         float x = paneRight - diameter * .5f;
         float y = bottom + diameter * .5f;
         Place(action, new Vector2(x, y), Vector2.one * diameter, scale);
-        Place(exit, new Vector2(x - step, y), Vector2.one * support, scale);
-        Place(emote, new Vector2(x - step * .5f, y + step * .866f), Vector2.one * support, scale);
-        float menuWidth = Mathf.Min(342f, paneRight - left);
-        float menuBottom = Mathf.Min(y + step * .866f + support * .5f + 9f, top - 68f);
-        float menuHeight = Mathf.Min(388f, top - menuBottom);
-        Place(emoteMenu, new Vector2(paneRight - menuWidth * .5f, menuBottom + menuHeight * .5f),
-            new Vector2(menuWidth, menuHeight), scale);
+        Place(exit, new Vector2(x - step * .5f, y + step * .866f), Vector2.one * support, scale);
+        Place(emote, new Vector2(x - step, y), Vector2.one * support, scale);
 
         SizeControlLabel(exitLabel, exitGlyph, support, vmin, scale);
         SizeControlLabel(emoteLabel, emoteGlyph, support, vmin, scale);

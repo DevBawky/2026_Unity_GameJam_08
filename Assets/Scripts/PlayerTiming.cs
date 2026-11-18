@@ -40,7 +40,6 @@ public sealed class PlayerTiming : MonoBehaviour
     private TimingArea currentSettings;
     public StationAction? NearbyRoyal { get; private set; }
     public StationAction? NearbyStation { get; private set; }
-    private bool inside;
     private bool actionRequested;
     private RectTransform ignoredArea;
     public void ExitStation()
@@ -54,13 +53,15 @@ public sealed class PlayerTiming : MonoBehaviour
     private float circularTargetCenter;
     private float circularPinAngle;
 
-    public bool IsCannonFocus => (IsAt(StationAction.Cannon) && stations.HoldsStation(StationAction.Cannon,actor)) || (stations.IsFiring && stations.Gunner.Value==actor.NetworkObjectId);
+    public bool IsCannonFocus => IsAt(StationAction.Cannon) && HasStationAccess;
     public bool CanInteract => actor.Holding.Value
         || (NearbyRoyal is StationAction royal && stations.CanUse(royal, actor))
-        || (inside && currentSettings != null && stations.CanUse(currentSettings.Action,actor));
-    public bool HasStationAccess => inside && currentSettings != null && stations.HoldsStation(currentSettings.Action,actor);
-    public bool IsAt(StationAction action) => inside && currentSettings != null && currentSettings.Action == action;
-    public StationAction? CurrentAction => inside && currentSettings != null ? currentSettings.Action : null;
+        || (CurrentAction is StationAction action && stations.CanUse(action, actor));
+    public bool HasStationAccess => CurrentAction is StationAction action && stations.HoldsStation(action, actor);
+    public bool IsAt(StationAction action) => CurrentAction == action;
+    public StationAction? CurrentAction { get; private set; }
+    private bool UsesTiming => CurrentAction is StationAction action && TimingArea.UsesTimingFor(action);
+    private StationAction ActionAt(TimingArea area) => area.Action == StationAction.Cannon ? stations.CannonAction : area.Action;
     public RectTransform ActiveTimingRect => timingPanel == null || !timingPanel.activeInHierarchy ? null
         : circularGraphic != null && circularGraphic.gameObject.activeInHierarchy ? circularGraphic.rectTransform : background;
     public bool TimingReady
@@ -97,7 +98,7 @@ public sealed class PlayerTiming : MonoBehaviour
         SetWheelRepairActive(stations.WheelDetached);
         if (actor.SecondLocal ? Keyboard.current?.rightShiftKey.wasPressedThisFrame == true : Keyboard.current?.qKey.wasPressedThisFrame == true || Gamepad.current?.buttonEast.wasPressedThisFrame == true) ExitStation();
         UpdateCurrentArea();
-        int requested = inside && currentSettings != null ? (int)currentSettings.Action : -1;
+        int requested = currentSettings != null ? (int)currentSettings.Action : -1;
         if (requested != lastReservationArea || (requested >= 0 && !stations.HoldsStation((StationAction)requested,actor)))
             actor.RequestStation(requested);
         lastReservationArea = requested;
@@ -112,12 +113,12 @@ public sealed class PlayerTiming : MonoBehaviour
         if (holdingShell != wasHoldingShell)
         {
             wasHoldingShell = holdingShell;
-            if (timingPanel != null) timingPanel.SetActive(holdingShell || (inside && currentSettings != null && currentSettings.UsesTiming));
+            if (timingPanel != null) timingPanel.SetActive(holdingShell || UsesTiming);
             if (holdingShell) ResetHoldTiming();
-            else if (inside && currentSettings != null && currentSettings.UsesTiming) ResetTiming();
+            else if (UsesTiming) ResetTiming();
         }
         if (timingPanel != null)
-            timingPanel.SetActive(holdingShell || (inside && currentSettings != null && currentSettings.UsesTiming && stations.CanUse(currentSettings.Action,actor)));
+            timingPanel.SetActive(holdingShell || (UsesTiming && stations.CanUse(CurrentAction.Value, actor)));
 
         bool pressed = ConsumePress();
         if (holdingShell)
@@ -130,11 +131,10 @@ public sealed class PlayerTiming : MonoBehaviour
             if (pressed && stations.CanUse(royal, actor)) actor.Request(royal);
             return;
         }
-        if (!inside) return;
-        if (currentSettings != null && !stations.CanUse(currentSettings.Action,actor)) return;
-        if (currentSettings != null && !currentSettings.UsesTiming)
+        if (CurrentAction is not StationAction action || !stations.CanUse(action, actor)) return;
+        if (!UsesTiming)
         {
-            if (pressed) actor.Request(currentSettings.Action);
+            if (pressed) actor.Request(action);
             return;
         }
         UpdateStationTiming(pressed);
@@ -144,21 +144,20 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         RectTransform area = FindArea();
         TimingArea settings = area != null ? area.GetComponent<TimingArea>() : null;
-        NearbyStation = settings != null ? settings.Action : (StationAction?)null;
+        NearbyStation = settings != null ? ActionAt(settings) : null;
         NearbyRoyal = settings != null && TimingArea.IsRoyal(settings.Action) ? settings.Action : (StationAction?)null;
         if (NearbyRoyal.HasValue || (settings != null && (int)settings.Action == actor.CompletedStation.Value)) area = null;
         if (ignoredArea != area) ignoredArea = null;
         if (area == ignoredArea) area = null;
-        if (area != null && !stations.HasWork(settings.Action, actor)
-            && !(settings.Action == StationAction.Cannon && stations.IsFiring && stations.Gunner.Value == actor.NetworkObjectId))
+        if (area != null && !(settings.Action == StationAction.Cannon ? actor.HandsFree : stations.HasWork(settings.Action, actor)))
             area = null;
-        if (area == currentArea && !(inside && area == null)) return;
+        StationAction? nextAction = area != null ? ActionAt(settings) : null;
+        if (area == currentArea && nextAction == CurrentAction) return;
         currentArea = area;
-        currentSettings = area != null ? area.GetComponent<TimingArea>() : null;
-        inside = area != null;
-        bool usesTiming = inside && (currentSettings == null || currentSettings.UsesTiming);
-        if (timingPanel != null) timingPanel.SetActive(usesTiming);
-        if (usesTiming) ResetTiming();
+        currentSettings = area != null ? settings : null;
+        CurrentAction = nextAction;
+        if (timingPanel != null) timingPanel.SetActive(UsesTiming);
+        if (UsesTiming) ResetTiming();
     }
 
     private bool ConsumePress()
@@ -199,7 +198,7 @@ public sealed class PlayerTiming : MonoBehaviour
         if (hold) return Mathf.Abs(CatchPinAt(time) - CatchTargetDegrees) <= CatchWidth() * .5f;
         var area = FindArea();
         var settings = area != null ? area.GetComponent<TimingArea>() : null;
-        if (settings == null || settings.Action != action || !settings.UsesTiming) return false;
+        if (settings == null || ActionAt(settings) != action || !TimingArea.UsesTimingFor(action)) return false;
         float angle = PinAt(time, settings.CircularSpeed);
         float center = TargetCenter(action, false, stations.WheelRepairSteps);
         return Mathf.Abs(Mathf.DeltaAngle(angle, center)) <= TargetWidth(settings.CircularTargetAngle) * .5f;
@@ -223,37 +222,54 @@ public sealed class PlayerTiming : MonoBehaviour
     private void UpdateStationTiming(bool pressed)
     {
         if (currentSettings == null || circularGraphic == null) return;
-        DrawRing(currentSettings.Action, false);
-        if (pressed) actor.Request(currentSettings.Action);
+        DrawRing(CurrentAction.Value, false);
+        if (pressed) actor.Request(CurrentAction.Value);
     }
 
     private RectTransform FindArea()
     {
         if (interactionAreas == null) return null;
         if (actor.InCellar && repairRect != null && stations.IsInsideDetachedTire(transform.position - Vector3.up * NetworkPlayer.CellarOffset)) return repairRect;
+        RectTransform workArea = null;
         RectTransform nearestRoyal = null;
+        RectTransform nearestUsableRoyal = null;
         float royalDistance = float.PositiveInfinity;
+        float usableRoyalDistance = float.PositiveInfinity;
         for (int i = 0; i < interactionAreas.childCount; i++)
         {
             Transform child = interactionAreas.GetChild(i);
             if (!child.gameObject.activeInHierarchy || !(child is RectTransform area) || area == repairRect) continue;
             if (!area.TryGetComponent<TimingArea>(out var station) || station.Action == StationAction.Stairs) continue;
-            Vector3 local = area.InverseTransformPoint(transform.position);
-            if (!area.rect.Contains(new Vector2(local.x, local.y))) continue;
-            if (!TimingArea.IsRoyal(station.Action))
+            bool royal = TimingArea.IsRoyal(station.Action);
+            Vector3 position = transform.position;
+            if (royal) position += area.position - stations.RoyalInteractionPosition(station.Action);
+            if (station.Action == StationAction.Cannon)
             {
-                if (nearestRoyal == null) return area;
+                if (actor.InCellar || !ContainsCannon(area)) continue;
+                if (stations.HoldsStation(StationAction.Cannon, actor)) return area;
+            }
+            Vector3 local = area.InverseTransformPoint(position);
+            if (!area.rect.Contains(new Vector2(local.x, local.y))) continue;
+            if (!royal)
+            {
+                if (workArea == null) workArea = area;
                 continue;
             }
-            float distance = (area.position - transform.position).sqrMagnitude;
+            float distance = (area.position - position).sqrMagnitude;
             if (distance < royalDistance) { nearestRoyal = area; royalDistance = distance; }
+            if (distance < usableRoyalDistance && stations.CanUse(station.Action, actor))
+            {
+                nearestUsableRoyal = area;
+                usableRoyalDistance = distance;
+            }
         }
-        return nearestRoyal;
+        return nearestUsableRoyal != null ? nearestUsableRoyal : workArea != null ? workArea : nearestRoyal;
     }
 
     public RectTransform AreaFor(StationAction action)
     {
         if (action == StationAction.WheelRepair) return repairRect;
+        if (TimingArea.IsCannon(action)) action = StationAction.Cannon;
         foreach (RectTransform area in interactionAreas)
             if (area.TryGetComponent<TimingArea>(out var station) && station.Action == action) return area;
         return null;
@@ -268,9 +284,20 @@ public sealed class PlayerTiming : MonoBehaviour
 
     public bool IsInActionArea(StationAction action)
     {
+        if (TimingArea.IsCannon(action))
+        {
+            var cannon = AreaFor(StationAction.Cannon);
+            return !actor.InCellar && cannon != null && cannon.gameObject.activeInHierarchy && ContainsCannon(cannon);
+        }
         if (action==StationAction.WheelRepair) return actor.InCellar && stations.IsInsideDetachedTire(transform.position - Vector3.up * NetworkPlayer.CellarOffset);
         var area=FindArea();
         return area != null && area.GetComponent<TimingArea>().Action==action;
+    }
+    private bool ContainsCannon(RectTransform area)
+    {
+        Vector2 point = area.InverseTransformPoint(transform.position);
+        Vector2 radii = area.rect.size * .5f;
+        return new Vector2(point.x / radii.x, point.y / radii.y).sqrMagnitude <= 1f;
     }
     private void LateUpdate()
     {
@@ -282,7 +309,7 @@ public sealed class PlayerTiming : MonoBehaviour
         }
         if (actor==null || !actor.Local) return;
         bool visible=CartStations.Running && timingPanel.activeSelf;
-        int action=actor.Holding.Value ? -2 : currentSettings != null ? (int)currentSettings.Action : -1;
+        int action=actor.Holding.Value ? -2 : (int)(CurrentAction ?? (StationAction)(-1));
         float speed=actor.Holding.Value || currentSettings == null ? 0f : currentSettings.CircularSpeed;
         float width=actor.Holding.Value ? CatchWidth() : currentSettings != null ? TargetWidth(currentSettings.CircularTargetAngle) : 0f;
         actor.PublishTask(action,visible,circularTargetCenter,width,circularPinAngle,speed);
@@ -314,8 +341,8 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         if (background != null) background.gameObject.SetActive(false);
         if (circularGraphic == null || currentSettings == null) return;
-        circularGraphic.gameObject.SetActive(currentSettings.UsesTiming);
-        if (currentSettings.UsesTiming) DrawRing(currentSettings.Action, false);
+        circularGraphic.gameObject.SetActive(UsesTiming);
+        if (UsesTiming) DrawRing(CurrentAction.Value, false);
     }
 
 

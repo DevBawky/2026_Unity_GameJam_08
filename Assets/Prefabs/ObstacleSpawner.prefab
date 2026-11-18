@@ -59,6 +59,3 @@ MonoBehaviour:
   gapPerStage: 4
   minGap: 125
   randomGap: 12
-  spawnDistance: 7.2
-  outerLaneY: 2
-  collisionHeightFraction: 0.65

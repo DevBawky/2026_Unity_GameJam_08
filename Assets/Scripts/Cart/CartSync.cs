@@ -28,7 +28,7 @@ public sealed partial class CartStations
         State.Value = new CartNetworkState { Flow=flow, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
             StageStart=stageStartDistance, Stage=stageNumber, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
             RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1,
-            Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel,
+            Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel, CleaningTaps=cleaningTaps,
             Loaded=loaded, Firing=fuseLit, Wheel=wheelDetached, EverWheel=wheelEverDetached };
         Failure.Value = new FixedString64Bytes(FailureReason);
     }
@@ -36,11 +36,12 @@ public sealed partial class CartStations
     {
         flow=v.Flow; durability=v.Durability; princeAnxiety=v.Prince; princessAnxiety=v.Princess;
         stageStartDistance=v.StageStart; stageNumber=Mathf.Max(1,v.Stage); depositedShells=v.Stored; shellsInPile=v.Pile; lostShells=v.Lost;
+        cleaningTaps = v.CleaningTaps;
         wheelRepairSteps=v.RepairSteps; cushionAxleLevel=v.Cushion; horseLevel=v.Horse; precisionLevel=v.Precision;
         loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
         for (int i = 0; i < tires.Count; i++)
         {
-            if (missingWheelSprite != null) tires[i].sprite = mountedWheelSprite;
+            if (missingWheelSprite != null) tires[i].sprite = tireSprites[i];
             var color = tires[i].color;
             color.a = tireAlphas[i];
             tires[i].color = color;

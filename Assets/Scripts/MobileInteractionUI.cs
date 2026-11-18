@@ -28,6 +28,7 @@ public sealed class MobileInteractionUI : MonoBehaviour
             bool aiming = timing.IsCannonFocus;
             aimJoystick.gameObject.SetActive(aiming);
             if (aiming && aimJoystick.IsMobileMode != mobile) aimJoystick.SetMobileMode(mobile);
+            aimJoystick.SetInputActive(aiming);
             movementJoystick.SetInputActive(!aiming && !local.Holding.Value);
             movementJoystick.ShowDesktopPreview(!aiming);
             exitButton.SetActive(timing.HasStationAccess);
@@ -35,6 +36,7 @@ public sealed class MobileInteractionUI : MonoBehaviour
             actionControl.interactable = CartStations.Running && timing.CanInteract;
             var guide = CartStations.Running ? WorkGuide.For(local, CartStations.Instance) : default;
             actionLabel.text = guide.Action ?? "행동";
+            actionLabel.color = actionControl.interactable ? new Color32(64, 45, 37, 255) : new Color32(245, 240, 224, 255);
             var colors = actionControl.colors;
             if (guide.Color.a > 0f && colors.normalColor != guide.Color)
             {

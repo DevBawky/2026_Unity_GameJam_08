@@ -94,10 +94,8 @@ MonoBehaviour:
   dropTime: 0.6
   lingerTime: 0.7
   offsetRange: {x: 0.76, y: 0.84}
-  hitRadius: {x: 0.75, y: 0.6}
   hitDamage: 22
   hitSpeedMultiplier: 0.78
-  warningScale: 2
   approachDistance: 7
   dropHeight: 12
   shockwaveScale: 3
