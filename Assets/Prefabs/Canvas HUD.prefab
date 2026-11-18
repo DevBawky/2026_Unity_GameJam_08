@@ -1884,7 +1884,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -1915,8 +1915,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PlayerTiming, Assembly-CSharp
+      - m_Target: {fileID: 963902186668680777}
+        m_TargetAssemblyTypeName: MobileInteractionUI, Assembly-CSharp
         m_MethodName: TriggerInteraction
         m_Mode: 0
         m_Arguments:
@@ -1973,11 +1973,11 @@ RectTransform:
   - {fileID: 5401534522974530059}
   m_Father: {fileID: 3112075185371582815}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -25, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 60, y: 60}
   m_SizeDelta: {x: 150, y: 150}
-  m_Pivot: {x: 1, y: 0}
+  m_Pivot: {x: 0, y: 0}
 --- !u!222 &7850375865358740924
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2032,7 +2032,6 @@ MonoBehaviour:
   visuals: {fileID: 0}
   radius: 55
   floating: 0
-  previewOnDesktop: 0
 --- !u!1 &2566461968485973377
 GameObject:
   m_ObjectHideFlags: 0
@@ -5934,7 +5933,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2084693561859381386
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5971,7 +5970,6 @@ MonoBehaviour:
   visuals: {fileID: 5724209835808703400}
   radius: 65
   floating: 0
-  previewOnDesktop: 1
 --- !u!1 &8098980317379192245
 GameObject:
   m_ObjectHideFlags: 0
@@ -6521,7 +6519,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df7755d1b5da40ca8527a240741e7963, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MobileInteractionUI
-  timing: {fileID: 0}
   movementJoystick: {fileID: 2638856144486769853}
   actionButton: {fileID: 2557437184090591688}
   exitButton: {fileID: 1021149034318028499}

@@ -3,6 +3,7 @@ using TMPro;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public struct PlayerTaskState : INetworkSerializeByMemcpy, IEquatable<PlayerTaskState>
@@ -28,6 +29,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<int> Emote = new();
     public NetworkVariable<double> EmoteTime = new(-10);
     public bool SecondLocal => Local && LobbySession.LocalSeats == 2 && Slot.Value == 1;
+    public bool UsesMobileControls => !SecondLocal && GameplayControlMode.IsMobile;
     public bool TouchHeld {get; set;}
     public NetworkVariable<bool> SpareWheel = new();
     public NetworkVariable<bool> Snack = new();
@@ -119,9 +121,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (Local)
         {
             if (LocalPlayer == null) RefreshAssignment();
-            var keys = UnityEngine.InputSystem.Keyboard.current;
-            bool pressed = SecondLocal ? keys?.enterKey.isPressed == true : keys?.spaceKey.isPressed == true || UnityEngine.InputSystem.Gamepad.current?.buttonSouth.isPressed == true || UnityEngine.InputSystem.Gamepad.current?.rightTrigger.isPressed == true;
-            bool cooking = timing.IsAt(StationAction.Kitchen) && (pressed || TouchHeld);
+            bool cooking = timing.IsAt(StationAction.Kitchen) && IsInteractionHeld();
             if (cooking != CookingHeld.Value) CookingHeld.Value = cooking;
         }
         bool showEmote=Emote.Value>0 && NetworkManager.ServerTime.Time-EmoteTime.Value<3;
@@ -132,6 +132,16 @@ public sealed class NetworkPlayer : NetworkBehaviour
         }
         if (IsServer && CartStations.Running && Holding.Value && NetworkManager.ServerTime.Time >= HoldDeadline.Value)
             CartStations.Instance.ResolveShellHold(this, false);
+    }
+
+    private bool IsInteractionHeld()
+    {
+        if (UsesMobileControls) return TouchHeld;
+        var keys = Keyboard.current;
+        if (SecondLocal) return keys?.enterKey.isPressed == true;
+        var pad = Gamepad.current;
+        return keys?.spaceKey.isPressed == true || pad?.buttonSouth.isPressed == true
+            || pad?.rightTrigger.isPressed == true;
     }
 
     private void DrawCrew()

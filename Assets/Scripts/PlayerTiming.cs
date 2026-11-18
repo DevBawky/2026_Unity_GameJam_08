@@ -83,7 +83,8 @@ public sealed class PlayerTiming : MonoBehaviour
 
     public void TriggerInteraction()
     {
-        if (actor != null && actor.Local && CanInteract) actionRequested = true;
+        if (actor != null && actor.Local && actor.UsesMobileControls && CartStations.Running && CanInteract)
+            actionRequested = true;
     }
 
     public void SetWheelRepairActive(bool active)
@@ -96,7 +97,9 @@ public sealed class PlayerTiming : MonoBehaviour
         if (actor == null || !actor.IsSpawned || !actor.Assigned.Value) { timingPanel.SetActive(false); return; }
         if (!actor.Local) { ApplyRemote(); return; }
         SetWheelRepairActive(stations.WheelDetached);
-        if (actor.SecondLocal ? Keyboard.current?.rightShiftKey.wasPressedThisFrame == true : Keyboard.current?.qKey.wasPressedThisFrame == true || Gamepad.current?.buttonEast.wasPressedThisFrame == true) ExitStation();
+        if (!actor.UsesMobileControls && (actor.SecondLocal ? Keyboard.current?.rightShiftKey.wasPressedThisFrame == true
+            : Keyboard.current?.qKey.wasPressedThisFrame == true || Gamepad.current?.buttonEast.wasPressedThisFrame == true))
+            ExitStation();
         UpdateCurrentArea();
         int requested = currentSettings != null ? (int)currentSettings.Action : -1;
         if (requested != lastReservationArea || (requested >= 0 && !stations.HoldsStation((StationAction)requested,actor)))
@@ -162,13 +165,13 @@ public sealed class PlayerTiming : MonoBehaviour
 
     private bool ConsumePress()
     {
-        if (actor.SecondLocal) return Keyboard.current?.enterKey.wasPressedThisFrame == true;
-        Gamepad pad = Gamepad.current;
-        bool pressed = actionRequested
-            || (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-            || (pad != null && (pad.buttonSouth.wasPressedThisFrame || pad.rightTrigger.wasPressedThisFrame));
+        bool touchPressed = actionRequested;
         actionRequested = false;
-        return pressed;
+        if (actor.UsesMobileControls) return touchPressed;
+        if (actor.SecondLocal) return Keyboard.current?.enterKey.wasPressedThisFrame == true;
+        var pad = Gamepad.current;
+        return Keyboard.current?.spaceKey.wasPressedThisFrame == true || pad?.buttonSouth.wasPressedThisFrame == true
+            || pad?.rightTrigger.wasPressedThisFrame == true;
     }
 
     public static float TargetCenter(StationAction action, bool hold, int repairStep)

@@ -76,8 +76,9 @@ public sealed class CannonAim : MonoBehaviour
 
         if (actor.Local)
         {
-            var stick = aimJoystick != null && aimJoystick.IsMobileMode ? aimJoystick.Direction : Vector2.zero;
-            var keys = Keyboard.current;
+            bool mobile = actor.UsesMobileControls;
+            var stick = mobile && aimJoystick != null ? aimJoystick.Direction : Vector2.zero;
+            var keys = mobile ? null : Keyboard.current;
             if (keys != null)
             {
                 if (actor.SecondLocal || LobbySession.LocalSeats != 2)
@@ -86,9 +87,9 @@ public sealed class CannonAim : MonoBehaviour
                 if (!actor.SecondLocal) stick += new Vector2((keys.dKey.isPressed ? 1 : 0) - (keys.aKey.isPressed ? 1 : 0),
                     (keys.wKey.isPressed ? 1 : 0) - (keys.sKey.isPressed ? 1 : 0));
             }
-            if (!actor.SecondLocal && Gamepad.current != null) stick += Gamepad.current.leftStick.ReadValue();
+            if (!mobile && !actor.SecondLocal && Gamepad.current != null) stick += Gamepad.current.leftStick.ReadValue();
             if (stick.sqrMagnitude > .01f) cursor += Vector2.ClampMagnitude(stick, 1) * (1.8f * Time.deltaTime);
-            else if (!actor.SecondLocal && (aimJoystick == null || !aimJoystick.IsMobileMode) && Mouse.current != null &&
+            else if (!mobile && !actor.SecondLocal && Mouse.current != null &&
                 gameCamera != null && Mouse.current.delta.ReadValue().sqrMagnitude > .01f)
             {
                 Vector2 d = ((Vector2)gameCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - (Vector2)muzzle.position) / game.WorldPerWebUnit;

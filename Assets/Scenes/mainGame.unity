@@ -25302,10 +25302,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Button | Exit
       objectReference: {fileID: 0}
-    - target: {fileID: 1344152031921345415, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 913201231}
     - target: {fileID: 1822334485098002200, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_fontSize
       value: 23
@@ -25461,10 +25457,6 @@ PrefabInstance:
     - target: {fileID: 5569867607772681269, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_Name
       value: Image | Catapult Alert P2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5724209835808703400, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5971353236856534590, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_SizeDelta.x
