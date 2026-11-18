@@ -19,7 +19,7 @@ public class Enemy : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (Unit==null) Unit=unitDefinition;
-        if (IsServer) Health.Value=hp;
+        if (IsServer) { Health.Value=hp; CartStations.SimulationStep+=Advance; }
     }
 
     private SpriteRenderer target;
@@ -29,13 +29,14 @@ public class Enemy : NetworkBehaviour
     private float hp;
     private float attackTimer;
     private float screenRightX;
+    private float sinceStrike = float.PositiveInfinity;
 
     private void Awake() => TryGetComponent(out rope);
 
     public void Init(UnitSO unit, WaveSO wave, SpriteRenderer cartBody, float baseScreenRightX)
     {
         Unit = unit;
-        speed = wave.RollSpeed(unit);
+        speed = unit.moveSpeed * Mathf.Lerp(1-wave.speedMin,1+wave.speedMax,CartStations.Instance.Sample());
         attack = wave.AttackOf(unit);
         hp = unit.hp;
         target = cartBody;
@@ -47,6 +48,12 @@ public class Enemy : NetworkBehaviour
             Debug.LogWarning($"[{name}] 추격조 프리팹에 EnemyRope가 없어 로프를 걸지 않습니다", this);
     }
 
+    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike };
+    public void Restore(PursuerCheckpoint saved)
+    {
+        hp=saved.Health;speed=saved.Speed;attack=saved.Damage;attackTimer=saved.Wait;sinceStrike=saved.SinceStrike;Health.Value=hp;
+    }
+
     public void TakeDamage(float damage)
     {
         if (!IsSpawned || !IsServer || !CartStations.Running) return;
@@ -55,11 +62,18 @@ public class Enemy : NetworkBehaviour
         if (hp <= 0f) NetworkObject.Despawn(true);
     }
 
-    private void Update()
+    public override void OnNetworkDespawn() => CartStations.SimulationStep-=Advance;
+    private void Advance(float dt)
     {
         if (!IsSpawned || !IsServer || !CartStations.Running || Unit==null || target==null) return;
         if (rope != null && rope.Attached) return;
 
+        sinceStrike += dt;
+        if (sinceStrike < 0.8f)
+        {
+            transform.position += Vector3.right * (speed * dt);
+            return;
+        }
         Vector3 pos = transform.position;
         Vector3 goal = target.bounds.ClosestPoint(pos);
         goal.z = pos.z;
@@ -68,7 +82,7 @@ public class Enemy : NetworkBehaviour
             : Vector2.Distance(pos, goal) <= Unit.attackRange;
         if (!inRange)
         {
-            transform.position = Vector3.MoveTowards(pos, goal, speed * EnemyRope.MonsterSpeedMultiplier * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(pos, goal, speed * (sinceStrike < 2.2f ? 0.4f : 1f) * EnemyRope.MonsterSpeedMultiplier * dt);
             return;
         }
 
@@ -78,12 +92,15 @@ public class Enemy : NetworkBehaviour
             return;
         }
 
-        attackTimer -= Time.deltaTime;
+        attackTimer -= dt;
         if (attackTimer > 0f) return;
         attackTimer = Unit.attackInterval;
 
         if (Unit.type == UnitType.Lancer)
+        {
             HitCart(attack);
+            sinceStrike = 0;
+        }
         else if (Unit.arrowPrefab != null)
         {
             var shot=Instantiate(Unit.arrowPrefab,pos,Quaternion.identity);

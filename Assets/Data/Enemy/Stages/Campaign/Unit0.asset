@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d7f6bd1fa4c874286c63455ec627b3, type: 3}
+  m_Name: Unit0
+  m_EditorClassIdentifier: Assembly-CSharp::UnitSO
+  type: 0
+  prefab: {fileID: 5076484409338409596, guid: 17d758ee2e688c14fbfcebf67c0c8ec3, type: 3}
+  moveSpeed: 2.7
+  attackPower: 14
+  attackRange: 0.3
+  attackInterval: 1
+  hp: 1
+  screenInset: 1
+  arrowPrefab: {fileID: 0}
+  arrowSpeed: 12
+  ropeSkill: {fileID: 0}

@@ -19,6 +19,9 @@ public sealed class CameraRig : MonoBehaviour
     [SerializeField, Min(0.1f)] private float smoothness = 8f;
 
     private readonly Vector3[] uiCorners = new Vector3[4];
+    [SerializeField] private NetworkPlayer secondSeat;
+    [SerializeField] private bool secondary;
+    private bool wasCellar;
     private Camera cam;
     private Vector3 homePosition;
     private float homeSize;
@@ -45,17 +48,29 @@ public sealed class CameraRig : MonoBehaviour
         shakeRemaining = shakeDuration;
     }
 
+    private static bool NeedsTaskView(NetworkPlayer actor)
+    {
+        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver)) return false;
+        return actor.Timing.HasStationAccess || actor.Carrying.Value || actor.Holding.Value || actor.Timing.IsCannonFocus;
+    }
     private void LateUpdate()
     {
         if (NetworkPlayer.LocalPlayer == null) return;
-        if (player != NetworkPlayer.LocalPlayer.Timing) Bind(NetworkPlayer.LocalPlayer);
+        var primary = NetworkPlayer.LocalPlayer;
+        bool split = LobbySession.LocalSeats == 2 && secondSeat != null && secondSeat.Assigned.Value && (primary.InCellar != secondSeat.InCellar || NeedsTaskView(primary) || NeedsTaskView(secondSeat));
+        if (secondary) cam.enabled = split;
+        if (secondary && !split) return;
+        cam.rect = split ? new Rect(secondary ? 0.5f : 0,0,0.5f,1) : new Rect(0,0,1,1);
+        var follow = secondary ? secondSeat : primary;
+        if (player != follow.Timing) Bind(follow);
         float t = 1f - Mathf.Exp(-smoothness * Time.deltaTime);
-        bool aiming = player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
-        bool carrying = NetworkPlayer.LocalPlayer.Carrying.Value || NetworkPlayer.LocalPlayer.Holding.Value;
-        bool atOwnStation = player.HasStationAccess;
-        bool zooming = aiming || atOwnStation || carrying;
+        bool aiming = !player.IsAt(StationAction.Driver) && player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
+        bool carrying = follow.Carrying.Value || follow.Holding.Value;
+        bool atOwnStation = player.HasStationAccess && !player.IsAt(StationAction.Driver);
+        bool zooming = NeedsTaskView(follow);
+        carrying &= zooming;
         float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f);
-        Vector3 destination = homePosition;
+        Vector3 destination = player.GetComponent<NetworkPlayer>().InCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z) : homePosition;
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
         if (aiming)
@@ -80,15 +95,11 @@ public sealed class CameraRig : MonoBehaviour
         if (zooming)
         {
             IncludeRect(ref visible, player.ActiveTimingRect);
-            if (atOwnStation && player.IsAt(StationAction.RoyalFamily))
-            {
-                IncludeRect(ref visible, stations.PrinceAnxietyUI);
-                IncludeRect(ref visible, stations.PrincessAnxietyUI);
-            }
             destination = new Vector3(visible.center.x, visible.center.y, homePosition.z);
             targetSize = Mathf.Max(targetSize, FitSize(visible.extents.x, visible.extents.y));
         }
 
+        if (wasCellar != follow.InCellar) { t = 1; wasCellar = follow.InCellar; }
         Vector3 basePosition = Vector3.Lerp(transform.position - lastShakeOffset, destination, t);
         lastShakeOffset = NextShakeOffset();
         transform.position = basePosition + lastShakeOffset;

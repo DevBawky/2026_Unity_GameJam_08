@@ -15,7 +15,7 @@ public sealed class MultiplayerGameScene : MonoBehaviour
     public void Assign(ulong client, int slot, Unity.Collections.FixedString64Bytes name)
     {
         var player = players[slot];
-        player.transform.position = spawnPoints[slot].position;
+        if (player.Slot.Value < 0) player.transform.position = spawnPoints[slot].position;
         player.Assign(client,slot,name);
     }
     public void Release(ulong client)

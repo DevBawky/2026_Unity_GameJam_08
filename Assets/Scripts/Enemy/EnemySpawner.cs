@@ -9,6 +9,9 @@ using Random = UnityEngine.Random;
 public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private StageSO stage;
+    [SerializeField] private StageSO[] campaign;
+    public int SpawnedWaves => nextWave;
+    private StageSO ActiveStage => campaign != null && campaign.Length >= stageNumber && stageNumber > 0 ? campaign[stageNumber - 1] : stage;
     [SerializeField] private SpriteRenderer cartBody;
     [SerializeField] private CartStations cartStations;
     [SerializeField] private Vector2 areaSize = new(4f, 8f);
@@ -46,14 +49,14 @@ public class EnemySpawner : MonoBehaviour
         cartHit = null;
     }
 
-    private void Update()
+    public void Advance(float dt)
     {
         if (cartStations == null || !cartStations.IsServer || !CartStations.Running) return;
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
-        elapsed += Time.deltaTime;
-        while (nextWave < stage.waves.Count && stage.waves[nextWave].waveStartTime <= elapsed)
-            SpawnWave(stage.waves[nextWave++]);
+        elapsed += dt;
+        while (nextWave < ActiveStage.waves.Count && ActiveStage.waves[nextWave].waveStartTime <= elapsed)
+            SpawnWave(ActiveStage.waves[nextWave++]);
     }
 
     // 남은 몬스터와 날아가던 화살(둘 다 이 오브젝트의 자식)을 치우고 타이머를 처음으로 돌린다.
@@ -73,12 +76,30 @@ public class EnemySpawner : MonoBehaviour
             if (arrow.IsSpawned) arrow.NetworkObject.Despawn(true);
     }
 
+    public float Elapsed => elapsed;
+    public Enemy[] Restore(int number,int wave,float time,PursuerCheckpoint[] saved)
+    {
+        stageNumber=number;nextWave=wave;elapsed=time;
+        var enemies=new Enemy[saved.Length];
+        for(int i=0;i<saved.Length;i++)
+        {
+            var entry=saved[i];
+            foreach(var setup in ActiveStage.waves)
+            {
+                var match=setup.spawns.Find(s=>s.unit.name==entry.Unit);
+                if(match.unit==null) continue;
+                var enemy=Instantiate(match.unit.prefab,entry.Position,Quaternion.identity).GetComponent<Enemy>();
+                enemy.Init(match.unit,setup,cartBody,baseScreenRightX);enemy.NetworkObject.Spawn(true);enemy.Restore(entry);enemies[i]=enemy;break;
+            }
+        }
+        return enemies;
+    }
     private void SpawnWave(WaveSO wave)
     {
         foreach (var s in wave.spawns)
             for (int i = 0; i < s.count; i++)
             {
-                var offset = new Vector3(Random.Range(-0.5f, 0.5f) * areaSize.x, Random.Range(-0.5f, 0.5f) * areaSize.y);
+                var offset = new Vector3((cartStations.Sample()-0.5f) * areaSize.x, (cartStations.Sample()-0.5f) * areaSize.y);
                 var go = Instantiate(s.unit.prefab, transform.position + offset, Quaternion.identity);
                 go.GetComponent<Enemy>().Init(s.unit,wave,cartBody,baseScreenRightX);
                 go.GetComponent<NetworkObject>().Spawn(true);

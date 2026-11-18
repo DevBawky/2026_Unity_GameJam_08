@@ -13,13 +13,24 @@ using UnityEngine.SceneManagement;
 
 /// <summary>Owns Relay and NGO lifetime. UI is authored and referenced in the Lobby scene.</summary>
 [RequireComponent(typeof(NetworkManager), typeof(UnityTransport))]
-public sealed class LobbySession : MonoBehaviour
+public sealed partial class LobbySession : MonoBehaviour
 {
+    public static int LocalSeats { get; private set; }
     public const int Capacity = 4;
     public const string GameScene = "mainGame";
     [SerializeField] private NetworkManager manager;
     [SerializeField] private UnityTransport transport;
-    [SerializeField] private LobbyRoster roster;
+    [SerializeField] private LobbyRoster rosterPrefab;
+    private LobbyRoster roster;
+    internal void BindRoster(LobbyRoster instance) => roster=instance;
+    private bool StartHost()
+    {
+        if(!manager.StartHost()) return false;
+        roster=Instantiate(rosterPrefab);
+        roster.NetworkObject.Spawn(false);
+        Connected(NetworkManager.ServerClientId);
+        return true;
+    }
     private readonly Dictionary<ulong, (int slot, string name)> admitted = new();
     private bool leaving;
     private bool quitting;
@@ -37,6 +48,7 @@ public sealed class LobbySession : MonoBehaviour
     {
         Application.runInBackground = true;
         lifetime = destroyCancellationToken;
+        LocalSeats = 0;
         Status = returnMessage ?? "";
         returnMessage = null;
         DontDestroyOnLoad(gameObject);
@@ -63,7 +75,17 @@ public sealed class LobbySession : MonoBehaviour
         if (!AuthenticationService.Instance.IsSignedIn)
             await WithTimeout(AuthenticationService.Instance.SignInAnonymouslyAsync());
         lifetime.ThrowIfCancellationRequested();
-        manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(nickname.Trim());
+        manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(ConnectionIdentity(nickname));
+    }
+
+    public void StartPractice(int seats)
+    {
+        if (Busy || manager.IsListening || seats < 1 || seats > 2) return;
+        LocalSeats = seats;
+        manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes("P1");
+        transport.SetConnectionData("127.0.0.1",0,"127.0.0.1");
+        if (!StartHost()) { LocalSeats = 0; Status = "연습을 시작하지 못했습니다."; return; }
+        StartGame();
     }
 
     public async Task CreateRoomAsync(string nickname)
@@ -76,10 +98,11 @@ public sealed class LobbySession : MonoBehaviour
             await Prepare(nickname);
             Allocation allocation = await WithTimeout(RelayService.Instance.CreateAllocationAsync(Capacity - 1));
             string code = await WithTimeout(RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId));
-            transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
-            RoomCode = code;
-            if (!manager.StartHost()) throw new InvalidOperationException("방을 시작하지 못했습니다.");
-            roster.Code.Value = new Unity.Collections.FixedString64Bytes(code);
+            transport.SetRelayServerData(allocation.ToRelayServerData(Protocol));
+            checkpoint=null;
+            await CreateDirectory(code);
+            if (!StartHost()) throw new InvalidOperationException("방을 시작하지 못했습니다.");
+            roster.Code.Value = new Unity.Collections.FixedString64Bytes(RoomCode);
             Status = "방 코드를 친구에게 공유하세요.";
         }
         catch (OperationCanceledException) { }
@@ -95,11 +118,13 @@ public sealed class LobbySession : MonoBehaviour
         try
         {
             code = (code ?? "").Trim().ToUpperInvariant();
-            if (code.Length != 6 || !System.Text.RegularExpressions.Regex.IsMatch(code, "^[A-Z0-9]+$"))
-                throw new InvalidOperationException("6자리 방 코드를 확인해주세요.");
+            if (!System.Text.RegularExpressions.Regex.IsMatch(code, "^[0-9]{3}$"))
+                throw new InvalidOperationException("3자리 방 코드를 확인해주세요.");
             await Prepare(nickname);
-            JoinAllocation allocation = await WithTimeout(RelayService.Instance.JoinAllocationAsync(code));
-            transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
+            checkpoint=null;
+            await JoinDirectory(code);
+            JoinAllocation allocation = await WithTimeout(RelayService.Instance.JoinAllocationAsync(relayCode));
+            transport.SetRelayServerData(allocation.ToRelayServerData(Protocol));
             if (!manager.StartClient()) throw new InvalidOperationException("접속을 시작하지 못했습니다.");
             float until = Time.realtimeSinceStartup + 20f;
             while (!InRoom && manager.IsListening && Time.realtimeSinceStartup < until)
@@ -127,6 +152,8 @@ public sealed class LobbySession : MonoBehaviour
             await Task.Yield();
         }
         if (lifetime.IsCancellationRequested) return;
+        try { await CloseDirectory(true); } catch (Exception cleanup) { Debug.LogWarning(cleanup.Message); }
+        checkpoint=null;
         admitted.Clear();
         RoomCode = "";
         Status = "연결 실패: " + error.Message;
@@ -158,45 +185,63 @@ public sealed class LobbySession : MonoBehaviour
     {
         response.CreatePlayerObject = false; // Players spawn together after the network scene load.
         response.Pending = false;
-        if (roster.Starting.Value) { response.Reason = "이미 게임이 시작된 방입니다."; return; }
+        if (loadingGame || (LocalSeats > 0 && request.ClientNetworkId != NetworkManager.ServerClientId)) { response.Reason = "현재 입장할 수 없습니다."; return; }
         string nickname;
         try { nickname = new UTF8Encoding(false, true).GetString(request.Payload); }
         catch { response.Reason = "잘못된 닉네임입니다."; return; }
+        string key = null;
+        if (LocalSeats == 0)
+        {
+            if (nickname.Length < 34 || nickname[32] != '|' || !Guid.TryParseExact(nickname.Substring(0,32),"N",out _)) { response.Reason="좌석 키 오류"; return; }
+            key=Verifier(nickname.Substring(0,32));nickname=nickname.Substring(33);
+        }
         if (string.IsNullOrWhiteSpace(nickname) || nickname.Length > 16 ||
             System.Linq.Enumerable.Any(nickname, char.IsControl))
         { response.Reason = "닉네임을 1~16자로 입력해주세요."; return; }
-        int slot = 0;
-        while (slot < Capacity && System.Linq.Enumerable.Any(admitted.Values, p => p.slot == slot)) slot++;
+        int slot = key == null ? -1 : Array.IndexOf(seatKeys,key);
+        if (slot >= 0 && System.Linq.Enumerable.Any(admitted.Values,p=>p.slot==slot)) { response.Reason="이미 연결된 좌석입니다."; return; }
+        if (slot < 0)
+        {
+            slot=0;
+            while(slot<Capacity && (seatKeys[slot]!=null || System.Linq.Enumerable.Any(admitted.Values,p=>p.slot==slot))) slot++;
+            if(slot==Capacity){slot=0;while(slot<Capacity && System.Linq.Enumerable.Any(admitted.Values,p=>p.slot==slot)) slot++;}
+        }
         if (slot == Capacity) { response.Reason = "방이 가득 찼습니다. (최대 4명)"; return; }
+        seatKeys[slot]=key;
         admitted[request.ClientNetworkId] = (slot, nickname.Trim());
         response.Approved = true;
     }
 
     private void Connected(ulong id)
     {
-        if (!manager.IsServer || !admitted.TryGetValue(id, out var player)) return;
+        if (roster==null || !roster.IsSpawned || !manager.IsServer || !admitted.TryGetValue(id, out var player)) return;
+        var game = FindFirstObjectByType<MultiplayerGameScene>();
+        if (!loadingGame && roster.Starting.Value && game != null) game.Assign(id,player.slot,new Unity.Collections.FixedString64Bytes(player.name));
         roster.Players.Add(new LobbyPlayerInfo { ClientId = id, Slot = player.slot,
             Nickname = new Unity.Collections.FixedString64Bytes(player.name) });
     }
 
     private void Disconnected(ulong id)
     {
+        if (leaving || quitting || (manager.IsServer && manager.ShutdownInProgress)) return;
         if (manager.IsServer)
         {
             var game=FindFirstObjectByType<MultiplayerGameScene>();
-            if (game != null) game.Release(id);
+            if (game != null && admitted.TryGetValue(id,out var seat)) game.Players[seat.slot].Release();
             admitted.Remove(id);
-            if (roster.IsSpawned)
+            if (roster!=null && roster.IsSpawned)
                 for (int i = roster.Players.Count - 1; i >= 0; i--)
                     if (roster.Players[i].ClientId == id) roster.Players.RemoveAt(i);
         }
-        if (id != manager.LocalClientId || leaving || Busy || quitting) return;
+        if (id != manager.LocalClientId || leaving || Busy || quitting || recovering) return;
+        if(directory!=null && !manager.IsServer){_=BeginRecovery();return;}
         _ = LeaveRoomAsync("방장과 연결이 끊어졌습니다.");
     }
 
     private void TransportFailed()
     {
-        if (!Busy && !leaving && !quitting) _ = LeaveRoomAsync("네트워크 연결이 끊어졌습니다.");
+        if(directory!=null && !IsHost && !Busy && !leaving && !quitting){_=BeginRecovery();return;}
+        if (!Busy && !leaving && !quitting && !recovering) _ = LeaveRoomAsync("네트워크 연결이 끊어졌습니다.");
     }
 
     public async Task LeaveRoomAsync(string message = "방에서 나왔습니다.")
@@ -205,6 +250,12 @@ public sealed class LobbySession : MonoBehaviour
         leaving = true;
         Busy = true;
         returnMessage = message;
+        if(!recovering)
+        {
+            if(IsHost && directory!=null) SendCheckpoint();
+            try{await CloseDirectory(true);}catch(Exception e){Debug.LogWarning(e.Message);}
+            checkpoint=null;
+        }
         manager.Shutdown();
         while (manager != null && manager.ShutdownInProgress)
         {
@@ -213,7 +264,7 @@ public sealed class LobbySession : MonoBehaviour
         }
         if (quitting || lifetime.IsCancellationRequested) return;
         // Reload the authored scene to reset scene NetworkObjects and all references.
-        Destroy(roster.gameObject);
+        if(roster!=null) Destroy(roster.gameObject);
         Destroy(gameObject);
         SceneManager.LoadScene("Lobby");
     }
@@ -252,7 +303,9 @@ public sealed class LobbySession : MonoBehaviour
             if (!completed.Contains(entry.Key) || !manager.ConnectedClients.ContainsKey(entry.Key)) continue;
             spawn.Assign(entry.Key,entry.Value.slot,new Unity.Collections.FixedString64Bytes(entry.Value.name));
         }
+        if (LocalSeats == 2) spawn.Assign(NetworkManager.ServerClientId,1,new Unity.Collections.FixedString64Bytes("P2"));
         CartStations.Instance.Begin();
+        if(restoreOnLoad!=null){CartStations.Instance.Restore(restoreOnLoad);restoreOnLoad=null;}
     }
 
     public bool ReloadGame()

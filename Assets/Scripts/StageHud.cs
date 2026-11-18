@@ -28,8 +28,6 @@ public sealed class StageHud : MonoBehaviour
     [SerializeField] private GameObject statusPanel;
     [SerializeField, Range(0f, 1f)] private float anxietyWarningLevel = 0.5f;
     [SerializeField, Range(0f, 1f)] private float durabilityWarningLevel = 0.3f;
-    [SerializeField, Min(0f)] private float headingWarningDegrees = 8f;
-    [SerializeField, Min(0f)] private float horseDifferenceWarning = 0.5f;
 
     private readonly StringBuilder alert = new();
     private SpriteRenderer alertTire;
@@ -52,9 +50,10 @@ public sealed class StageHud : MonoBehaviour
         if (NetworkPlayer.LocalPlayer == null || !stations.IsSpawned) return;
         player=NetworkPlayer.LocalPlayer.Timing;
         UpdateIndicators();
-        restartButton.SetActive(stations.Failed && stations.IsHost);
-        upgradePanel.SetActive(stations.ChoosingUpgrade && stations.IsHost);
+        restartButton.SetActive((stations.Failed || stations.ChapterComplete) && stations.IsHost);
+        upgradePanel.SetActive(stations.ChoosingUpgrade);
         UpdateAlert();
+        if (stations.ChoosingUpgrade || stations.ChapterComplete) { UpdateStatusText(); return; }
 
         int key = HashCode.Combine(stations.Failed, stations.ChoosingUpgrade, stations.StageNumber,
             player.CurrentAction, stations.DepositedShells, stations.IsLoaded);
@@ -65,17 +64,17 @@ public sealed class StageHud : MonoBehaviour
 
     private void UpdateIndicators()
     {
-        healthFill.fillAmount = Mathf.Clamp01(stations.Durability / CartStations.MaxDurability);
+        healthFill.fillAmount = Mathf.Clamp01(stations.Durability / stations.Capacity);
         repairProgress.SetActive(stations.WheelDetached && !stations.Failed && !stations.ChoosingUpgrade);
         repairFill.fillAmount = Mathf.Clamp01(stations.WheelRepairSteps / (float)CartStations.WheelRepairStepsNeeded);
         float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
         distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(progress, 0.5f);
         distanceMarker.anchoredPosition = Vector2.zero;
-        int percent = Mathf.RoundToInt(progress * 100f);
+        int percent = Mathf.CeilToInt(Mathf.Max(0,stations.StageGoal-stations.StageDistance));
         if (distanceLabel != null && percent != lastProgressPercent)
         {
             lastProgressPercent = percent;
-            distanceLabel.text = $"{percent}%";
+            distanceLabel.text = $"{percent} m   ·   W{stations.Waves.Value}";
         }
     }
 
@@ -86,16 +85,18 @@ public sealed class StageHud : MonoBehaviour
             stationStatus.text = stations.FailureReason;
             return;
         }
-        if (stations.ChoosingUpgrade)
+        if (stations.ChapterComplete || stations.ChoosingUpgrade)
         {
-            stationStatus.text = $"STAGE {stations.StageNumber} COMPLETE - CHOOSE AN UPGRADE";
-            string[] lines =
+            bool reporting=stations.Report.Value<0;
+            stationStatus.text=$"{(stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : CartStations.Reports[stations.Report.Value]+" 보고 완료")}  ·  왕자 {stations.PrincePoints.Value}점  공주 {stations.PrincessPoints.Value}점  ·  {stations.Affection.Value} AP";
+            for(int i=0;i<upgradeButtons.Length;i++)
             {
-                $"1 / A: CUSHION AXLE  Lv {stations.CushionAxleLevel} -> {stations.CushionAxleLevel + 1}  (impact x {stations.CushionImpactFactor:0.##})",
-                $"2 / X: TRAINED HORSES  Lv {stations.HorseLevel} -> {stations.HorseLevel + 1}  (+{stations.SpeedPerHorseLevel:0.#} speed)",
-                $"3 / Y: PRECISION SIGHT  Lv {stations.PrecisionLevel} -> {stations.PrecisionLevel + 1}  (+{stations.PrecisionPerLevel * 100f:0.#}% timing)",
-            };
-            for (int i = 0; i < upgradeLabels.Length && i < lines.Length; i++) upgradeLabels[i].text = lines[i];
+                bool visible=!reporting || i<3;
+                upgradeButtons[i].gameObject.SetActive(visible);
+                if(!visible) continue;
+                upgradeLabels[i].text=reporting ? CartStations.Reports[i] : i==CartStations.Departure ? "다음 구간 출발" : $"{CartRules.Active.GetCard(i).title}  {CartRules.Active.GetCard(i).price} AP";
+                upgradeButtons[i].interactable=reporting ? stations.IsHost : i==CartStations.Departure || stations.CanBuy(i);
+            }
             return;
         }
 
@@ -140,22 +141,15 @@ public sealed class StageHud : MonoBehaviour
             alert.Append(alertTireNumber).Append(stations.WheelRepairSteps == 0 ? "번 타이어 고장 - 수리 필요" : "번 타이어 축 핀 고정 필요");
         }
         if (stations.PrinceAnxiety >= anxietyWarningLevel)
-            AppendLine(stations.PrinceEscaping ? "왕자 탈출 시도 - 달래기 필요" : "왕자 불안도 높음");
+            AppendLine(stations.PrinceEscaping ? "왕자 관심 부족 - 돌봄 필요" : "왕자 불안도 높음");
         if (stations.PrincessAnxiety >= anxietyWarningLevel)
-            AppendLine(stations.PrincessEscaping ? "공주 탈출 시도 - 달래기 필요" : "공주 불안도 높음");
+            AppendLine(stations.PrincessEscaping ? "공주 관심 부족 - 돌봄 필요" : "공주 불안도 높음");
         if (stations.Durability <= durabilityWarningLevel * CartStations.MaxDurability)
             AppendLine("마차 내구도 위험");
 
         CartMotion cart = stations.Cart;
-        float difference = cart.RightHorseSpeed - cart.LeftHorseSpeed;
-        if (cart.Heading >= headingWarningDegrees)
-            AppendLine(difference < -horseDifferenceWarning ? "마차 방향 위쪽으로 조정 중" : "마차 아래쪽 치우침 - 왼말 재촉");
-        else if (cart.Heading <= -headingWarningDegrees)
-            AppendLine(difference > horseDifferenceWarning ? "마차 방향 아래쪽으로 조정 중" : "마차 위쪽 치우침 - 오른말 재촉");
-        else if (difference >= horseDifferenceWarning)
-            AppendLine("오른말 빠름 - 왼말 재촉");
-        else if (difference <= -horseDifferenceWarning)
-            AppendLine("왼말 빠름 - 오른말 재촉");
+        if (Mathf.Abs(cart.Lane) == 2)
+            AppendLine(cart.Lane > 0 ? "위쪽 끝 차선" : "아래쪽 끝 차선");
     }
 
     private void AppendLine(string text)
