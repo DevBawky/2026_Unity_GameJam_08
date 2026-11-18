@@ -1,119 +1,106 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// 대포 조준. 대포 스테이션에 있는 동안 조준선과 조준점을 보여 준다.
-// 입력 순서: 모바일 조이스틱 → 게임패드 → 방향키, 입력이 없으면 마우스 위치를 따라간다(모바일 모드 제외).
-// 오른쪽 땅 쪽으로만 조준하고, 충격을 받으면 잠시 흔들린다.
 public sealed class CannonAim : MonoBehaviour
 {
-    private const float MinInputSqr = 0.04f;
-    private const float MinAimX = 0.05f;
-    private const float LineDrawRatio = 0.95f;
-
     [SerializeField] private Transform muzzle;
     [SerializeField] private LineRenderer aimLine;
     [SerializeField] private SpriteRenderer crosshair;
+    [SerializeField] private SpriteRenderer spreadRing;
     [SerializeField] private Camera gameCamera;
     [SerializeField] private MobileJoystick aimJoystick;
-    [SerializeField, Min(1f)] private float lineLength = 8f;
-
-    private PlayerTiming timing;
     private NetworkPlayer actor;
-    private Vector2 sentAim=Vector2.right;
-    private float nextAimSend;
-    private Vector2 direction = Vector2.right;
-    private Vector2 displayedDirection = Vector2.right;
-    private float impactTime;
-    private float impactDuration;
-    private float impactDegrees;
-
-    public Vector2 Direction => displayedDirection;
+    private Vector2 cursor;
+    private float nextSend;
     public Transform Muzzle => muzzle;
-    public float LineLength => lineLength;
+    public Vector2 Direction { get; private set; } = Vector2.right;
+    public float LineLength { get; private set; } = 8f;
+    public float Accuracy { get; private set; }
+    public Bounds LandingBounds => spreadRing != null && spreadRing.enabled
+        ? spreadRing.bounds : new Bounds(muzzle.position + (Vector3)Direction * LineLength, Vector3.zero);
 
     private void Awake()
     {
-        timing = GetComponent<PlayerTiming>();
         actor = GetComponent<NetworkPlayer>();
         if (gameCamera == null) gameCamera = Camera.main;
     }
 
-    public void ApplyImpact(float degrees, float duration)
+    public static Vector2 AimPoint(Vector2 cursor, Vector2 origin, CartStations game, double time, out Vector2 spread, out float accuracy)
     {
-        impactDegrees = Mathf.Max(0f, degrees);
-        impactDuration = Mathf.Max(0.01f, duration);
-        impactTime = impactDuration;
+        float scale = game.WorldPerWebUnit;
+        double tick = System.Math.Floor(time * 30);
+        float wave = .105f*Sin(tick*.105) + .045f*Sin(tick*.21+.9);
+        float shake = Mathf.Clamp01(1f-(float)(time-game.LastShockTime.Value)/.45f);
+        float roll = .017f*Sin(tick*.28) + .012f*Sin(tick*.53);
+        if (game.IsFiring)
+        {
+            double end = System.Math.Round(game.FuseDeadline.Value*30);
+            double lit = tick-end+75;
+            roll += Mathf.Clamp01((float)lit/8f)*(.23f*Sin(lit*.31+end*.618)+.085f*Sin(lit*.67-end*.618));
+        }
+        float motion = .9f*(roll+shake*.18f*Sin(tick*.53))*Mathf.Pow(.78f,game.Stabilizer.Value);
+        accuracy = Mathf.Clamp(.86f+wave-Mathf.Abs(motion)*.6f-shake*.2f,.32f,.98f);
+        float miss = (1f-accuracy)/.68f;
+        spread = new Vector2(12+38*miss,9+34*miss)*scale;
+        float x = 225+Mathf.Clamp(cursor.x,-1,1)*107;
+        float angle = Mathf.Clamp(Mathf.Atan2(Mathf.Clamp(cursor.y,-1,1)*154,x)+motion,-1.1f,1.1f);
+        float edge = game.Cart.LateralLimit+134*scale-spread.y-6*scale;
+        return new Vector2(origin.x+x*scale,Mathf.Clamp(origin.y+Mathf.Tan(angle)*x*scale,-edge,edge));
     }
+
+    private static float Sin(double radians) => (float)System.Math.Sin(radians);
 
     private void Update()
     {
-        bool active=actor!=null && actor.IsSpawned && actor.Assigned.Value;
-        bool aiming=active && CartStations.Running && (actor.Local ? timing.IsCannonFocus : (actor.TaskState.Value.Action==(int)StationAction.Cannon && CartStations.Instance.HoldsStation(StationAction.Cannon,actor)) || (CartStations.Instance.IsFiring && CartStations.Instance.Gunner.Value==actor.NetworkObjectId)) && muzzle!=null;
-        if (aimLine != null) aimLine.enabled = aiming;
+        var game = CartStations.Instance;
+        bool aiming = game != null && CartStations.Running && actor.IsSpawned && actor.Assigned.Value && muzzle != null &&
+            (game.HoldsStation(StationAction.Cannon, actor) || game.IsFiring && game.Gunner.Value == actor.NetworkObjectId);
         if (crosshair != null) crosshair.enabled = aiming;
-        if (!aiming)
-        {
-            displayedDirection = direction;
-            impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
-            return;
-        }
+        if (aimLine != null) aimLine.enabled = aiming;
+        if (spreadRing != null) spreadRing.enabled = aiming;
+        if (!aiming) { if (actor.IsSpawned) cursor = actor.Aim.Value; return; }
 
-        if (actor.Local) ReadInput();
-        else direction=actor.Aim.Value;
-        float fuseWobble = CartStations.Instance.IsFiring ? Mathf.Sin(Time.time * 13f) * 3f / (1 + CartRules.Active.stabilizer.amount * CartStations.Instance.Stabilizer.Value) : 0;
-        float jitter = impactTime > 0f ? Random.Range(-impactDegrees, impactDegrees) * (impactTime / impactDuration) : 0f;
-        displayedDirection = Quaternion.Euler(0f, 0f, jitter + fuseWobble) * direction;
-        impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
-
-        if (actor.Local && Time.unscaledTime>=nextAimSend && (sentAim-displayedDirection).sqrMagnitude>0.0001f)
+        if (actor.Local)
         {
-            sentAim=displayedDirection; actor.Aim.Value=displayedDirection; nextAimSend=Time.unscaledTime+1f/60f;
+            var stick = aimJoystick != null && aimJoystick.IsMobileMode ? aimJoystick.Direction : Vector2.zero;
+            var keys = Keyboard.current;
+            if (keys != null)
+            {
+                if (actor.SecondLocal || LobbySession.LocalSeats != 2)
+                    stick += new Vector2((keys.rightArrowKey.isPressed ? 1 : 0) - (keys.leftArrowKey.isPressed ? 1 : 0),
+                        (keys.upArrowKey.isPressed ? 1 : 0) - (keys.downArrowKey.isPressed ? 1 : 0));
+                if (!actor.SecondLocal) stick += new Vector2((keys.dKey.isPressed ? 1 : 0) - (keys.aKey.isPressed ? 1 : 0),
+                    (keys.wKey.isPressed ? 1 : 0) - (keys.sKey.isPressed ? 1 : 0));
+            }
+            if (!actor.SecondLocal && Gamepad.current != null) stick += Gamepad.current.leftStick.ReadValue();
+            if (stick.sqrMagnitude > .01f) cursor += Vector2.ClampMagnitude(stick, 1) * (1.8f * Time.deltaTime);
+            else if (!actor.SecondLocal && (aimJoystick == null || !aimJoystick.IsMobileMode) && Mouse.current != null &&
+                gameCamera != null && Mouse.current.delta.ReadValue().sqrMagnitude > .01f)
+            {
+                Vector2 d = ((Vector2)gameCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - (Vector2)muzzle.position) / game.WorldPerWebUnit;
+                cursor = new Vector2((d.x - 225f) / 107f, d.y / 154f);
+            }
+            cursor = new Vector2(Mathf.Clamp(cursor.x,-1,1), Mathf.Clamp(cursor.y,-1,1));
+            if (Time.unscaledTime >= nextSend && actor.Aim.Value != cursor)
+            {
+                actor.Aim.Value = cursor;
+                nextSend = Time.unscaledTime + 1f/30f;
+            }
         }
-        Vector3 origin = muzzle.position;
-        if (aimLine != null)
+        else cursor = actor.Aim.Value;
+        var target = AimPoint(cursor, muzzle.position, game, actor.NetworkManager.ServerTime.Time, out var spread, out var accuracy);
+        Accuracy = accuracy;
+        Vector2 delta = target - (Vector2)muzzle.position;
+        Direction = delta.normalized;
+        LineLength = delta.magnitude;
+        if (aimLine != null) { aimLine.SetPosition(0,muzzle.position); aimLine.SetPosition(1,target); }
+        if (crosshair != null) crosshair.transform.position = target;
+        if (spreadRing != null)
         {
-            aimLine.SetPosition(0, origin);
-            aimLine.SetPosition(1, origin + (Vector3)displayedDirection * (lineLength * LineDrawRatio));
+            spreadRing.transform.position = target;
+            var parentScale = spreadRing.transform.parent.lossyScale;
+            var size = spreadRing.sprite.bounds.size;
+            spreadRing.transform.localScale = new Vector3(2*spread.x/(size.x*parentScale.x),2*spread.y/(size.y*parentScale.y),1);
         }
-        if (crosshair != null) crosshair.transform.position = origin + (Vector3)displayedDirection * lineLength;
-    }
-
-    private void ReadInput()
-    {
-        if (actor.SecondLocal)
-        {
-            var keys=Keyboard.current;
-            if (keys!=null) SetDirection(new Vector2((keys.rightArrowKey.isPressed?1:0)-(keys.leftArrowKey.isPressed?1:0),(keys.upArrowKey.isPressed?1:0)-(keys.downArrowKey.isPressed?1:0)));
-            return;
-        }
-        Vector2 input = Vector2.zero;
-        if (aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.Direction.sqrMagnitude > MinInputSqr)
-            input = aimJoystick.Direction;
-        else if (Gamepad.current != null && Gamepad.current.leftStick.ReadValue().sqrMagnitude > MinInputSqr)
-            input = Gamepad.current.leftStick.ReadValue();
-        else if (Keyboard.current != null && LobbySession.LocalSeats != 2)
-            input = new Vector2((Keyboard.current.rightArrowKey.isPressed ? 1 : 0) - (Keyboard.current.leftArrowKey.isPressed ? 1 : 0),
-                (Keyboard.current.upArrowKey.isPressed ? 1 : 0) - (Keyboard.current.downArrowKey.isPressed ? 1 : 0));
-
-        if (input.sqrMagnitude > MinInputSqr)
-        {
-            SetDirection(input);
-            return;
-        }
-        bool mobileAim = aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.IsMobileMode;
-        if (Mouse.current == null || gameCamera == null || mobileAim) return;
-        // 마우스를 움직이거나 누를 때만 따라간다. 안 그러면 방향키·패드를 떼는 순간 마우스 쪽으로 튄다.
-        if (Mouse.current.delta.ReadValue().sqrMagnitude <= 0f && !Mouse.current.leftButton.isPressed) return;
-        Vector3 screen = Mouse.current.position.ReadValue();
-        screen.z = Mathf.Abs(muzzle.position.z - gameCamera.transform.position.z);
-        SetDirection(gameCamera.ScreenToWorldPoint(screen) - muzzle.position);
-    }
-
-    // 마차에서 오른쪽 땅을 향해서만 조준한다.
-    private void SetDirection(Vector2 value)
-    {
-        if (value.sqrMagnitude < 0.001f) return;
-        value.x = Mathf.Max(value.x, MinAimX);
-        direction = value.normalized;
     }
 }

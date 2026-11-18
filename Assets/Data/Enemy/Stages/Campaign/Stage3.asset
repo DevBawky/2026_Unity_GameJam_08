@@ -81,8 +81,6 @@ MonoBehaviour:
   spawns:
   - unit: {fileID: 11400000, guid: 68c07e1576b4f6f428fb844e130b4ddd, type: 2}
     count: 2
-  - unit: {fileID: 11400000, guid: d8875a99f33b5344b9a72ecf8bc3d5cf, type: 2}
-    count: 1
   - unit: {fileID: 11400000, guid: 83019816a11f53347979c8395d7758da, type: 2}
     count: 1
   speedMin: 0

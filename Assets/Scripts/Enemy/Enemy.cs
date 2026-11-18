@@ -15,13 +15,27 @@ public class Enemy : NetworkBehaviour
 
     [SerializeField] private UnitSO unitDefinition;
     public NetworkVariable<float> Health = new();
+    public static readonly System.Collections.Generic.List<Enemy> Active = new();
     public UnitSO Unit { get; private set; }
     public override void OnNetworkSpawn()
     {
+        Active.Add(this);
+        PreviousPosition = transform.position;
         if (Unit==null) Unit=unitDefinition;
         if (IsServer) { Health.Value=hp; CartStations.SimulationStep+=Advance; }
     }
 
+    public Vector2 PreviousPosition { get; private set; }
+    private Vector2 knockVelocity;
+    private float knockLeft;
+    public bool Knocked => knockLeft > 0;
+    public void KnockAway(Vector2 velocity)
+    {
+        if (!IsServer || !IsSpawned || Knocked) return;
+        knockVelocity = velocity;
+        knockLeft = 24f/30f;
+        if (rope != null && rope.Attached) rope.Detach();
+    }
     private SpriteRenderer target;
     private EnemyRope rope;
     private float speed;
@@ -29,6 +43,7 @@ public class Enemy : NetworkBehaviour
     private float hp;
     private float attackTimer;
     private float screenRightX;
+    private float engagementAge = -1f;
     private float sinceStrike = float.PositiveInfinity;
 
     private void Awake() => TryGetComponent(out rope);
@@ -48,26 +63,46 @@ public class Enemy : NetworkBehaviour
             Debug.LogWarning($"[{name}] 추격조 프리팹에 EnemyRope가 없어 로프를 걸지 않습니다", this);
     }
 
-    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike };
+    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,KnockLeft=knockLeft,KnockVelocity=knockVelocity,Angle=transform.eulerAngles.z,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,EngagementAge=engagementAge,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike };
     public void Restore(PursuerCheckpoint saved)
     {
-        hp=saved.Health;speed=saved.Speed;attack=saved.Damage;attackTimer=saved.Wait;sinceStrike=saved.SinceStrike;Health.Value=hp;
+        knockLeft=saved.KnockLeft;knockVelocity=saved.KnockVelocity;transform.rotation=Quaternion.Euler(0,0,saved.Angle);
+        hp=saved.Health;speed=saved.Speed;attack=saved.Damage;attackTimer=saved.Wait;sinceStrike=saved.SinceStrike;engagementAge=saved.EngagementAge;Health.Value=hp;
     }
 
     public void TakeDamage(float damage)
     {
-        if (!IsSpawned || !IsServer || !CartStations.Running) return;
+        if (!IsSpawned || !IsServer || Knocked || !CartStations.Running) return;
         hp -= Mathf.Max(0f,damage);
         Health.Value=hp;
         if (hp <= 0f) NetworkObject.Despawn(true);
     }
 
-    public override void OnNetworkDespawn() => CartStations.SimulationStep-=Advance;
+    public override void OnNetworkDespawn()
+    {
+        Active.Remove(this);
+        CartStations.SimulationStep -= Advance;
+    }
     private void Advance(float dt)
     {
         if (!IsSpawned || !IsServer || !CartStations.Running || Unit==null || target==null) return;
+        PreviousPosition = transform.position;
+        if (Knocked)
+        {
+            transform.position += (Vector3)(knockVelocity * dt);
+            transform.Rotate(0,0,Mathf.Sign(knockVelocity.y)*420f*dt);
+            knockVelocity *= .965f;
+            knockLeft -= dt;
+            if (knockLeft <= .0001f) NetworkObject.Despawn(true);
+            return;
+        }
         if (rope != null && rope.Attached) return;
 
+        if (engagementAge >= 0f)
+        {
+            engagementAge += dt;
+            if (CartStations.Instance.Endless.Value && engagementAge >= 14f) { NetworkObject.Despawn(true); return; }
+        }
         sinceStrike += dt;
         if (sinceStrike < 0.8f)
         {
@@ -98,6 +133,7 @@ public class Enemy : NetworkBehaviour
 
         if (Unit.type == UnitType.Lancer)
         {
+            if (engagementAge < 0) engagementAge = 0;
             HitCart(attack);
             sinceStrike = 0;
         }

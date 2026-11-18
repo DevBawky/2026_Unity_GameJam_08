@@ -33,6 +33,7 @@ public sealed class StageHud : MonoBehaviour
     private SpriteRenderer alertTire;
     private string alertTireNumber;
     private int lastStatusKey = int.MinValue;
+    private int lastWave = -1;
     private int lastProgressPercent = -1;
 
     private void Awake()
@@ -70,10 +71,11 @@ public sealed class StageHud : MonoBehaviour
         float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
         distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(progress, 0.5f);
         distanceMarker.anchoredPosition = Vector2.zero;
-        int percent = Mathf.CeilToInt(Mathf.Max(0,stations.StageGoal-stations.StageDistance));
-        if (distanceLabel != null && percent != lastProgressPercent)
+        int percent = stations.Endless.Value ? Mathf.FloorToInt(stations.StageDistance) : Mathf.CeilToInt(Mathf.Max(0,stations.StageGoal-stations.StageDistance));
+        if (distanceLabel != null && (percent != lastProgressPercent || lastWave != stations.Waves.Value))
         {
             lastProgressPercent = percent;
+            lastWave = stations.Waves.Value;
             distanceLabel.text = $"{percent} m   ·   W{stations.Waves.Value}";
         }
     }
@@ -88,7 +90,7 @@ public sealed class StageHud : MonoBehaviour
         if (stations.ChapterComplete || stations.ChoosingUpgrade)
         {
             bool reporting=stations.Report.Value<0;
-            stationStatus.text=$"{(stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : CartStations.Reports[stations.Report.Value]+" 보고 완료")}  ·  왕자 {stations.PrincePoints.Value}점  공주 {stations.PrincessPoints.Value}점  ·  {stations.Affection.Value} AP";
+            stationStatus.text=$"{(stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : stations.KingReply.Value.ToString())}  ·  왕자 {stations.PrincePoints.Value}점  공주 {stations.PrincessPoints.Value}점  ·  {stations.Affection.Value} AP";
             for(int i=0;i<upgradeButtons.Length;i++)
             {
                 bool visible=!reporting || i<3;

@@ -98,6 +98,32 @@ public sealed class CatapultStrike : NetworkBehaviour
 
     private static float Unit(SpriteRenderer renderer) => renderer.sprite != null ? 1f / renderer.sprite.bounds.size.x : 1f;
 
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer && stations != null) stations.CollectDrivingHazards += CollectDrivingHazards;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (stations != null) stations.CollectDrivingHazards -= CollectDrivingHazards;
+    }
+
+    private void CollectDrivingHazards(System.Collections.Generic.List<CartDrivingHazard> hazards)
+    {
+        var strike = State.Value;
+        if (!strike.Active || strike.Landed) return;
+        float remaining = Mathf.Max(0, flightTime - strike.Time);
+        var cart = stations.Cart;
+        var body = stations.CartBody.bounds;
+        float x = GroundX(strike) + cart.ScrollVelocity.x * remaining;
+        float dx = Mathf.Abs(x - Mathf.Clamp(x, body.min.x, body.max.x));
+        if (dx > hitRadius.x) return;
+        float normalizedX = dx / Mathf.Max(.001f, hitRadius.x);
+        float radius = body.extents.y + hitRadius.y * Mathf.Sqrt(1f - normalizedX * normalizedX);
+        float center = strike.Y - (body.center.y - cart.transform.position.y);
+        hazards.Add(new CartDrivingHazard(center, radius, remaining, remaining));
+    }
+
     private void Update()
     {
         if (!IsSpawned || stations == null || !stations.IsSpawned) return;
@@ -180,7 +206,7 @@ public sealed class CatapultStrike : NetworkBehaviour
         float dy = (s.Y - Mathf.Clamp(s.Y, body.min.y, body.max.y)) / hitRadius.y;
         if (dx * dx + dy * dy > 1f) return;
         stations.Cart.ApplySpeedHit(hitSpeedMultiplier);
-        stations.ReceiveCollision(hitDamage);
+        stations.ReceiveCatapultHit(hitDamage);
     }
 
     // 도로에 고정된 착탄 지점의 현재 화면 x. 배경과 같은 속도로 흘러가며, 기본 속도면 착탄 순간 마차 뒤끝에 온다.

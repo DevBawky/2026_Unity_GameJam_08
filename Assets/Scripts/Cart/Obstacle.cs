@@ -17,5 +17,12 @@ public sealed class Obstacle : MonoBehaviour
     // 소환 전 프리팹에서도 쓸 수 있는 크기 (예고 단계의 차선 판정용).
     public Vector2 SpriteSize => Vector2.Scale(GetComponent<SpriteRenderer>().sprite.bounds.size, transform.lossyScale);
 
+    public static readonly System.Collections.Generic.List<Obstacle> WheelSurfaces = new();
+    private void OnEnable()
+    {
+        if (name.StartsWith("Log",System.StringComparison.Ordinal) || name.StartsWith("Rock",System.StringComparison.Ordinal))
+            WheelSurfaces.Add(this);
+    }
+    private void OnDisable() => WheelSurfaces.Remove(this);
     private void Awake() => Size = GetComponent<SpriteRenderer>().bounds.size;
 }

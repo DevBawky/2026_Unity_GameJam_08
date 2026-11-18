@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
 public sealed partial class LobbySession : MonoBehaviour
 {
     public static int LocalSeats { get; private set; }
+    public static bool PracticeTest { get; private set; }
     public const int Capacity = 4;
     public const string GameScene = "mainGame";
     [SerializeField] private NetworkManager manager;
@@ -49,6 +50,7 @@ public sealed partial class LobbySession : MonoBehaviour
         Application.runInBackground = true;
         lifetime = destroyCancellationToken;
         LocalSeats = 0;
+        PracticeTest = false;
         Status = returnMessage ?? "";
         returnMessage = null;
         DontDestroyOnLoad(gameObject);
@@ -78,10 +80,11 @@ public sealed partial class LobbySession : MonoBehaviour
         manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(ConnectionIdentity(nickname));
     }
 
-    public void StartPractice(int seats)
+    public void StartPractice(int seats, bool endless = false)
     {
         if (Busy || manager.IsListening || seats < 1 || seats > 2) return;
         LocalSeats = seats;
+        PracticeTest = endless;
         manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes("P1");
         transport.SetConnectionData("127.0.0.1",0,"127.0.0.1");
         if (!StartHost()) { LocalSeats = 0; Status = "연습을 시작하지 못했습니다."; return; }
@@ -305,16 +308,18 @@ public sealed partial class LobbySession : MonoBehaviour
         }
         if (LocalSeats == 2) spawn.Assign(NetworkManager.ServerClientId,1,new Unity.Collections.FixedString64Bytes("P2"));
         CartStations.Instance.Begin();
+        if (!string.IsNullOrEmpty(retryEntryJson)) { CartStations.Instance.Restore(JsonUtility.FromJson<RunCheckpoint>(retryEntryJson)); retryEntryJson=null; }
         if(restoreOnLoad!=null){CartStations.Instance.Restore(restoreOnLoad);restoreOnLoad=null;}
     }
 
-    public bool ReloadGame()
+    private string retryEntryJson;
+    public bool ReloadGame(string entryJson = null)
     {
         if (!manager.IsHost || loadingGame) return false;
         loadingGame = true;
         manager.SceneManager.OnLoadEventCompleted += Loaded;
         var result = manager.SceneManager.LoadScene(GameScene,LoadSceneMode.Single);
-        if (result == SceneEventProgressStatus.Started) return true;
+        if (result == SceneEventProgressStatus.Started) { retryEntryJson=entryJson; return true; }
         manager.SceneManager.OnLoadEventCompleted -= Loaded;
         loadingGame = false;
         Status = "씬을 다시 불러오지 못했습니다: " + result;

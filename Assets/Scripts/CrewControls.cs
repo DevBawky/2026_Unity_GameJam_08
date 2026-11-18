@@ -12,6 +12,8 @@ public sealed class CrewControls : MonoBehaviour
     [SerializeField] private TMP_Text team, task;
     [SerializeField] private TMP_Text[] overheadActions;
     private NetworkPlayer menuOwner;
+    [SerializeField] private GameObject testSettingsButton, testSettingsPanel;
+    public void ToggleTestSettings() => testSettingsPanel.SetActive(!testSettingsPanel.activeSelf);
     private float nextText;
     private static readonly Key[] Digits={Key.Digit1,Key.Digit2,Key.Digit3,Key.Digit4,Key.Digit5,Key.Digit6,Key.Digit7,Key.Digit8,Key.Digit9};
 
@@ -43,6 +45,7 @@ public sealed class CrewControls : MonoBehaviour
     }
     private void Update()
     {
+        if (testSettingsButton != null) testSettingsButton.SetActive(CartStations.Instance != null && CartStations.Instance.Endless.Value);
         var local=NetworkPlayer.LocalPlayer;
         if(local==null) return;
         var keys=Keyboard.current;
@@ -83,7 +86,11 @@ public sealed class CrewControls : MonoBehaviour
     }
     private static string ActionLabel(NetworkPlayer p, CartStations game)
     {
+        if (p.Timing.VisibleResult != null) return p.Timing.VisibleResult;
         if (p.Holding.Value) return "포탄 붙잡기";
+        if (game.CarriedChild(p, out var child))
+            return child.Bored ? "지루해요 · 갑판 끝이나 지하층으로" : child.Upset
+                ? $"걸어서 달래기 {100f * child.Soothing / CartStations.SootheDistance:0}%" : "1층 자기 좌석에 앉히기";
         if (p.Timing.NearbyRoyal is StationAction royal)
             return game.AvailableCare(royal, p) switch
             {
@@ -123,13 +130,23 @@ public sealed class CrewControls : MonoBehaviour
         {
             case StationAction.Kitchen: return "간식 만들기 · 행동 버튼 길게";
             case StationAction.ShellDeposit: return "포탄 적재 · 행동 버튼";
-            case StationAction.Cannon: return $"{ActionLabel(p, game)} · {exit} 이탈";
+            case StationAction.Cannon:
+                float fuse = Mathf.Max(0, (float)(game.FuseDeadline.Value - p.NetworkManager.ServerTime.Time));
+                return game.IsFiring ? $"조준 {p.Cannon.Accuracy:P0} · 심지 {fuse:0.0}초"
+                    : $"스틱으로 착탄점 조준 · {p.Cannon.Accuracy:P0} · 점화";
             case StationAction.Driver:
                 var right=p.DriverAim.Value.y>=0;
                 int marks=right?game.RightWounds.Value:game.LeftWounds.Value;
+                HorseCondition horse = right ? game.RightHorse.Value : game.LeftHorse.Value;
+                string condition = horse.Mood switch {
+                    HorseMood.Runaway => $"폭주 {horse.Remaining / 30f:0.0}초",
+                    HorseMood.Tired => $"회복 {horse.Remaining / 30f:0.0}초",
+                    HorseMood.Angry => $"놀람 {horse.Remaining / 30f:0.0}초",
+                    _ => $"타격 {marks}/8"
+                };
                 string controls = p.SecondLocal ? "방향키 조준 · Enter 채찍질"
                     : Application.isMobilePlatform ? "스틱 조준 · 행동 버튼 채찍질" : "WASD 조준 · Space 채찍질";
-                return $"{controls} · {(right?"오른말 ↑":"왼말 ↓")} · {(game.AimsAtSteeringZone(p.DriverAim.Value)?"조향":"감속")} · 말 {game.Cart.LeftStep}:{game.Cart.RightStep} · 목표 Y {game.Cart.Lane} · 상처 {marks} {(marks>=8?"화남":marks>=5?"피로":"")}   {exit} 이탈";
+                return $"{controls} · {(right?"오른말 ↑":"왼말 ↓")} · {(game.AimsAtSteeringZone(p.DriverAim.Value)?"조향":"감속")} · 말 {game.Cart.LeftStep}:{game.Cart.RightStep} · 목표 Y {game.Cart.Lane} · {condition}   {exit} 이탈";
         }
         if(p.SpareWheel.Value) return "예비 바퀴 · 고장 난 모서리로";
         if(p.Snack.Value) return "간식 · 갑판 좌석으로";

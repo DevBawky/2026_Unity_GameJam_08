@@ -18,6 +18,7 @@ public struct PlayerTaskState : INetworkSerializeByMemcpy, IEquatable<PlayerTask
 [RequireComponent(typeof(NetworkObject))]
 public sealed class NetworkPlayer : NetworkBehaviour
 {
+    public NetworkVariable<bool> Bot = new(false);
     public NetworkVariable<bool> Assigned = new(false);
     public NetworkVariable<int> Slot = new(-1);
     public NetworkVariable<FixedString64Bytes> Nickname = new();
@@ -39,7 +40,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<bool> Holding = new(false);
     public NetworkVariable<double> HoldDeadline = new();
     public NetworkVariable<PlayerTaskState> TaskState = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public NetworkVariable<Vector2> Aim = new(Vector2.right, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<Vector2> Aim = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private GameObject carriedShell;
     [SerializeField] private GameObject namePanel;
     [SerializeField] private TMP_Text nameLabel;
@@ -61,7 +62,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     private bool shown;
     private bool carryingShown;
     private FixedString64Bytes shownName;
-    public bool Local => IsSpawned && Assigned.Value && IsOwner;
+    public bool Local => IsSpawned && Assigned.Value && !Bot.Value && IsOwner;
     public static NetworkPlayer LocalPlayer { get; private set; }
     public PlayerTiming Timing => timing;
     public CannonAim Cannon => cannon;
@@ -69,6 +70,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Assigned.OnValueChanged += AssignmentChanged;
+        Bot.OnValueChanged += AssignmentChanged;
         RefreshAssignment();
         body.enabled = false;
         namePanel.SetActive(false);
@@ -98,7 +100,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (carryingShown != carrying) { carryingShown = carrying; carriedShell.SetActive(carrying); }
         if (emoteBubble != null && emoteBubble.activeSelf && (!active || Time.unscaledTime >= emoteHideTime)) emoteBubble.SetActive(false);
         if (!active) return;
-        if (IsServer && CompletedStation.Value >= 0 && !timing.IsInActionArea((StationAction)CompletedStation.Value))
+        if (IsServer && CompletedStation.Value >= 0 && !timing.InsideCompletedArea((StationAction)CompletedStation.Value))
             CompletedStation.Value = -1;
         if (Local)
         {
@@ -119,24 +121,51 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public void Assign(ulong client, int slot, FixedString64Bytes nickname)
     {
         if (!IsServer) return;
+        Bot.Value = false;
         Slot.Value = slot;
         Nickname.Value = nickname;
         NetworkObject.ChangeOwnership(client);
         Assigned.Value = true;
         RefreshAssignment();
     }
+    public void TakeBotControl(int slot)
+    {
+        if (!IsServer) return;
+        Bot.Value = true;
+        Slot.Value = slot;
+        Nickname.Value = new FixedString64Bytes($"도우미 {slot + 1}");
+        if (OwnerClientId != NetworkManager.ServerClientId) NetworkObject.RemoveOwnership();
+        Assigned.Value = true;
+        RefreshAssignment();
+    }
     public void Release()
     {
         if (!IsServer) return;
-        CartStations.Instance.ReleaseStations(NetworkObjectId);
-        if (CartStations.Instance.Votes.Count > Slot.Value) CartStations.Instance.Votes[Slot.Value] = -1;
-        Assigned.Value = false;
-        CartStations.Instance.TallyChoices();
-        Holding.Value = false;
-        CookProgress.Value = 0;
-        CompletedStation.Value = -1;
-        if (IsSpawned && OwnerClientId != NetworkManager.ServerClientId) NetworkObject.RemoveOwnership();
+        var game = CartStations.Instance;
+        game.ReleaseStations(NetworkObjectId);
+        if (game.Votes.Count > Slot.Value) game.Votes[Slot.Value] = -1;
+        TakeBotControl(Slot.Value);
+        game.TallyChoices();
     }
+    public void RestoreSeat(SeatCheckpoint saved)
+    {
+        transform.localPosition = saved.Position;
+        RestoreSeatRpc(saved.Position, saved.Aim, saved.DriverAim, saved.HasWhipAim || saved.DriverAim != Vector2.zero);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void RestoreSeatRpc(Vector3 localPosition, Vector2 aim, Vector2 whip, bool hasWhip)
+    {
+        if (!IsOwner) return;
+        Aim.Value = aim;
+        if (hasWhip) DriverAim.Value = whip;
+        transform.localPosition = localPosition;
+        var sync = GetComponent<OwnerNetworkTransform>();
+        if (sync != null && sync.CanCommitToTransform)
+            sync.Teleport(sync.InLocalSpace ? localPosition : transform.position,
+                sync.InLocalSpace ? transform.localRotation : transform.rotation, transform.localScale);
+    }
+
     public void SendEmote(int id) { if(Local) EmoteRpc(id); }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     private void EmoteRpc(int id)
@@ -164,30 +193,41 @@ public sealed class NetworkPlayer : NetworkBehaviour
     {
         if (CartStations.Instance != null) CartStations.Instance.ReserveStation(this, action);
     }
-    public void Request(StationAction action, bool success, bool hold = false)
+    [Rpc(SendTo.ClientsAndHost)]
+    private void WorkResultRpc(bool loaded) { if (Local) timing.ShowResult(loaded); }
+    public void ShowWorkResult(bool loaded) => WorkResultRpc(loaded);
+
+    public void Request(StationAction action, bool hold = false)
     {
         if (!Local || (!hold && Time.unscaledTime < nextRequestTime)) return;
         if (!hold) nextRequestTime = Time.unscaledTime + 0.12f;
         var stations = CartStations.Instance;
         var care = TimingArea.IsRoyal(action) ? stations.AvailableCare(action, this) : CareAction.None;
-        ActionRpc(action, success, hold, stations.StageNumber, care, DriverAim.Value);
+        ActionRpc(action, NetworkManager.ServerTime.Time, hold, stations.StageNumber, care, DriverAim.Value);
     }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    private void ActionRpc(StationAction action, bool success, bool hold, int stage, CareAction care, Vector2 whipAim)
+    private void ActionRpc(StationAction action, double inputTime, bool hold, int stage, CareAction care, Vector2 whipAim)
     {
         var stations = CartStations.Instance;
         if (!Assigned.Value || stations == null || stage != stations.StageNumber || !CartStations.Running) return;
-        if (hold) { if (Holding.Value) stations.ResolveShellHold(this, success); return; }
-        if (Holding.Value) return;
         double now = NetworkManager.ServerTime.Time;
+        if ((double.IsNaN(inputTime) || double.IsInfinity(inputTime)) || inputTime < now - .35 || inputTime > now + .1) return;
+        if (hold)
+        {
+            if (Holding.Value && inputTime <= HoldDeadline.Value && inputTime >= HoldDeadline.Value - CartRules.Active.shellHoldSeconds)
+                stations.ResolveShellHold(this, timing.TimingSuccess(action, true, inputTime));
+            return;
+        }
+        if (Holding.Value) return;
         if (now-lastActionTime < 0.12 || !timing.IsInActionArea(action) || !stations.CanUse(action,this)) return;
         if (TimingArea.IsRoyal(action) && care != stations.AvailableCare(action, this)) return;
         lastActionTime = now;
         if (action == StationAction.ShellDeposit) stations.Enter(action,this);
         else if (action == StationAction.Cannon) stations.Ignite(this);
-        else if (success && action == StationAction.Driver) stations.StrikeHorse(whipAim);
-        else if (success) stations.Succeed(action,this);
-        else stations.Fail(action);
+        else if (action == StationAction.Driver) stations.StrikeHorse(whipAim);
+        else if (action != StationAction.ShellPile && action != StationAction.Reload && action != StationAction.WheelRepair
+            || timing.TimingSuccess(action, false, inputTime)) stations.Succeed(action,this);
+        else stations.Fail(action, this);
     }
     // TeamEmotes가 아이콘을 골라 호출한다.
     public void ShowEmoteBubble(Sprite icon)
@@ -207,6 +247,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         Assigned.OnValueChanged -= AssignmentChanged;
+        Bot.OnValueChanged -= AssignmentChanged;
         EmoteTime.OnValueChanged -= EmoteReceived;
         if (LocalPlayer == this) LocalPlayer = null;
     }

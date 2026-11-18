@@ -18,6 +18,7 @@ public class CannonballHit : NetworkBehaviour
     public int[] HitIndices(Enemy[] enemies) => System.Array.FindAll(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Range(0,enemies.Length)),i=>victims.Contains(enemies[i]));
     public void RestoreHits(int[] indices,Enemy[] enemies)
     {
+        if (indices==null) return;
         foreach(int i in indices) if(i>=0 && i<enemies.Length && enemies[i]!=null) victims.Add(enemies[i]);
     }
     public void Sweep(Vector2 step)
@@ -26,6 +27,20 @@ public class CannonballHit : NetworkBehaviour
         var filter = new ContactFilter2D { useTriggers = true };
         shape.Cast(step.normalized, filter, hits, step.magnitude);
         foreach (var hit in hits) OnTriggerEnter2D(hit.collider);
+    }
+
+    public void Blast(Vector2 origin, float length, float halfWidth)
+    {
+        for (int i = Enemy.Active.Count - 1; i >= 0; i--)
+        {
+            var enemy = Enemy.Active[i];
+            Vector2 delta = (Vector2)enemy.transform.position - origin;
+            if (delta.x < 0 || delta.x > length) continue;
+            float t = delta.x / length;
+            float width = halfWidth * Mathf.Min(1f, (.55f + .95f * Mathf.Sin(Mathf.PI * t)) * Mathf.Sqrt(1f-t));
+            if (Mathf.Abs(delta.y) <= width && victims.Add(enemy))
+                enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)

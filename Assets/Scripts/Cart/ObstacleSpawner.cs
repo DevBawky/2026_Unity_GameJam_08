@@ -53,6 +53,35 @@ public sealed class ObstacleSpawner : MonoBehaviour
     private float pendingRemaining;
     private NetworkObject pendingMarker;
 
+    private void OnEnable()
+    {
+        if (stations != null) stations.CollectDrivingHazards += CollectDrivingHazards;
+    }
+
+    private void OnDisable()
+    {
+        if (stations != null) stations.CollectDrivingHazards -= CollectDrivingHazards;
+    }
+
+    private void CollectDrivingHazards(List<CartDrivingHazard> hazards)
+    {
+        Bounds body = cartBody.bounds;
+        float speed = cart.ScrollVelocity.x;
+        if (speed <= 0f) return;
+        float centerOffset = body.center.y - cart.transform.position.y;
+        foreach (var obstacle in active)
+        {
+            if (obstacle == null) continue;
+            Vector2 pos = obstacle.transform.position;
+            Vector2 half = obstacle.Size * .5f;
+            float enter = (body.min.x - half.x - pos.x) / speed;
+            float exit = (body.max.x + half.x - pos.x) / speed;
+            if (exit < 0 || enter > CartDrivingHazard.Lookahead) continue;
+            float radius = body.extents.y * collisionHeightFraction + half.y;
+            hazards.Add(new CartDrivingHazard(pos.y - centerOffset, radius, enter, exit));
+        }
+    }
+
     private void Start() => nextWarningDistance = cart.Distance + firstWarningDistance;
 
     // 다음 스테이지 시작 시 CartStations가 호출한다.

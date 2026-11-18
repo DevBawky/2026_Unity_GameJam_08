@@ -10,7 +10,7 @@ public sealed class CameraRig : MonoBehaviour
     private const float CarryZoom = 3f;
     private const float StationZoom = 4f;
     private const float AimZoom = 2f;
-    private const float CartVisibleFraction = 0.2f;
+    private const float GunnerCartViewportX = 0.1f;
     private const float AimEndPadding = 0.25f;
 
     [SerializeField] private PlayerTiming player;
@@ -32,6 +32,8 @@ public sealed class CameraRig : MonoBehaviour
 
     public void Bind(NetworkPlayer actor) { player=actor.Timing; cannonAim=actor.Cannon; }
 
+    public Vector3 ShakeOffset => lastShakeOffset;
+    public bool CameraActive => cam != null && cam.enabled;
     public float ShakeAmount => shakeRemaining > 0f ? shakeRemaining / shakeDuration : 0f;
 
     private void Awake()
@@ -76,23 +78,20 @@ public sealed class CameraRig : MonoBehaviour
         if (aiming)
         {
             Vector3 muzzle = cannonAim.Muzzle.position;
-            Vector3 endpoint = muzzle + (Vector3)cannonAim.Direction * cannonAim.LineLength;
-            Vector3 padding = new Vector3(AimEndPadding, AimEndPadding);
-            visible = new Bounds(muzzle, Vector3.zero);
-            visible.Encapsulate(endpoint + padding);
-            visible.Encapsulate(endpoint - padding);
-            SpriteRenderer body = stations.CartBody;
-            if (body != null && body.enabled && body.gameObject.activeInHierarchy)
-            {
-                Bounds cartBounds = body.bounds;
-                float cartVisibleLeft = Mathf.Lerp(cartBounds.max.x, cartBounds.min.x, CartVisibleFraction);
-                visible.Encapsulate(new Vector3(cartVisibleLeft, cartBounds.min.y, muzzle.z));
-                visible.Encapsulate(new Vector3(cartBounds.max.x, cartBounds.max.y, muzzle.z));
-            }
-            targetSize = homeSize / AimZoom;
+            visible = stations.PursuerEntryBounds;
+            visible.Encapsulate(muzzle);
+            visible.Encapsulate(cannonAim.LandingBounds);
+            visible.Expand(new Vector3(2f * AimEndPadding, 2f * AimEndPadding, 0f));
+            float rearX = stations.CartBody.bounds.max.x;
+            float width = Mathf.Max((rearX - visible.min.x) / GunnerCartViewportX,
+                (visible.max.x - rearX) / (1f - GunnerCartViewportX));
+            float requiredSize = Mathf.Max(visible.extents.y / SafeFraction, width / (2f * cam.aspect));
+            targetSize = Mathf.Max(homeSize / AimZoom, requiredSize);
+            float halfWidth = targetSize * cam.aspect;
+            destination = new Vector3(rearX + (1f - 2f * GunnerCartViewportX) * halfWidth,
+                visible.center.y, homePosition.z);
         }
-
-        if (zooming)
+        else if (zooming)
         {
             IncludeRect(ref visible, player.ActiveTimingRect);
             destination = new Vector3(visible.center.x, visible.center.y, homePosition.z);
@@ -105,7 +104,7 @@ public sealed class CameraRig : MonoBehaviour
         transform.position = basePosition + lastShakeOffset;
 
         float size = Mathf.Lerp(cam.orthographicSize, targetSize, t);
-        if (zooming)
+        if (zooming && !aiming)
         {
             // 이동 중에도 현재 카메라 위치 기준으로 보여야 할 영역이 잘리지 않게 한다.
             Vector3 center = transform.position;
@@ -135,6 +134,6 @@ public sealed class CameraRig : MonoBehaviour
     {
         if (rect == null || !rect.gameObject.activeInHierarchy) return;
         rect.GetWorldCorners(uiCorners);
-        foreach (Vector3 corner in uiCorners) bounds.Encapsulate(corner);
+        foreach (Vector3 corner in uiCorners) bounds.Encapsulate(corner - lastShakeOffset);
     }
 }
