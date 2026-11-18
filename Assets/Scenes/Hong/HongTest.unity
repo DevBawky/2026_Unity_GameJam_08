@@ -22538,6 +22538,15 @@ MonoBehaviour:
         byte0507: 0
         byte0508: 0
         byte0509: 0
+  shopCatalog: {fileID: 11400000, guid: 8ddfbf4b99eabbc4abaf1cb69e35c7a8, type: 2}
+  ShopOffer:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+  PurchasedItems:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   impactDust: {fileID: 1279328010}
   impactAudio: {fileID: 1279328008}
   cannonSound: {fileID: 8300000, guid: fd1f776759935b949a8e663483f6ff2f, type: 3}
@@ -26222,6 +26231,14 @@ PrefabInstance:
       propertyPath: profile
       value: 
       objectReference: {fileID: 11400000, guid: fd90f7395740e984793b46ab58c28f30, type: 2}
+    - target: {fileID: 292941113531128693, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 292941113531128693, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 550455371504482494, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -26242,13 +26259,45 @@ PrefabInstance:
       propertyPath: 'rigs.Array.data[1]'
       value: 
       objectReference: {fileID: 162087382}
+    - target: {fileID: 2569872708874875772, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 2569872708874875772, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 2919701206174167429, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Area | WheelRack
       objectReference: {fileID: 0}
+    - target: {fileID: 2986323632029225351, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 2986323632029225351, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 3145671450888821725, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Area | ShellPile
+      objectReference: {fileID: 0}
+    - target: {fileID: 3186103725571985789, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 3186103725571985789, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3323993852039640282, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 3323993852039640282, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 3715669901632687764, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
@@ -26362,6 +26411,14 @@ PrefabInstance:
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
       objectReference: {fileID: 0}
+    - target: {fileID: 5633873483525446356, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 5633873483525446356, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 6112022490218517002, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Area | Cannon
@@ -26369,6 +26426,14 @@ PrefabInstance:
     - target: {fileID: 6212022342887672199, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Canvas | InGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 6340413190061823865, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 6340413190061823865, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 6692721860881595095, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
@@ -26382,6 +26447,14 @@ PrefabInstance:
       propertyPath: profile
       value: 
       objectReference: {fileID: 11400000, guid: 4cbd64f715be87b49931d29d041fab6e, type: 2}
+    - target: {fileID: 8348108918593756273, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292801791
+      objectReference: {fileID: 0}
+    - target: {fileID: 8348108918593756273, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 9061259304506196323, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_Name
       value: Area | Stairs Up
