@@ -12,7 +12,12 @@ public sealed class CameraRig : MonoBehaviour
     private const float AimZoom = 2f;
     private const float GunnerCartViewportX = 0.1f;
     private const float AimEndPadding = 0.25f;
+    // 웹판 v10 앞길 시야: 일반 주행·마부석은 말·마차 묶음 중심을 화면 너비 55%에 두고, 마부석은 가로·세로 15% 더 넓게 본다.
+    private const float ConvoyScreenX = 0.55f;
+    private const float DriverViewRange = 1.15f;
 
+    [Tooltip("말·마차 묶음의 가로 중심(월드 x). 말 앞끝~마차 뒤끝의 가운데 (웹판 convoyCenterX)")]
+    [SerializeField] private float convoyCenterX = -0.75f;
     [SerializeField] private PlayerTiming player;
     [SerializeField] private CartStations stations;
     [SerializeField] private CannonAim cannonAim;
@@ -71,8 +76,11 @@ public sealed class CameraRig : MonoBehaviour
         bool atOwnStation = player.HasStationAccess && !player.IsAt(StationAction.Driver);
         bool zooming = NeedsTaskView(follow);
         carrying &= zooming;
-        float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f);
-        Vector3 destination = player.GetComponent<NetworkPlayer>().InCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z) : homePosition;
+        bool driving = player.HasStationAccess && player.IsAt(StationAction.Driver);
+        float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f) * (driving ? DriverViewRange : 1f);
+        bool inCellar = player.GetComponent<NetworkPlayer>().InCellar;
+        Vector3 destination = inCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z)
+            : new Vector3(convoyCenterX - (ConvoyScreenX - 0.5f) * 2f * targetSize * cam.aspect, homePosition.y, homePosition.z);
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
         if (aiming)

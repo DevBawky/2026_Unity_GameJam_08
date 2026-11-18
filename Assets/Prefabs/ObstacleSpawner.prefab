@@ -47,6 +47,7 @@ MonoBehaviour:
   cart: {fileID: 0}
   stations: {fileID: 0}
   cartBody: {fileID: 0}
+  catapult: {fileID: 0}
   prefabs:
   - {fileID: 8006847307704388264, guid: b7ec9cf3fb1ced444903c50932266376, type: 3}
   - {fileID: 5925149844747649662, guid: 55360678debb48641927acd929d2f563, type: 3}
@@ -58,6 +59,6 @@ MonoBehaviour:
   gapPerStage: 4
   minGap: 125
   randomGap: 12
-  spawnDistance: 9.5
+  spawnDistance: 7.2
   outerLaneY: 2
   collisionHeightFraction: 0.65
