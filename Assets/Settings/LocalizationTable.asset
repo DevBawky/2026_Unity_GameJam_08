@@ -438,3 +438,7 @@ MonoBehaviour:
     english: 'Couldn''t reload the scene: '
   - korean: "mainGame \uC52C\uC774 \uBE4C\uB4DC \uBAA9\uB85D\uC5D0 \uC5C6\uC2B5\uB2C8\uB2E4."
     english: mainGame is not in the build list.
+  - korean: "\uC0C1\uC810"
+    english: Shop
+  - korean: "\uBCF4\uC720 {0} AP"
+    english: '{0} AP'
