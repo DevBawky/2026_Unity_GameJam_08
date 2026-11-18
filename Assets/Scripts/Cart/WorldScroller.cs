@@ -1,10 +1,21 @@
 using UnityEngine;
 
-// 월드 루트 1개에 붙인다. 마차가 왼쪽으로 달리므로 월드는 오른쪽(+x)으로 흐른다.
-// 배경·장애물은 이 오브젝트의 자식으로 두면 같이 흐른다.
 public class WorldScroller : MonoBehaviour
 {
-    [SerializeField] CartMotion cart; // 씬에서 Cart 프리팹 인스턴스를 연결
-
-    void Update() => transform.position += Vector3.right * (cart.Speed * Time.deltaTime);
+    [SerializeField] private CartMotion cart;
+    private Transform roadSurface;
+    private void Awake() { roadSurface = transform.Find("RoadSurface"); }
+    private void Update()
+    {
+        if (cart == null) return;
+        float angle = cart.Heading * Mathf.Deg2Rad;
+        transform.position += new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (cart.Speed * Time.deltaTime);
+        // The uniform road must cover the camera even after the scrolling tiles have looped.
+        if (roadSurface != null && Camera.main != null)
+        {
+            Vector3 roadPosition = roadSurface.position;
+            roadPosition.x = Camera.main.transform.position.x;
+            roadSurface.position = roadPosition;
+        }
+    }
 }
