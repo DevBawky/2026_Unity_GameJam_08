@@ -5,8 +5,30 @@ public sealed class HorseWhipZone : MonoBehaviour
 {
     [Tooltip("말 스프라이트 안의 조향 판정 영역. 씬 뷰의 초록 사각형으로 편집합니다.")]
     [SerializeField] private Rect steeringArea = new Rect(.575f, 0f, .425f, 1f);
+    [SerializeField] private SpriteRenderer gallopVisual;
+    [SerializeField] private SpriteSequence gallop;
+    [SerializeField] private SpriteSequence woundedGallop;
+    [SerializeField] private float gallopOffset;
+    private float phase;
+    private float lastFrame;
     private SpriteRenderer horse;
     public Rect SteeringArea => steeringArea;
+
+    public void ShowGallop(bool running, bool wounded, HorseMood mood, float time)
+    {
+        if (gallopVisual == null) return;
+        var sequence = wounded ? woundedGallop : gallop;
+        float rate = mood switch
+        {
+            HorseMood.Tired => .52f,
+            HorseMood.Angry => 1.4f,
+            HorseMood.Runaway => 2.05f,
+            _ => 1f
+        };
+        if (running) phase += Mathf.Clamp(time - lastFrame, 0f, .1f) * rate;
+        lastFrame = time;
+        gallopVisual.sprite = sequence.FrameAt(phase + gallopOffset, true);
+    }
     public Bounds SpriteBounds
     {
         get

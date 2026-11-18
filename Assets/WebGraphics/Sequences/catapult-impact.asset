@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: catapult-impact
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: -2091572604, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 156981388, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 28532409, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: -1355468210, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: -1573188075, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 1362778928, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: -1661815211, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 1378394089, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 1677110552, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 1567280948, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: 6262953568202918021, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  frameStarts:
+  - 0
+  - 0.06666667
+  - 0.13333334
+  - 0.2
+  - 0.26666668
+  - 0.33333334
+  - 0.4
+  - 0.46666667
+  - 0.53333336
+  - 0.6
+  - 0.6666667
+  duration: 0.70000005

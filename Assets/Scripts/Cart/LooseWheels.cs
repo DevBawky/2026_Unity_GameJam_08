@@ -35,7 +35,7 @@ public sealed partial class CartStations
         {
             var src=tires[LooseWheels[wheelVisuals.Count].Mount];
             var copy=Instantiate(src,src.transform.position,Quaternion.identity);
-            copy.transform.localScale=src.transform.lossyScale;
+            copy.transform.localScale = looseWheelSprite != null ? Vector3.one * (WorldPerWebUnit * 100f) : src.transform.lossyScale;
             copy.color=Color.white;
             wheelVisuals.Add(copy);
         }
@@ -43,7 +43,7 @@ public sealed partial class CartStations
         {
             if (i>=LooseWheels.Count) {Destroy(wheelVisuals[i].gameObject);wheelVisuals.RemoveAt(i);continue;}
             var w=LooseWheels[i];var view=wheelVisuals[i];
-            view.sprite=tires[w.Mount].sprite;
+            view.sprite = looseWheelSprite != null ? looseWheelSprite : tires[w.Mount].sprite;
             view.transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
         }
     }

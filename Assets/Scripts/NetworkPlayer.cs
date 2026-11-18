@@ -45,6 +45,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     [SerializeField] private GameObject namePanel;
     [SerializeField] private TMP_Text nameLabel;
     [SerializeField] private SpriteRenderer body;
+    [SerializeField] private CrewSpriteSet crewSprites;
     [SerializeField] private PlayerTiming timing;
     [SerializeField] private CannonAim cannon;
     [Header("Emote")]
@@ -61,6 +62,9 @@ public sealed class NetworkPlayer : NetworkBehaviour
     private int shownEmote;
     private bool shown;
     private bool carryingShown;
+    private static readonly int LocalOutline = Shader.PropertyToID("_LocalOutline");
+    private MaterialPropertyBlock outlineProperties;
+    private bool outlineShown;
     private FixedString64Bytes shownName;
     public bool Local => IsSpawned && Assigned.Value && !Bot.Value && IsOwner;
     public static NetworkPlayer LocalPlayer { get; private set; }
@@ -96,10 +100,17 @@ public sealed class NetworkPlayer : NetworkBehaviour
     {
         bool active = IsSpawned && Assigned.Value;
         if (shown != active) { shown = active; body.enabled = active; namePanel.SetActive(active); }
-        bool carrying = active && Carrying.Value;
+        ShowLocalOutline(Local);
+        bool carrying = active && Carrying.Value && crewSprites == null;
         if (carryingShown != carrying) { carryingShown = carrying; carriedShell.SetActive(carrying); }
         if (emoteBubble != null && emoteBubble.activeSelf && (!active || Time.unscaledTime >= emoteHideTime)) emoteBubble.SetActive(false);
         if (!active) return;
+        if (crewSprites != null)
+        {
+            var stations = CartStations.Instance;
+            var pose = stations != null ? stations.CrewPose(this) : CrewSpriteSet.Pose.Idle;
+            body.sprite = crewSprites.Get(Slot.Value, pose);
+        }
         if (IsServer && CompletedStation.Value >= 0 && !timing.InsideCompletedArea((StationAction)CompletedStation.Value))
             CompletedStation.Value = -1;
         if (Local)
@@ -117,6 +128,16 @@ public sealed class NetworkPlayer : NetworkBehaviour
         }
         if (IsServer && CartStations.Running && Holding.Value && NetworkManager.ServerTime.Time >= HoldDeadline.Value)
             CartStations.Instance.ResolveShellHold(this, false);
+    }
+
+    private void ShowLocalOutline(bool visible)
+    {
+        if (crewSprites == null || outlineShown == visible) return;
+        outlineShown = visible;
+        outlineProperties ??= new MaterialPropertyBlock();
+        body.GetPropertyBlock(outlineProperties);
+        outlineProperties.SetFloat(LocalOutline, visible ? 1f : 0f);
+        body.SetPropertyBlock(outlineProperties);
     }
     public void Assign(ulong client, int slot, FixedString64Bytes nickname)
     {
@@ -246,6 +267,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     }
     public override void OnNetworkDespawn()
     {
+        ShowLocalOutline(false);
         Assigned.OnValueChanged -= AssignmentChanged;
         Bot.OnValueChanged -= AssignmentChanged;
         EmoteTime.OnValueChanged -= EmoteReceived;

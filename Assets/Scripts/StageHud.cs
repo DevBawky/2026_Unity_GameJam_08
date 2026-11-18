@@ -22,11 +22,11 @@ public sealed class StageHud : MonoBehaviour
     [SerializeField] private GameObject repairProgress;
     [SerializeField] private RectTransform distanceMarker;
     [SerializeField] private TMP_Text distanceLabel;
+    [SerializeField] private Image distanceFill;
 
     [Header("Warning panel")]
     [SerializeField] private TMP_Text statusAlert;
     [SerializeField] private GameObject statusPanel;
-    [SerializeField, Range(0f, 1f)] private float anxietyWarningLevel = 0.5f;
     [SerializeField, Range(0f, 1f)] private float durabilityWarningLevel = 0.3f;
 
     private readonly StringBuilder alert = new();
@@ -69,6 +69,7 @@ public sealed class StageHud : MonoBehaviour
         repairProgress.SetActive(stations.WheelDetached && !stations.Failed && !stations.ChoosingUpgrade);
         repairFill.fillAmount = Mathf.Clamp01(stations.WheelRepairSteps / (float)CartStations.WheelRepairStepsNeeded);
         float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
+        if (distanceFill != null) distanceFill.fillAmount = progress;
         distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(progress, 0.5f);
         distanceMarker.anchoredPosition = Vector2.zero;
         int percent = stations.Endless.Value ? Mathf.FloorToInt(stations.StageDistance) : Mathf.CeilToInt(Mathf.Max(0,stations.StageGoal-stations.StageDistance));
@@ -142,10 +143,6 @@ public sealed class StageHud : MonoBehaviour
             }
             alert.Append(alertTireNumber).Append(stations.WheelRepairSteps == 0 ? "번 타이어 고장 - 수리 필요" : "번 타이어 축 핀 고정 필요");
         }
-        if (stations.PrinceAnxiety >= anxietyWarningLevel)
-            AppendLine(stations.PrinceEscaping ? "왕자 관심 부족 - 돌봄 필요" : "왕자 불안도 높음");
-        if (stations.PrincessAnxiety >= anxietyWarningLevel)
-            AppendLine(stations.PrincessEscaping ? "공주 관심 부족 - 돌봄 필요" : "공주 불안도 높음");
         if (stations.Durability <= durabilityWarningLevel * CartStations.MaxDurability)
             AppendLine("마차 내구도 위험");
 

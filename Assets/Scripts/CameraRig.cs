@@ -26,6 +26,7 @@ public sealed class CameraRig : MonoBehaviour
     private readonly Vector3[] uiCorners = new Vector3[4];
     [SerializeField] private NetworkPlayer secondSeat;
     [SerializeField] private bool secondary;
+    [SerializeField] private bool matchWebFraming;
     private bool wasCellar;
     private Camera cam;
     private Vector3 homePosition;
@@ -81,6 +82,8 @@ public sealed class CameraRig : MonoBehaviour
         bool inCellar = player.GetComponent<NetworkPlayer>().InCellar;
         Vector3 destination = inCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z)
             : new Vector3(convoyCenterX - (ConvoyScreenX - 0.5f) * 2f * targetSize * cam.aspect, homePosition.y, homePosition.z);
+        if (matchWebFraming)
+            MatchWebFraming(follow, driving, carrying, atOwnStation, ref destination, ref targetSize);
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
         if (aiming)
@@ -94,7 +97,7 @@ public sealed class CameraRig : MonoBehaviour
             float width = Mathf.Max((rearX - visible.min.x) / GunnerCartViewportX,
                 (visible.max.x - rearX) / (1f - GunnerCartViewportX));
             float requiredSize = Mathf.Max(visible.extents.y / SafeFraction, width / (2f * cam.aspect));
-            targetSize = Mathf.Max(homeSize / AimZoom, requiredSize);
+            targetSize = Mathf.Max(matchWebFraming ? targetSize : homeSize / AimZoom, requiredSize);
             float halfWidth = targetSize * cam.aspect;
             destination = new Vector3(rearX + (1f - 2f * GunnerCartViewportX) * halfWidth,
                 visible.center.y, homePosition.z);
@@ -121,6 +124,32 @@ public sealed class CameraRig : MonoBehaviour
             size = Mathf.Max(size, FitSize(halfWidth, halfHeight));
         }
         cam.orthographicSize = size;
+    }
+
+    private void MatchWebFraming(NetworkPlayer follow, bool driving, bool carrying, bool atStation,
+        ref Vector3 destination, ref float targetSize)
+    {
+        float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+        float width = Mathf.Clamp(550f + 300f * aspect, 650f, 1200f);
+        float height = width / Mathf.Max(.01f, aspect);
+        float paneWidth = width * cam.rect.width;
+        float unit = stations.WorldPerWebUnit;
+        float zoom = Mathf.Min(1f, height / 480f, paneWidth / 760f);
+        if (follow.InCellar)
+            zoom = atStation ? Mathf.Min(3.2f, paneWidth / 120f, height / 112f)
+                : Mathf.Min(3f, paneWidth / 411f, height / 234f);
+        else if (driving)
+            zoom /= 1.5f;
+        else if (carrying)
+            zoom = 3f;
+        else if (atStation)
+            zoom = 4f;
+
+        if (!follow.InCellar) zoom = Mathf.Max(zoom, paneWidth * ConvoyScreenX / 1450f);
+        targetSize = height / (2f * zoom) * unit;
+        if (!follow.InCellar)
+            destination.x = stations.Cart.transform.position.x - (77f + (ConvoyScreenX - .5f) * paneWidth / zoom) * unit;
+        destination.y -= .04f * targetSize;
     }
 
     private float FitSize(float halfWidth, float halfHeight)

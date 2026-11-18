@@ -1,8 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Collections;
-using UnityEngine.UI;
-using UnityEngine.Serialization;
 using System.Collections;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
@@ -39,10 +37,17 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField] private ObstacleSpawner obstacles;
     [SerializeField] private CameraRig cameraRig;
     [SerializeField] private GameObject storedShell;
+    [SerializeField] private TMPro.TMP_Text rackCountLabel;
     [SerializeField] private GameObject shellPrefab;
     [SerializeField] private Transform cannonMuzzle;
-    [FormerlySerializedAs("princeAnxietyBar"), SerializeField] private Image princeHungerBar;
-    [FormerlySerializedAs("princessAnxietyBar"), SerializeField] private Image princessHungerBar;
+    [SerializeField] private SpriteRenderer cannonVisual;
+    [SerializeField] private Sprite cannonReady, cannonFuse;
+    [SerializeField] private SpriteRenderer muzzleVisual;
+    [SerializeField] private SpriteSequence muzzleFlash;
+    [SerializeField] private Sprite looseWheelSprite;
+    [SerializeField] private Sprite missingWheelSprite;
+    private Sprite mountedWheelSprite;
+    private float muzzleFlashStart = float.NegativeInfinity;
 
     [Header("Stage")]
     [SerializeField, Min(1)] private int stageNumber = 1;
@@ -153,6 +158,7 @@ public sealed partial class CartStations : NetworkBehaviour
             {
                 tires.Add(renderer);
                 tireAlphas.Add(renderer.color.a);
+                if (mountedWheelSprite == null) mountedWheelSprite = renderer.sprite;
             }
         }
         ResetStageState();
@@ -402,7 +408,9 @@ public sealed partial class CartStations : NetworkBehaviour
         StationOwners[(int)StationAction.Cannon] = NoStationOwner;
         ApplyImpact();
         AddImpactEffects(recoilAnxietyIncrease, recoilShakeStrength, true);
-        GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position, cannonMuzzle.rotation);
+        Vector2 direction = target - (Vector2)cannonMuzzle.position;
+        var rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+        GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position, rotation);
         shot.GetComponent<Projectile>().SetCaliber(Barrel.Value);
         shot.GetComponent<NetworkObject>().Spawn(true);
         if (shot.TryGetComponent(out Projectile projectile))
@@ -447,6 +455,12 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         if (detachedTire == null) return;
         Color color = detachedTire.color;
+        if (missingWheelSprite != null)
+        {
+            bool missing = alpha <= 0f;
+            detachedTire.sprite = missing ? missingWheelSprite : mountedWheelSprite;
+            alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
+        }
         color.a = alpha;
         detachedTire.color = color;
     }
@@ -586,10 +600,6 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         if (IsServer)
             for (int i = 0; i < StationCount; i++) StationOwners.Add(NoStationOwner);
-        Prince.OnValueChanged += UpdatePrinceHunger;
-        Princess.OnValueChanged += UpdatePrincessHunger;
-        UpdatePrinceHunger(default, Prince.Value);
-        UpdatePrincessHunger(default, Princess.Value);
         State.OnValueChanged += Changed;
         Failure.OnValueChanged += FailureChanged;
         NetworkManager.NetworkTickSystem.Tick += Publish;
@@ -598,22 +608,10 @@ public sealed partial class CartStations : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         ClearWheelVisuals();
-        Prince.OnValueChanged -= UpdatePrinceHunger;
-        Princess.OnValueChanged -= UpdatePrincessHunger;
         State.OnValueChanged -= Changed;
         Failure.OnValueChanged -= FailureChanged;
         NetworkManager.NetworkTickSystem.Tick -= Publish;
     }
-    private void UpdatePrinceHunger(RiderState previous, RiderState current)
-    {
-        if (princeHungerBar != null) princeHungerBar.fillAmount = current.Hunger / 100f;
-    }
-
-    private void UpdatePrincessHunger(RiderState previous, RiderState current)
-    {
-        if (princessHungerBar != null) princessHungerBar.fillAmount = current.Hunger / 100f;
-    }
-
     private void Changed(CartNetworkState before, CartNetworkState after) { if (!IsServer) Apply(after); }
     private void FailureChanged(FixedString64Bytes before, FixedString64Bytes after) => FailureReason = after.ToString();
     private void Publish()
@@ -634,6 +632,7 @@ public sealed partial class CartStations : NetworkBehaviour
         loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
         for (int i = 0; i < tires.Count; i++)
         {
+            if (missingWheelSprite != null) tires[i].sprite = mountedWheelSprite;
             var color = tires[i].color;
             color.a = tireAlphas[i];
             tires[i].color = color;
@@ -650,6 +649,7 @@ public sealed partial class CartStations : NetworkBehaviour
         cameraRig.Shake(shake, duration);
         if (secondCamera != null) secondCamera.Shake(shake, duration);
         if (impactDust != null) impactDust.Emit(cannon ? 18 : 12);
+        if (cannon && muzzleVisual != null) muzzleFlashStart = Time.time;
         var clip = cannon ? cannonSound : hitSound;
         if (impactAudio != null && clip != null) impactAudio.PlayOneShot(clip);
     }
@@ -680,5 +680,6 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         Publish();
         if (storedShell != null) storedShell.SetActive(depositedShells > 0);
+        if (rackCountLabel != null) rackCountLabel.SetText("적재 {0}발", depositedShells);
     }
 }

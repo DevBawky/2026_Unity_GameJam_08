@@ -38,6 +38,9 @@ public sealed partial class CartStations
     [SerializeField] private EnemySpawner waveSpawner;
     public Bounds PursuerEntryBounds => waveSpawner.SpawnBounds;
     [SerializeField] private Transform[] royalVisuals;
+    [SerializeField] private SpriteSequence[] royalWalks;
+    [SerializeField] private Sprite[] princePoses;
+    [SerializeField] private Sprite[] princessPoses;
     [SerializeField] private RectTransform[] royalAreas;
     private readonly Vector2[] seats = new Vector2[2];
     public NetworkVariable<RiderState> Prince = new(), Princess = new();
@@ -80,6 +83,16 @@ public sealed partial class CartStations
     public bool IsCarryingChild(NetworkPlayer p) => IsCarrier(Prince.Value,p) || IsCarrier(Princess.Value,p);
     private static bool IsCarrier(RiderState child, NetworkPlayer p) => child.Pose == RiderPose.Carried && child.CarrierSlot == p.Slot.Value;
 
+    public CrewSpriteSet.Pose CrewPose(NetworkPlayer player)
+    {
+        if (IsCarrier(Prince.Value, player)) return CrewSpriteSet.Pose.Prince;
+        if (IsCarrier(Princess.Value, player)) return CrewSpriteSet.Pose.Princess;
+        if (player.Carrying.Value) return CrewSpriteSet.Pose.Shell;
+        if (player.Snack.Value) return CrewSpriteSet.Pose.Snack;
+        if (player.SpareWheel.Value) return CrewSpriteSet.Pose.SpareWheel;
+        return CrewSpriteSet.Pose.Idle;
+    }
+
     public int CryingCount => (Prince.Value.Crying ? 1 : 0) + (Princess.Value.Crying ? 1 : 0);
     public float TimingWidthRate => CryingCount == 2 ? .60f : CryingCount == 1 ? .80f : 1f;
     public float WalkRate => CryingCount == 2 ? .75f : CryingCount == 1 ? .90f : 1f;
@@ -91,6 +104,24 @@ public sealed partial class CartStations
         child = Princess.Value;
         return IsCarrier(child, actor);
     }
+
+    internal Vector3 RoyalStatusAnchor(RiderState child, int index)
+    {
+        if (child.Pose == RiderPose.Carried && child.CarrierSlot >= 0 && child.CarrierSlot < gameScene.Players.Length)
+        {
+            var carrier = gameScene.Players[child.CarrierSlot];
+            if (carrier != null && carrier.Assigned.Value)
+            {
+                // The carry sprites draw the child on the left, with feet below the crew pivot.
+                return carrier.transform.position + new Vector3(-13f, -16f, 0f) * WorldPerWebUnit;
+            }
+        }
+
+        if (royalVisuals != null && index < royalVisuals.Length && royalVisuals[index] != null)
+            return royalVisuals[index].TransformPoint(Vector3.down * .16f);
+        return cart.transform.TransformPoint(child.Position) + Vector3.down * (16f * WorldPerWebUnit);
+    }
+
     public const float SootheDistance = 312.5f;
     private void ResetCare()
     {
@@ -238,6 +269,23 @@ public sealed partial class CartStations
     private void LateUpdate()
     {
         ShowDriverAim();
+        if (cannonVisual != null)
+            cannonVisual.sprite = IsFiring ? cannonFuse : cannonReady;
+        if (muzzleVisual != null)
+        {
+            float age = Time.time - muzzleFlashStart;
+            muzzleVisual.enabled = muzzleFlash.PlayingAt(age);
+            if (muzzleVisual.enabled) muzzleVisual.sprite = muzzleFlash.FrameAt(age);
+        }
+        if (IsSpawned)
+        {
+            float time = (float)NetworkManager.ServerTime.Time;
+            if (horseWhipZones != null && horseWhipZones.Length == 2)
+            {
+                horseWhipZones[0]?.ShowGallop(Running, LeftWounds.Value > 0, LeftHorse.Value.Mood, time);
+                horseWhipZones[1]?.ShowGallop(Running, RightWounds.Value > 0, RightHorse.Value.Mood, time);
+            }
+        }
         if (!IsSpawned || !Running || royalVisuals == null || royalVisuals.Length != 2) return;
         ShowWheels();
         PlaceChild(Prince.Value,0);
@@ -247,6 +295,20 @@ public sealed partial class CartStations
     {
         var visual=royalVisuals[index];
         visual.position=cart.transform.TransformPoint(child.Position);
+        var poses = index == 0 ? princePoses : princessPoses;
+        if (poses != null && poses.Length == 5 && visual.TryGetComponent(out SpriteRenderer sprite))
+        {
+            sprite.enabled = child.Pose != RiderPose.Carried;
+            float size = WorldPerWebUnit * 100f * (child.Pose == RiderPose.Seated ? .83f : 1f);
+            visual.localScale = Vector3.one * size;
+            sprite.sprite = child.Pose == RiderPose.Fallen ? poses[1]
+                : child.Crying ? poses[2]
+                : child.Bored ? poses[3]
+                : child.Pose == RiderPose.Seated ? poses[0]
+                : child.Pose == RiderPose.Wandering && royalWalks != null && index < royalWalks.Length && royalWalks[index] != null
+                    ? royalWalks[index].FrameAt(Time.time, true)
+                    : poses[4];
+        }
         var target = child.Pose == RiderPose.Carried ? seats[index] : child.Position;
         royalAreas[index].position=cart.transform.TransformPoint(target);
     }

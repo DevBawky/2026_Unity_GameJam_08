@@ -1,0 +1,325 @@
+fileFormatVersion: 2
+guid: d52be7c295046864f97bf9a6dfcfd198
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1471099788404305065
+    second: cannon-muzzle_0
+  - first:
+      213: -4560714807038636880
+    second: cannon-muzzle_1
+  - first:
+      213: -10920537012001479
+    second: cannon-muzzle_2
+  - first:
+      213: -6296123467544834185
+    second: cannon-muzzle_3
+  - first:
+      213: 4782740812496673556
+    second: cannon-muzzle_4
+  - first:
+      213: -3081829248004310065
+    second: cannon-muzzle_5
+  - first:
+      213: -2406756193029512363
+    second: cannon-muzzle_6
+  - first:
+      213: -5237021901522556260
+    second: cannon-muzzle_7
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0.18461539, y: 0.5116279}
+  spritePixelsToUnits: 200
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: cannon-muzzle_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 172
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0eb88446cc500f4428573f78d079fa6b
+      internalID: -1116680405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_01
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 172
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e0545a5b94ab5dc4695710bd52fdf68a
+      internalID: -1070517756
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_02
+      rect:
+        serializedVersion: 2
+        x: 520
+        y: 172
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f33c115e88fc4484f934dd2cc83592dc
+      internalID: 1338286060
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_03
+      rect:
+        serializedVersion: 2
+        x: 780
+        y: 172
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cfa158fa1c85e054e959f07475d7759c
+      internalID: -352004708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2108653411de6b24fa720c9f8f636328
+      internalID: -1873869400
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_05
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 0
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ccf546108b8b57846a1bf986dae36134
+      internalID: 1902868519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_06
+      rect:
+        serializedVersion: 2
+        x: 520
+        y: 0
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d7bb38e4e75b2db48ae7796e8924cc5d
+      internalID: -1671238865
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cannon-muzzle_07
+      rect:
+        serializedVersion: 2
+        x: 780
+        y: 0
+        width: 260
+        height: 172
+      alignment: 9
+      pivot: {x: 0.18461539, y: 0.5116279}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dbd98478b8f29b8449e38cfd8eef544d
+      internalID: 510003214
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: de62cbef24ca31345adca968934776c8
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      cannon-muzzle_00: -1116680405
+      cannon-muzzle_01: -1070517756
+      cannon-muzzle_02: 1338286060
+      cannon-muzzle_03: -352004708
+      cannon-muzzle_04: -1873869400
+      cannon-muzzle_05: 1902868519
+      cannon-muzzle_06: -1671238865
+      cannon-muzzle_07: 510003214
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -12,6 +12,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private RectTransform area;
     private Vector2 origin;
     [SerializeField] private bool floating;
+    [SerializeField] private bool previewOnDesktop;
     private bool acceptsInput = true;
     public void SetInputActive(bool active)
     {
@@ -24,6 +25,11 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     public event Action Released;
     public Vector2 Direction { get; private set; }
     public bool IsMobileMode { get; private set; }
+    public void SetRadius(float value) => radius = value;
+    public void ShowDesktopPreview(bool show)
+    {
+        if (previewOnDesktop && !IsMobileMode && visuals != null) visuals.SetActive(show);
+    }
 
     private void Awake()
     {
@@ -43,7 +49,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     {
         IsMobileMode = enabled;
         ResetJoystick();
-        if (visuals != null) visuals.SetActive(enabled && !floating);
+        if (visuals != null) visuals.SetActive(enabled ? !floating : previewOnDesktop);
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -81,7 +87,7 @@ public sealed class MobileJoystick : MonoBehaviour, IPointerDownHandler, IDragHa
     private void ResetJoystick()
     {
         pointerId = int.MinValue;
-        if(floating && visuals != null) visuals.SetActive(false);
+        if(floating && visuals != null) visuals.SetActive(!IsMobileMode && previewOnDesktop);
         Direction = Vector2.zero;
         if (handle != null) handle.anchoredPosition = Vector2.zero;
     }

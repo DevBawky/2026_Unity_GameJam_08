@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 // 플레이어 상호작용. 상호작용 영역(TimingArea) 안에 들어가면 타이밍 미니게임을 띄우고 성공·실패를 CartStations에 알린다.
 // 포탄을 들고 충격을 받으면 버티기 판정(원형 타이밍)을 띄운다.
@@ -15,9 +14,9 @@ public sealed class PlayerTiming : MonoBehaviour
     [SerializeField] private RectTransform interactionAreas;
     [SerializeField] private RectTransform repairRect;
     [SerializeField] private GameObject timingPanel;
-    [SerializeField] private Image workProgressFill;
     [SerializeField] private RectTransform background;
     [SerializeField] private CircularTimingGraphic circularGraphic;
+    [SerializeField] private bool timingRingAtPlayer;
     private float resultUntil;
     public string ResultText { get; private set; }
     public string VisibleResult => Time.unscaledTime < resultUntil ? ResultText : null;
@@ -32,6 +31,7 @@ public sealed class PlayerTiming : MonoBehaviour
     private RectTransform currentArea;
     private TimingArea currentSettings;
     public StationAction? NearbyRoyal { get; private set; }
+    public StationAction? NearbyStation { get; private set; }
     private bool inside;
     private bool actionRequested;
     private RectTransform ignoredArea;
@@ -56,6 +56,15 @@ public sealed class PlayerTiming : MonoBehaviour
     public StationAction? CurrentAction => inside && currentSettings != null ? currentSettings.Action : null;
     public RectTransform ActiveTimingRect => timingPanel == null || !timingPanel.activeInHierarchy ? null
         : circularGraphic != null && circularGraphic.gameObject.activeInHierarchy ? circularGraphic.rectTransform : background;
+    public bool TimingReady
+    {
+        get
+        {
+            if (ActiveTimingRect == null || (!actor.Holding.Value && currentSettings == null)) return false;
+            float width = TargetWidth(actor.Holding.Value ? HoldTargetAngle : currentSettings.CircularTargetAngle);
+            return Mathf.Abs(Mathf.DeltaAngle(circularPinAngle, circularTargetCenter)) <= width * .5f;
+        }
+    }
 
     private void Awake()
     {
@@ -128,6 +137,7 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         RectTransform area = FindArea();
         TimingArea settings = area != null ? area.GetComponent<TimingArea>() : null;
+        NearbyStation = settings != null ? settings.Action : (StationAction?)null;
         NearbyRoyal = settings != null && TimingArea.IsRoyal(settings.Action) ? settings.Action : (StationAction?)null;
         if (NearbyRoyal.HasValue || (settings != null && (int)settings.Action == actor.CompletedStation.Value)) area = null;
         if (ignoredArea != area) ignoredArea = null;
@@ -244,32 +254,13 @@ public sealed class PlayerTiming : MonoBehaviour
         var area=FindArea();
         return area != null && area.GetComponent<TimingArea>().Action==action;
     }
-    private float WorkProgress()
-    {
-        if (!actor.IsSpawned || !actor.Assigned.Value || !CartStations.Running) return -1f;
-        var rules = CartRules.Active;
-        if (stations.CarriedChild(actor, out var child) && child.Upset) return child.Soothing / CartStations.SootheDistance;
-        if (actor.Holding.Value)
-            return Mathf.Clamp01((float)(actor.HoldDeadline.Value - actor.NetworkManager.ServerTime.Time) / rules.shellHoldSeconds);
-        if (stations.IsFiring && stations.Gunner.Value == actor.NetworkObjectId)
-            return Mathf.Clamp01(1f - (float)(stations.FuseDeadline.Value - actor.NetworkManager.ServerTime.Time) / rules.fuseSeconds);
-        if (stations.HoldsStation(StationAction.Kitchen, actor) && actor.HandsFree)
-            return actor.CookProgress.Value / rules.cookSeconds;
-        if (stations.CanUse(StationAction.WheelRepair, actor))
-            return stations.WheelRepairSteps / (float)CartStations.WheelRepairStepsNeeded;
-        return -1f;
-    }
-
     private void LateUpdate()
     {
         if (timingPanel != null && timingPanel.activeInHierarchy && actor != null && actor.IsSpawned)
-            timingPanel.transform.position = timingPanel.transform.parent.TransformPoint(panelOrigin) + stations.RingOffset(actor);
-        if (workProgressFill != null)
         {
-            float progress = WorkProgress();
-            var bar = workProgressFill.transform.parent.gameObject;
-            if (bar.activeSelf != (progress >= 0f)) bar.SetActive(progress >= 0f);
-            if (progress >= 0f) workProgressFill.fillAmount = progress;
+            timingPanel.transform.position = timingPanel.transform.parent.TransformPoint(panelOrigin) + stations.RingOffset(actor);
+            if (timingRingAtPlayer && circularGraphic != null)
+                circularGraphic.rectTransform.position = transform.position + stations.RingOffset(actor);
         }
         if (actor==null || !actor.Local) return;
         bool visible=CartStations.Running && timingPanel.activeSelf;

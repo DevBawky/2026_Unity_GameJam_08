@@ -27,6 +27,15 @@ public sealed class CatapultStrike : NetworkBehaviour
     [SerializeField] private SpriteRenderer shadow;
     [SerializeField] private SpriteRenderer rock;
     [SerializeField] private SpriteRenderer shockwave;
+    [SerializeField] private Sprite dangerShadow;
+    [SerializeField] private SpriteSequence impactSequence;
+    private Sprite safeShadow;
+
+    public bool TryGetWarning(out Vector3 point)
+    {
+        point = warning.transform.position;
+        return warning.enabled && warning.gameObject.activeInHierarchy;
+    }
 
     [Header("Timing (초)")]
     [Tooltip("스테이지 시작 후 첫 발까지")]
@@ -88,6 +97,7 @@ public sealed class CatapultStrike : NetworkBehaviour
     {
         warningColor = warning.color;
         shadowColor = shadow.color;
+        safeShadow = shadow.sprite;
         rockColor = rock.color;
         shockwaveColor = shockwave.color;
         warningUnit = Unit(warning);
@@ -201,12 +211,17 @@ public sealed class CatapultStrike : NetworkBehaviour
     {
         s.Landed = true;
         s.LandX = GroundX(s);
-        Bounds body = stations.CartBody.bounds;
-        float dx = (s.LandX - Mathf.Clamp(s.LandX, body.min.x, body.max.x)) / hitRadius.x;
-        float dy = (s.Y - Mathf.Clamp(s.Y, body.min.y, body.max.y)) / hitRadius.y;
-        if (dx * dx + dy * dy > 1f) return;
+        if (!HitsCart(s.LandX, s.Y)) return;
         stations.Cart.ApplySpeedHit(hitSpeedMultiplier);
         stations.ReceiveCatapultHit(hitDamage);
+    }
+
+    private bool HitsCart(float x, float y)
+    {
+        Bounds body = stations.CartBody.bounds;
+        float dx = (x - Mathf.Clamp(x, body.min.x, body.max.x)) / hitRadius.x;
+        float dy = (y - Mathf.Clamp(y, body.min.y, body.max.y)) / hitRadius.y;
+        return dx * dx + dy * dy <= 1f;
     }
 
     // 도로에 고정된 착탄 지점의 현재 화면 x. 배경과 같은 속도로 흘러가며, 기본 속도면 착탄 순간 마차 뒤끝에 온다.
@@ -235,11 +250,15 @@ public sealed class CatapultStrike : NetworkBehaviour
         shadow.transform.localScale = marker * (grow * shadowUnit);
         shadow.color = WithAlpha(shadowColor, Mathf.Lerp(0.28f, 0.52f, approach));
 
-        warning.enabled = locked;
-        if (locked)
+        bool danger = locked && (dangerShadow == null || HitsCart(ground.x, ground.y));
+        if (dangerShadow != null) shadow.sprite = danger ? dangerShadow : safeShadow;
+        warning.enabled = danger;
+        if (danger)
         {
             warning.transform.position = ground;
-            warning.transform.localScale = marker * warningUnit;
+            warning.transform.localScale = dangerShadow != null
+                ? Vector3.one * (marker.y * warningUnit * .48f)
+                : marker * warningUnit;
             warning.color = WithAlpha(warningColor, warningColor.a * (0.68f + 0.22f * Mathf.Sin(s.Time * 10f)));
         }
 
@@ -260,6 +279,19 @@ public sealed class CatapultStrike : NetworkBehaviour
         float fade = Mathf.Min(1f, (1f - age) * 3f);
         var ground = new Vector3(s.LandX, s.Y, 0f);
         warning.enabled = false;
+        if (impactSequence != null)
+        {
+            shadow.enabled = rock.enabled = false;
+            float seconds = s.Time - flightTime;
+            shockwave.enabled = impactSequence.PlayingAt(seconds);
+            if (shockwave.enabled)
+            {
+                shockwave.transform.position = ground;
+                shockwave.sprite = impactSequence.FrameAt(seconds);
+                shockwave.color = WithAlpha(shockwaveColor, fade);
+            }
+            return;
+        }
 
         // 바닥 자국 + 바위
         shadow.enabled = true;

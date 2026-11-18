@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: draft-left-wounded-gallop
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: -241798152, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -1580948720, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -1925000829, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: 1613735385, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -1746310981, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -1415414327, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -551677929, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: 1566798941, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -780837654, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: 616303262, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: 4077632026100757987, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: 3407246342396771275, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  frameStarts:
+  - 0
+  - 0.02358553
+  - 0.04717106
+  - 0.07075659
+  - 0.09434212
+  - 0.117927656
+  - 0.14151318
+  - 0.16509871
+  - 0.18868424
+  - 0.21226978
+  - 0.23585531
+  - 0.25944084
+  duration: 0.28302637

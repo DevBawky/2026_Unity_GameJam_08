@@ -14,6 +14,8 @@ public class Enemy : NetworkBehaviour
     public static void HitCart(float damage) => CartHit?.Invoke(damage);
 
     [SerializeField] private UnitSO unitDefinition;
+    [SerializeField] private SpriteRenderer mountedVisual;
+    [SerializeField] private SpriteSequence gallop;
     public NetworkVariable<float> Health = new();
     public static readonly System.Collections.Generic.List<Enemy> Active = new();
     public UnitSO Unit { get; private set; }
@@ -47,6 +49,12 @@ public class Enemy : NetworkBehaviour
     private float sinceStrike = float.PositiveInfinity;
 
     private void Awake() => TryGetComponent(out rope);
+
+    private void LateUpdate()
+    {
+        if (mountedVisual != null && IsSpawned)
+            mountedVisual.sprite = gallop.FrameAt((float)NetworkManager.ServerTime.Time, true);
+    }
 
     public void Init(UnitSO unit, WaveSO wave, SpriteRenderer cartBody, float baseScreenRightX)
     {

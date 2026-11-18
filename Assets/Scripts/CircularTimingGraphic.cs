@@ -11,6 +11,7 @@ public sealed class CircularTimingGraphic : MonoBehaviour
     [SerializeField] private CircularTimingGraphic targetGraphic;
     [SerializeField] private RectTransform pinTransform;
     [SerializeField] private Image targetImage;
+    [SerializeField] private RectTransform rotatingNeedle;
 
     // PlayerTiming이 Graphic 시절 이름 그대로 부른다.
     public RectTransform rectTransform => (RectTransform)transform;
@@ -23,7 +24,9 @@ public sealed class CircularTimingGraphic : MonoBehaviour
             targetImage.fillAmount = Mathf.Clamp01(width / 360f);
             targetImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, center - width * 0.5f);
         }
-        if (pinTransform != null)
+        if (rotatingNeedle != null)
+            rotatingNeedle.localRotation = Quaternion.Euler(0f, 0f, pin - 90f);
+        else if (pinTransform != null)
         {
             float radius = Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) * TrackRadiusRatio * PinRadiusRatio;
             float radians = pin * Mathf.Deg2Rad;

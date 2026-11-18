@@ -1,0 +1,793 @@
+fileFormatVersion: 2
+guid: 63cbbb045ecba2b4789ee97773bdf42c
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8869658697419712451
+    second: upper-woodland_0
+  - first:
+      213: 8284923862890288381
+    second: upper-woodland_1
+  - first:
+      213: -7776315151779329599
+    second: upper-woodland_2
+  - first:
+      213: 4902450128381848171
+    second: upper-woodland_3
+  - first:
+      213: -7655097436966877881
+    second: upper-woodland_4
+  - first:
+      213: 7731446743135161130
+    second: upper-woodland_5
+  - first:
+      213: 3590059591138325417
+    second: upper-woodland_6
+  - first:
+      213: 7819678759166190871
+    second: upper-woodland_7
+  - first:
+      213: 6063403425120124195
+    second: upper-woodland_8
+  - first:
+      213: -5006750770800915900
+    second: upper-woodland_9
+  - first:
+      213: 6846388589233281857
+    second: upper-woodland_10
+  - first:
+      213: -8463519675531575192
+    second: upper-woodland_11
+  - first:
+      213: 7802597067157617503
+    second: upper-woodland_12
+  - first:
+      213: -7596591148897183663
+    second: upper-woodland_13
+  - first:
+      213: -3160107233446392121
+    second: upper-woodland_14
+  - first:
+      213: -7284806136003136252
+    second: upper-woodland_15
+  - first:
+      213: 6695654397678629630
+    second: upper-woodland_16
+  - first:
+      213: -6260595309082986080
+    second: upper-woodland_17
+  - first:
+      213: 5741798929074934821
+    second: upper-woodland_18
+  - first:
+      213: -8675000068331973903
+    second: upper-woodland_19
+  - first:
+      213: -7411889412539731865
+    second: upper-woodland_20
+  - first:
+      213: -2388480200323431317
+    second: upper-woodland_21
+  - first:
+      213: 9205922897709790298
+    second: upper-woodland_22
+  - first:
+      213: 7024509175093420744
+    second: upper-woodland_23
+  - first:
+      213: -6055888339371900655
+    second: upper-woodland_24
+  - first:
+      213: -6628145686904512099
+    second: upper-woodland_25
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: upper-woodland_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 879
+        width: 63
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d38185d7864a8e480800000000000000
+      internalID: -8869658697419712451
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_1
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 807
+        width: 152
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df49bbe9b56f9f270800000000000000
+      internalID: 8284923862890288381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_2
+      rect:
+        serializedVersion: 2
+        x: 262
+        y: 803
+        width: 120
+        height: 97
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c984b4f19af41490800000000000000
+      internalID: -7776315151779329599
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_3
+      rect:
+        serializedVersion: 2
+        x: 369
+        y: 891
+        width: 96
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6aa44fda60090440800000000000000
+      internalID: 4902450128381848171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_4
+      rect:
+        serializedVersion: 2
+        x: 507
+        y: 880
+        width: 90
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74506948071a3c590800000000000000
+      internalID: -7655097436966877881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_5
+      rect:
+        serializedVersion: 2
+        x: 602
+        y: 880
+        width: 69
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2b0c6499dd9b4b60800000000000000
+      internalID: 7731446743135161130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_6
+      rect:
+        serializedVersion: 2
+        x: 669
+        y: 733
+        width: 178
+        height: 167
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a3b84c5d2472d130800000000000000
+      internalID: 3590059591138325417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_7
+      rect:
+        serializedVersion: 2
+        x: 784
+        y: 867
+        width: 73
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 715a4c9a664158c60800000000000000
+      internalID: 7819678759166190871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_8
+      rect:
+        serializedVersion: 2
+        x: 902
+        y: 878
+        width: 90
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32dfb243a49852450800000000000000
+      internalID: 6063403425120124195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_9
+      rect:
+        serializedVersion: 2
+        x: 1012
+        y: 876
+        width: 157
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44a8f7b63b2748ab0800000000000000
+      internalID: -5006750770800915900
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_10
+      rect:
+        serializedVersion: 2
+        x: 1181
+        y: 858
+        width: 88
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14b998fe522430f50800000000000000
+      internalID: 6846388589233281857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_11
+      rect:
+        serializedVersion: 2
+        x: 1273
+        y: 865
+        width: 112
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 860496e52b98b8a80800000000000000
+      internalID: -8463519675531575192
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_12
+      rect:
+        serializedVersion: 2
+        x: 1360
+        y: 734
+        width: 140
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5b3f6151b4684c60800000000000000
+      internalID: 7802597067157617503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_13
+      rect:
+        serializedVersion: 2
+        x: 1413
+        y: 879
+        width: 87
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1585b1a399c739690800000000000000
+      internalID: -7596591148897183663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_14
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 742
+        width: 51
+        height: 119
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ce0942d63b0524d0800000000000000
+      internalID: -3160107233446392121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_15
+      rect:
+        serializedVersion: 2
+        x: 405
+        y: 730
+        width: 232
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40572f57a6b27ea90800000000000000
+      internalID: -7284806136003136252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_16
+      rect:
+        serializedVersion: 2
+        x: 798
+        y: 816
+        width: 96
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef2ba68133ebbec50800000000000000
+      internalID: 6695654397678629630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_17
+      rect:
+        serializedVersion: 2
+        x: 889
+        y: 726
+        width: 178
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a9b1a78cb5ed19a0800000000000000
+      internalID: -6260595309082986080
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_18
+      rect:
+        serializedVersion: 2
+        x: 1082
+        y: 790
+        width: 93
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 524da3364b7feaf40800000000000000
+      internalID: 5741798929074934821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_19
+      rect:
+        serializedVersion: 2
+        x: 1191
+        y: 723
+        width: 141
+        height: 121
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f2559466653c9780800000000000000
+      internalID: -8675000068331973903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_20
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 716
+        width: 87
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 760371369dda32990800000000000000
+      internalID: -7411889412539731865
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_21
+      rect:
+        serializedVersion: 2
+        x: 614
+        y: 794
+        width: 67
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b640baa99e96aded0800000000000000
+      internalID: -2388480200323431317
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_22
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 736
+        width: 193
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5470a3b91202cf70800000000000000
+      internalID: 9205922897709790298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_23
+      rect:
+        serializedVersion: 2
+        x: 277
+        y: 733
+        width: 86
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c26ae690e11c7160800000000000000
+      internalID: 7024509175093420744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_24
+      rect:
+        serializedVersion: 2
+        x: 869
+        y: 738
+        width: 79
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 111ce4c04a925fba0800000000000000
+      internalID: -6055888339371900655
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-woodland_25
+      rect:
+        serializedVersion: 2
+        x: 1051
+        y: 753
+        width: 110
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d91e48c7d981404a0800000000000000
+      internalID: -6628145686904512099
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      upper-woodland_0: -8869658697419712451
+      upper-woodland_1: 8284923862890288381
+      upper-woodland_10: 6846388589233281857
+      upper-woodland_11: -8463519675531575192
+      upper-woodland_12: 7802597067157617503
+      upper-woodland_13: -7596591148897183663
+      upper-woodland_14: -3160107233446392121
+      upper-woodland_15: -7284806136003136252
+      upper-woodland_16: 6695654397678629630
+      upper-woodland_17: -6260595309082986080
+      upper-woodland_18: 5741798929074934821
+      upper-woodland_19: -8675000068331973903
+      upper-woodland_2: -7776315151779329599
+      upper-woodland_20: -7411889412539731865
+      upper-woodland_21: -2388480200323431317
+      upper-woodland_22: 9205922897709790298
+      upper-woodland_23: 7024509175093420744
+      upper-woodland_24: -6055888339371900655
+      upper-woodland_25: -6628145686904512099
+      upper-woodland_3: 4902450128381848171
+      upper-woodland_4: -7655097436966877881
+      upper-woodland_5: 7731446743135161130
+      upper-woodland_6: 3590059591138325417
+      upper-woodland_7: 7819678759166190871
+      upper-woodland_8: 6063403425120124195
+      upper-woodland_9: -5006750770800915900
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

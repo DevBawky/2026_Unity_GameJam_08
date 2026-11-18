@@ -6,6 +6,7 @@ public sealed class Projectile : NetworkBehaviour
     [SerializeField] private SpriteRenderer impactWave;
     [SerializeField] private SpriteRenderer scorch;
     [SerializeField] private ParticleSystem smoke;
+    [SerializeField] private SpriteSequence impactSequence;
     private readonly NetworkVariable<int> caliber = new();
     private readonly NetworkVariable<double> impactTime = new(double.MinValue);
     private int startCaliber;
@@ -43,7 +44,12 @@ public sealed class Projectile : NetworkBehaviour
         ball.enabled = shape.enabled = !landed;
         if (scorch != null) scorch.enabled = landed;
         if (impactWave != null) impactWave.enabled = landed;
-        if (landed && smoke != null) smoke.Play();
+        if (landed && impactSequence != null)
+        {
+            impactWave.transform.rotation = Quaternion.identity;
+            if (scorch != null) scorch.transform.rotation = Quaternion.identity;
+        }
+        if (landed && smoke != null && impactSequence == null) smoke.Play();
     }
     private float Upgrade => Mathf.Min(.5f, CartRules.Active.barrel.amount * caliber.Value);
     private float Length => (200f + 70f * Upgrade) * CartStations.Instance.WorldPerWebUnit;
@@ -72,6 +78,13 @@ public sealed class Projectile : NetworkBehaviour
     {
         if (!IsSpawned || impactTime.Value == double.MinValue) return;
         float age = (float)(NetworkManager.ServerTime.Time - impactTime.Value);
+        if (impactSequence != null)
+        {
+            impactWave.enabled = impactSequence.PlayingAt(age);
+            if (impactWave.enabled) impactWave.sprite = impactSequence.FrameAt(age);
+            if (scorch != null) scorch.color = new Color(1f, 1f, 1f, Mathf.Clamp01(3f - age));
+            return;
+        }
         if (impactWave != null)
         {
             float t = Mathf.Clamp01(age / .35f);

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: draft-left-gallop
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: -480899763, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: 1564445453, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -778876688, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -684556884, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -993984148, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: 1853909276, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -1048808860, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -1497733841, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: 1533455630, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -1811691968, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: -3566668239262719000, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  - {fileID: 6005933789535360624, guid: 3db6aa9bb16c05342b44cfc4bf7f27de, type: 3}
+  frameStarts:
+  - 0
+  - 0.02358553
+  - 0.04717106
+  - 0.07075659
+  - 0.09434212
+  - 0.117927656
+  - 0.14151318
+  - 0.16509871
+  - 0.18868424
+  - 0.21226978
+  - 0.23585531
+  - 0.25944084
+  duration: 0.28302637

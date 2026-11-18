@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: princess-walk
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: -610586133, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 1606444902, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 631732312, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 1493073774, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: -984377755, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: -932092690, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 1420495825, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 2012352322, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: -1018415937, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: -2026475139, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 3423650453998177744, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: 8931365365660130102, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  frameStarts:
+  - 0
+  - 0.037736848
+  - 0.075473696
+  - 0.113210544
+  - 0.15094739
+  - 0.18868424
+  - 0.22642109
+  - 0.26415795
+  - 0.30189478
+  - 0.33963165
+  - 0.37736848
+  - 0.41510534
+  duration: 0.4528422
