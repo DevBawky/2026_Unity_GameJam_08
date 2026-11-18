@@ -40,7 +40,7 @@ public sealed partial class CartStations
             Strength = strength,
             Phase = Mathf.Repeat(sequence * 2.3999632f, 2f * Mathf.PI)
         };
-        if (strength > ShellSlipThreshold) StartShellCatch(time);
+        if (strength > (Owns(ShopPerk.CarrySling) ? CarrySlingThreshold : ShellSlipThreshold)) StartShellCatch(time);
         ImpactRpc(sequence, cannon, cameraStrength * multiplier, shakeDuration);
     }
 

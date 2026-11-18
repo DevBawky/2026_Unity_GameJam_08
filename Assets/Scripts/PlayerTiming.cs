@@ -24,6 +24,8 @@ public sealed class PlayerTiming : MonoBehaviour
         && (!cookingImpactResult || HasStationAccess && IsAt(StationAction.Kitchen)) ? ResultText : null;
     public void ShowResult(bool loaded) => ShowResult(LocalizationTable.T(loaded ? "장전 완료 · 포수 점화 가능" : "장전 실패 · 포탄 1발 손실"));
 
+    internal void ShowShellReturned() => ShowResult(LocalizationTable.T("장전 실패 · 포탄이 적재함에 남았다"));
+
     internal void ShowCookingImpact(int percentLost) =>
         ShowResult(LocalizationTable.F("마차 흔들림 · 제작 진행도 {0}%p 감소", percentLost), cookingImpact: true);
 
@@ -134,6 +136,11 @@ public sealed class PlayerTiming : MonoBehaviour
             if (pressed && stations.CanUse(royal, actor)) actor.Request(royal);
             return;
         }
+        if (pressed && CurrentAction == null && actor.CanUseStairShelf())
+        {
+            actor.RequestStairShelf();
+            return;
+        }
         if (CurrentAction is not StationAction action || !stations.CanUse(action, actor)) return;
         if (!UsesTiming)
         {
@@ -185,10 +192,10 @@ public sealed class PlayerTiming : MonoBehaviour
         Mathf.Repeat(180f - (float)((System.Math.Floor(time * 30d) / 30d * speed) % 360d), 360f);
 
     private float TargetWidth(float baseWidth) =>
-        Mathf.Min(360f, baseWidth + stations.TimingBonusDegrees) * stations.TimingWidthRate;
+        Mathf.Min(360f, baseWidth + stations.TimingBonusDegrees + stations.ShopTimingBonus(CurrentAction, stations.WheelRepairSteps)) * stations.TimingWidthRate;
 
     private float CatchWidth() =>
-        Mathf.Min(.34f * 360f, CatchWidthDegrees + stations.TimingBonusDegrees) * stations.TimingWidthRate;
+        Mathf.Min(.34f * 360f + stations.ShopCatchBonus, CatchWidthDegrees + stations.TimingBonusDegrees + stations.ShopCatchBonus) * stations.TimingWidthRate;
 
     private float CatchPinAt(double time)
     {
@@ -250,9 +257,11 @@ public sealed class PlayerTiming : MonoBehaviour
             {
                 if (actor.InCellar || !ContainsCannon(area)) continue;
                 if (stations.HoldsStation(StationAction.Cannon, actor)) return area;
+                if (workArea == null) workArea = area;
+                continue;
             }
             Vector3 local = area.InverseTransformPoint(position);
-            if (!area.rect.Contains(new Vector2(local.x, local.y))) continue;
+            if (!AreaRect(area, station.Action).Contains(new Vector2(local.x, local.y))) continue;
             if (!royal)
             {
                 if (workArea == null) workArea = area;
@@ -282,7 +291,7 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         if (action == StationAction.WheelRepair) return IsInActionArea(action);
         var area = AreaFor(action);
-        return area != null && area.rect.Contains(area.InverseTransformPoint(transform.position));
+        return area != null && AreaRect(area, action).Contains(area.InverseTransformPoint(transform.position));
     }
 
     public bool IsInActionArea(StationAction action)
@@ -300,7 +309,29 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         Vector2 point = area.InverseTransformPoint(transform.position);
         Vector2 radii = area.rect.size * .5f;
-        return new Vector2(point.x / radii.x, point.y / radii.y).sqrMagnitude <= 1f;
+        // 긴 손잡이 솔: 포신 청소 차례면 조금 더 멀리서도 닿는다.
+        float reach = stations.CannonAction == StationAction.CannonCleaning && stations.Owns(ShopPerk.LongBrush) ? CartStations.LongBrushReach : 1f;
+        return new Vector2(point.x / radii.x, point.y / radii.y).sqrMagnitude <= reach * reach;
+    }
+
+    // 넓은 적재 받침: 적재함 판정 영역을 넓힌다.
+    private Rect AreaRect(RectTransform area, StationAction action)
+    {
+        var rect = area.rect;
+        if (action != StationAction.ShellDeposit || !stations.Owns(ShopPerk.WideRack)) return rect;
+        Vector2 size = rect.size * CartStations.WideRackScale;
+        return new Rect(rect.center - size * .5f, size);
+    }
+
+    // 장전 회수판용: 성공 구간을 살짝 벗어났는지.
+    public bool NearMiss(StationAction action, double time)
+    {
+        var area = FindArea();
+        var settings = area != null ? area.GetComponent<TimingArea>() : null;
+        if (settings == null || ActionAt(settings) != action || !TimingArea.UsesTimingFor(action)) return false;
+        float angle = PinAt(time, settings.CircularSpeed);
+        float center = TargetCenter(action, false, stations.WheelRepairSteps);
+        return Mathf.Abs(Mathf.DeltaAngle(angle, center)) <= TargetWidth(settings.CircularTargetAngle) * .5f + CartStations.NearMissDegrees;
     }
     private void LateUpdate()
     {

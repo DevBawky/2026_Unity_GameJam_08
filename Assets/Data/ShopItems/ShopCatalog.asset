@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0d8a8b8cbf2a6b47af2a771212bfdcd, type: 3}
+  m_Name: ShopCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::ShopCatalog
+  items:
+  - {fileID: 11400000, guid: f5475cd8b42cbc24f98dbc0946f5313f, type: 2}
+  - {fileID: 11400000, guid: 6f73392a5e3ff994bb35ef3af3ef0633, type: 2}
+  - {fileID: 11400000, guid: fa3217f913a4f154d93d07f88681df61, type: 2}
+  - {fileID: 11400000, guid: b343cea5cf3b6624c8a0f970b97b4b6a, type: 2}
+  - {fileID: 11400000, guid: bd0abb1e7e914fb41b46d998244287ff, type: 2}
+  - {fileID: 11400000, guid: 42335782027414741806a51e8ee806ad, type: 2}
+  - {fileID: 11400000, guid: bcab493ead6c3ba40b0534113ccde750, type: 2}
+  - {fileID: 11400000, guid: c0de44d2867e5084fb5dfb0c6830fcb4, type: 2}
+  - {fileID: 11400000, guid: 1b8f13a00b050584fbe109a2ff514e6f, type: 2}
+  - {fileID: 11400000, guid: 2a38e316a741f2343b4cb0be830b605d, type: 2}
+  - {fileID: 11400000, guid: bfe2a0c338206234f91c6df82566c102, type: 2}
+  - {fileID: 11400000, guid: e90ddfbf80a13824b89032bfe0d1c010, type: 2}
+  - {fileID: 11400000, guid: e5b6038bc428e0147bc5b8ddd1a1f74b, type: 2}
+  - {fileID: 11400000, guid: 4f8be1bbc529cad47959cdbbe92f99bc, type: 2}
+  - {fileID: 11400000, guid: 5cfc8ba1ec35b9f41a8d921b0d789fd6, type: 2}
+  - {fileID: 11400000, guid: 8437f6ee708d54c45a1d3fe5be7c7c55, type: 2}
+  - {fileID: 11400000, guid: 87dadc987e8d6d64b8202d4b31c6ba8c, type: 2}
+  - {fileID: 11400000, guid: 0e099ee8e8d47c94bb27a8e7ef5c46e6, type: 2}
+  - {fileID: 11400000, guid: 49242da3640f1884991caab31dea7166, type: 2}
+  - {fileID: 11400000, guid: 3d561e406dcce1940b0f030d7fe58f6f, type: 2}
+  - {fileID: 11400000, guid: c2746c93575476f48a848973a09a4ae4, type: 2}
+  - {fileID: 11400000, guid: bf8f2f5ae919d584ebd818c9c9afedb0, type: 2}
+  - {fileID: 11400000, guid: a30c0fcd650b11e46b485936560c1fb2, type: 2}
+  - {fileID: 11400000, guid: 9fea2949bf58dd148befd64a8ae7f0cc, type: 2}
+  - {fileID: 11400000, guid: c4d52014ae6bab74f82d9549f0b842db, type: 2}
+  - {fileID: 11400000, guid: fca1d6c6da8e67645ba12c0b1d70c0af, type: 2}
+  - {fileID: 11400000, guid: 477303c5de6baf84d885d6e3ff1ae6af, type: 2}
+  - {fileID: 11400000, guid: d0a63ece6093e864495d2c49ea0254d5, type: 2}
+  - {fileID: 11400000, guid: e627f86fa479850489afc01573cf53c2, type: 2}
+  - {fileID: 11400000, guid: 1251db64bcd3b9740a95c386d610c446, type: 2}
+  - {fileID: 11400000, guid: a073ad68f20ddbb429867431418123f3, type: 2}
+  - {fileID: 11400000, guid: b307bc34305072949bb1a3925192f0cb, type: 2}
+  - {fileID: 11400000, guid: 9ed160abe622520468349b1b6c5d43ba, type: 2}
+  - {fileID: 11400000, guid: 3c7d68e20183f0f4394a06cd89fca4aa, type: 2}
+  - {fileID: 11400000, guid: fead47a4be4a53c45a664dcd666277be, type: 2}
+  - {fileID: 11400000, guid: 99bfebc8c94aed84aa55485eafe1eb4a, type: 2}
+  - {fileID: 11400000, guid: c5cc25a4bf495a84c9a30042ceff45d6, type: 2}
+  - {fileID: 11400000, guid: 089de038f0c1df7409e3d31a244d2673, type: 2}
+  - {fileID: 11400000, guid: 74ca6f6f9bd52374892d764ac8c7c078, type: 2}
+  - {fileID: 11400000, guid: 319544b92413e594f8c68f2a1387abdd, type: 2}
+  - {fileID: 11400000, guid: dbcf63a1d7b617545a9c7fdf8b92ce48, type: 2}
+  - {fileID: 11400000, guid: 77c6c8af73473474c8beeb76a4373e92, type: 2}
+  - {fileID: 11400000, guid: 6b28aa385945c794bb583dff14ca8e64, type: 2}
+  - {fileID: 11400000, guid: abdc9c9eb7929184a9dc22527b3267ad, type: 2}
+  - {fileID: 11400000, guid: abf808e9ab585764b919d9fe82038a69, type: 2}
+  - {fileID: 11400000, guid: 808ef8868a3438f49b115cc38369ccb2, type: 2}
+  - {fileID: 11400000, guid: 67e9ac7dda59e1545948871b52fd8f8a, type: 2}
+  - {fileID: 11400000, guid: 7bdfcb0367f12a843879d9807e1b1aac, type: 2}
+  - {fileID: 11400000, guid: 2e7f790578ecfe246ad3c697ad2ce023, type: 2}
+  - {fileID: 11400000, guid: c6fb389ed6e88804cb78547ef0dabc26, type: 2}

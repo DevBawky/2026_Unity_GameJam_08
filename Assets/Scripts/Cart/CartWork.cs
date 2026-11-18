@@ -32,7 +32,8 @@ public sealed partial class CartStations
                 break;
             case StationAction.CannonCleaning:
                 if (!NeedsCleaning) break;
-                if (++cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
+                cleaningTaps = Mathf.Min(CleaningTapsRequired, cleaningTaps + CleaningTapGain(actor));
+                if (cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
                 break;
             case StationAction.Reload:
                 if (!CanReload) break;
@@ -41,8 +42,13 @@ public sealed partial class CartStations
                 actor.ShowWorkResult(true);
                 break;
             case StationAction.WheelRepair:
-                if (!wheelDetached || (wheelRepairSteps == 0 && !actor.SpareWheel.Value)) break;
-                if (wheelRepairSteps == 0) actor.SpareWheel.Value = false;
+                if (!wheelDetached || (wheelRepairSteps == 0 && !actor.SpareWheel.Value && !SpareKitReady.Value)) break;
+                if (wheelRepairSteps == 0)
+                {
+                    // 들고 온 예비 바퀴가 없으면 비상 바퀴 꾸러미를 쓴다.
+                    if (actor.SpareWheel.Value) actor.SpareWheel.Value = false;
+                    else SpareKitReady.Value = false;
+                }
                 wheelRepairSteps++;
                 if (wheelRepairSteps == 1)
                 {
@@ -76,7 +82,7 @@ public sealed partial class CartStations
             case StationAction.Reload: return CanReload && actor.HandsFree;
             case StationAction.Cannon: return loaded && !fuseLit && actor.HandsFree;
             case StationAction.ShellDeposit: return actor.Carrying.Value;
-            case StationAction.WheelRepair: return wheelDetached && (wheelRepairSteps > 0 || actor.SpareWheel.Value);
+            case StationAction.WheelRepair: return wheelDetached && (wheelRepairSteps > 0 || actor.SpareWheel.Value || SpareKitReady.Value);
             default: return true;
         }
     }
@@ -149,9 +155,14 @@ public sealed partial class CartStations
         for (int i = 0; i < StationOwners.Count; i++) StationOwners[i] = NoStationOwner;
     }
 
-    public void Fail(StationAction action, NetworkPlayer actor)
+    public void Fail(StationAction action, NetworkPlayer actor, bool nearMiss = false)
     {
         if (!IsServer || action != StationAction.Reload || !CanReload) return;
+        if (KeepsShellOnReloadFail(nearMiss))
+        {
+            actor.ShowShellReturned();
+            return;
+        }
         depositedShells--;
         lostShells++;
         actor.ShowWorkResult(false);
@@ -160,12 +171,21 @@ public sealed partial class CartStations
 
     private void StartShellCatch(double time)
     {
+        // 비상용 포탄 안전끈: 스테이지에서 처음 미끄러질 포탄을 한 번 붙잡아 준다.
+        if (strapReady && AnyoneCarryingShell(time)) { strapReady = false; return; }
         foreach (var actor in gameScene.Players)
         {
             if (!actor.Assigned.Value || !actor.Carrying.Value || actor.Holding.Value || actor.ShellSafeUntil > time) continue;
             actor.HoldDeadline.Value = time + CartRules.Active.shellHoldSeconds;
             actor.Holding.Value = true;
         }
+    }
+
+    private bool AnyoneCarryingShell(double time)
+    {
+        foreach (var actor in gameScene.Players)
+            if (actor.Assigned.Value && actor.Carrying.Value && !actor.Holding.Value && actor.ShellSafeUntil <= time) return true;
+        return false;
     }
 
     public void ResolveShellHold(NetworkPlayer actor, bool success)

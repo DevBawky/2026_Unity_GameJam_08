@@ -47,10 +47,11 @@ public sealed partial class CartStations
         randomState ^= randomState << 13; randomState ^= randomState >> 17; randomState ^= randomState << 5;
         return (randomState >> 8) / 16777216f;
     }
-    public float PorterMultiplier => 1f + CartRules.Active.porter.amount * Porter.Value;
-    public float SpeedLimit => StageGoal / (stageNumber == 1 ? 52.5f : stageNumber == 2 ? 59.5f : 63.5f);
+    public float PorterMultiplier => 1f + CartRules.Active.porter.amount * Porter.Value + (Owns(ShopPerk.Dumbbell) ? DumbbellPorterBonus : 0f);
+    public float SpeedLimit => StageGoal / (stageNumber == 1 ? 52.5f : stageNumber == 2 ? 59.5f : 63.5f)
+        * (Owns(ShopPerk.LightWheels) ? LightWheelsLimitRate : 1f);
     public bool ChapterComplete => flow == StageFlow.Complete;
-    public float Capacity => MaxDurability + CartRules.Active.hull.amount * Hull.Value;
+    public float Capacity => MaxDurability + CartRules.Active.hull.amount * Hull.Value + (Owns(ShopPerk.ReinforcedHull) ? HullBonus : 0f);
     public bool IsCarryingChild(NetworkPlayer p) => IsCarrier(Prince.Value,p) || IsCarrier(Princess.Value,p);
     private static bool IsCarrier(RiderState child, NetworkPlayer p) => child.Pose == RiderPose.Carried && child.CarrierSlot == p.Slot.Value;
 
@@ -94,6 +95,8 @@ public sealed partial class CartStations
     }
 
     public const float SootheDistance = 312.5f;
+    // 포대기가 있으면 더 짧게 걸어도 달래진다.
+    public float SootheTarget => Owns(ShopPerk.Swaddle) ? SootheDistance * SwaddleRate : SootheDistance;
     private void ResetCare()
     {
         careTicks = 0;
@@ -130,7 +133,8 @@ public sealed partial class CartStations
         AdvanceChild(Princess,1);
         const float cookLossSecondsPerShock = .55f;
         float cookSeconds = CartRules.Active.cookSeconds;
-        int lostTicks = Mathf.FloorToInt(pendingCookingShock * cookLossSecondsPerShock / Step + .5f);
+        float potRate = Owns(ShopPerk.FixedPot) ? FixedPotRate : 1f;
+        int lostTicks = Mathf.FloorToInt(pendingCookingShock * cookLossSecondsPerShock * potRate / Step + .5f);
         pendingCookingShock = 0f;
         foreach (var actor in gameScene.Players)
         {
@@ -203,7 +207,8 @@ public sealed partial class CartStations
         switch ((StationAction)(child.Mischief - 1))
         {
             case StationAction.ShellDeposit:
-                if (depositedShells > 0) { depositedShells--; lostShells++; }
+                if (coverReady) coverReady = false;
+                else if (depositedShells > 0) { depositedShells--; lostShells++; }
                 break;
             case StationAction.Cannon:
                 if (loaded && !fuseLit) { gunner = null; StartFuse(0); }
@@ -235,18 +240,20 @@ public sealed partial class CartStations
                 child.Bored = false;
             return;
         }
-        child.Soothing = Mathf.Min(SootheDistance, child.Soothing + distance);
-        if (child.BoredomPending && child.Soothing >= SootheDistance / 3f)
+        child.Soothing = Mathf.Min(SootheTarget, child.Soothing + distance);
+        if (child.BoredomPending && child.Soothing >= SootheTarget / 3f)
         {
             child.BoredomPending = false;
-            if (!child.InCellar)
+            // 은방울 딸랑이: 스테이지마다 한 번, 지루해져 달래기가 멈추는 것을 막는다.
+            if (!child.InCellar && rattleReady) rattleReady = false;
+            else if (!child.InCellar)
             {
                 child.Bored = true;
                 child.BoredFrom = foot;
                 return;
             }
         }
-        if (child.Soothing >= SootheDistance) child.Upset = false;
+        if (child.Soothing >= SootheTarget) child.Upset = false;
     }
 
     private void LateUpdate()
@@ -338,10 +345,10 @@ public sealed partial class CartStations
                 child.Attention = 100f;
                 child.Soothing = 0;
                 child.Bored = child.BoredomPending = child.InCellar = false;
-                ignoreWanderUntil[index] = careTicks + 210;
+                ignoreWanderUntil[index] = careTicks + (Owns(ShopPerk.PictureBook) ? PictureBookTicks : 210);
                 break;
             case CareAction.Feed:
-                child.Hunger = Mathf.Max(0, child.Hunger - 55);
+                child.Hunger = Mathf.Max(0, child.Hunger - (Owns(ShopPerk.HeartyRecipe) ? HeartyRecipeHunger : 55));
                 actor.Snack.Value = false;
                 break;
             case CareAction.PickUp:
@@ -362,6 +369,7 @@ public sealed partial class CartStations
     private void KnockDown(NetworkVariable<RiderState> field,float chance)
     {
         var child=field.Value;
+        if (Owns(ShopPerk.SeatCushion)) chance *= CushionFallRate;
         if(child.Pose!=RiderPose.Seated || Sample()>=chance) return;
         child.Pose=RiderPose.Fallen;
         child.Position+=Vector2.down*0.65f;

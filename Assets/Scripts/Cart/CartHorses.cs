@@ -91,7 +91,7 @@ public sealed partial class CartStations
         else
         {
             cart.ResetHorsePace(right);
-            state.Value = new HorseCondition { Mood = HorseMood.Angry, Remaining = 90 };
+            state.Value = new HorseCondition { Mood = HorseMood.Angry, Remaining = Owns(ShopPerk.Blinders) ? BlindersAngryTicks : 90 };
         }
     }
 
@@ -100,9 +100,9 @@ public sealed partial class CartStations
         var wounds = right ? RightWounds : LeftWounds;
         var state = right ? RightHorse : LeftHorse;
         if (state.Value.Mood != HorseMood.Normal || (wounds.Value == RunawayHits - 1 && RunawayDirection != 0)) return;
-        nextHorseRest[right ? 1 : 0] = careTicks + 90;
+        nextHorseRest[right ? 1 : 0] = careTicks + (Owns(ShopPerk.OatFeed) ? OatFeedRestTicks : 90);
         wounds.Value++;
-        cart.BoostHorse(right);
+        cart.BoostHorse(right, Owns(ShopPerk.ImprovedWhip) ? ImprovedWhipStrength : 1f);
         if (wounds.Value == RunawayHits)
             state.Value = new HorseCondition { Mood = HorseMood.Runaway, Remaining = RunawayTicks };
     }

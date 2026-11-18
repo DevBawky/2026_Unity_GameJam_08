@@ -58,6 +58,10 @@ public sealed class PlayerMovement : MonoBehaviour
         // At the two aiming seats the movement stick controls aim. Other work areas are walk-through.
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
         {
+            // 비상 제동 손잡이: E(2P는 오른쪽 Ctrl), 게임패드 X/□.
+            bool brake = actor.SecondLocal ? keyboard?.rightCtrlKey.wasPressedThisFrame == true
+                : keyboard?.eKey.wasPressedThisFrame == true || Gamepad.current?.buttonWest.wasPressedThisFrame == true;
+            if (brake && stations.Owns(ShopPerk.EmergencyBrake)) actor.PullBrake();
             AimWhip(input);
             return;
         }
@@ -109,8 +113,10 @@ public sealed class PlayerMovement : MonoBehaviour
     public Vector2 StairPoint(bool cellar) => (cellar ? cellarStairs : deckStairs).position;
 
     private float WalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
-        ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 110f/165f
-        : stations.IsCarryingChild(actor) ? 125f/165f : 1f);
+        ? carrySpeedMultiplier * stations.PorterMultiplier
+        : actor.SpareWheel.Value ? (stations.Owns(ShopPerk.LightSpareWheel) ? CartStations.LightSpareWheelRate : 110f/165f)
+        : stations.IsCarryingChild(actor) ? 125f/165f
+        : stations.CheerActive ? CartStations.CheerSpeedRate : 1f);
 
     public float BotTimeToDeckPoint(Vector2 point)
     {

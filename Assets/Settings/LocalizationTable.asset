@@ -438,3 +438,315 @@ MonoBehaviour:
     english: 'Couldn''t reload the scene: '
   - korean: "mainGame \uC52C\uC774 \uBE4C\uB4DC \uBAA9\uB85D\uC5D0 \uC5C6\uC2B5\uB2C8\uB2E4."
     english: mainGame is not in the build list.
+  - korean: "\uC0C1\uC810"
+    english: Shop
+  - korean: "\uBCF4\uC720 {0} AP"
+    english: '{0} AP'
+  - korean: "\uD310\uB9E4 \uC644\uB8CC"
+    english: Sold
+  - korean: '{0} AP'
+    english: '{0} AP'
+  - korean: "\uC0C1\uD488\uC744 \uACE8\uB77C \uC8FC\uC138\uC694."
+    english: Pick an item.
+  - korean: "\uBC29\uC7A5\uB9CC \uAD6C\uB9E4"
+    english: Host only
+  - korean: "AP \uBD80\uC871"
+    english: Not enough AP
+  - korean: "\uAD6C\uB9E4"
+    english: Buy
+  - korean: "\uACBD\uB7C9 \uBC14\uD034"
+    english: Light Wheels
+  - korean: "\uB9C8\uCC28\uC758 \uAE30\uBCF8 \uC8FC\uD589 \uC18D\uB3C4\uAC00 \uC870\uAE08
+      \uC62C\uB77C\uAC04\uB2E4."
+    english: The cart's base speed rises a little.
+  - korean: "\uAC1C\uB7C9 \uCC44\uCC0D"
+    english: Better Whip
+  - korean: "\uCC44\uCC0D\uC774 \uC81C\uB300\uB85C \uB9DE\uC744 \uB54C\uB9C8\uB2E4
+      \uB9D0\uC774 \uB354 \uBE60\uB974\uAC8C \uC18D\uB3C4\uB97C \uC62C\uB9B0\uB2E4."
+    english: Each clean whip hit makes the horse speed up faster.
+  - korean: "\uC870\uD5A5 \uACE0\uC090"
+    english: Steering Reins
+  - korean: "\uD55C\uCABD \uB9D0\uC744 \uC7AC\uCD09\uD560 \uB54C \uB9C8\uCC28\uAC00
+      \uADF8 \uBC29\uD5A5\uC73C\uB85C \uB354 \uBE60\uB974\uAC8C \uC6C0\uC9C1\uC778\uB2E4."
+    english: Urging one horse moves the cart toward that side faster.
+  - korean: "\uADC0\uB9AC \uC0AC\uB8CC"
+    english: Oat Feed
+  - korean: "\uCC44\uCC0D\uC9C8\uC744 \uAC70\uB4ED\uD560 \uB54C \uB9D0\uC758 \uD53C\uB85C\uAC00
+      \uB354 \uCC9C\uCC9C\uD788 \uC313\uC778\uB2E4."
+    english: Horse fatigue builds up more slowly when you keep whipping.
+  - korean: "\uB9D0 \uB208\uAC00\uB9AC\uAC1C"
+    english: Horse Blinders
+  - korean: "\uCC44\uCC0D\uC774 \uBE57\uB098\uAC00 \uB9D0\uC774 \uB180\uB790\uC744
+      \uB54C \uB2E4\uC2DC \uC870\uC791\uC5D0 \uBC18\uC751\uD558\uAE30\uAE4C\uC9C0
+      \uAC78\uB9AC\uB294 \uC2DC\uAC04\uC774 \uC904\uC5B4\uB4E0\uB2E4."
+    english: A spooked horse responds to the reins again sooner after a missed whip.
+  - korean: "\uB9C8\uBD80\uC758 \uB9DD\uC6D0\uACBD"
+    english: Driver's Spyglass
+  - korean: "\uC55E\uAE38 \uC7A5\uC560\uBB3C\uC758 \uC704\uCE58\uB97C \uB354 \uC77C\uCC0D
+      \uC54C\uB824 \uC918 \uCC28\uC120\uC744 \uBC14\uAFC0 \uC5EC\uC720\uAC00 \uC0DD\uAE34\uB2E4."
+    english: Obstacles on the road are flagged earlier, giving you time to change
+      lanes.
+  - korean: "\uBE44\uC0C1 \uC81C\uB3D9 \uC190\uC7A1\uC774"
+    english: Emergency Brake
+  - korean: "\uB9C8\uBD80\uAC00 \uC9C1\uC811 \uB2F9\uACA8(E) \uC7A0\uAE50 \uC18D\uB3C4\uB97C
+      \uB0AE\uCD9C \uC218 \uC788\uB2E4. \uC7A5\uC560\uBB3C \uD68C\uD53C \uD0C0\uC774\uBC0D\uC744
+      \uB9DE\uCD94\uB294 \uB370 \uC4F8 \uC218 \uC788\uB2E4."
+    english: The driver can pull it (E) to slow down briefly. Handy for timing obstacle
+      dodges.
+  - korean: "\uD3EC\uC2E0 \uCCAD\uC18C \uC194"
+    english: Barrel Brush
+  - korean: "\uD074\uB9AD \uD55C \uBC88\uC5D0 \uCCAD\uC18C \uAC8C\uC774\uC9C0\uB97C
+      \uB354 \uB9CE\uC774 \uCC44\uC6CC \uD544\uC694\uD55C \uD074\uB9AD \uD69F\uC218\uB97C
+      \uC904\uC778\uB2E4."
+    english: Each click fills more of the cleaning gauge, so fewer clicks are needed.
+  - korean: "\uAD50\uB300\uC6A9 \uC194\uAC78\uC774"
+    english: Brush Relay Hook
+  - korean: "\uCCAD\uC18C \uB3C4\uC911 \uB3D9\uB8CC\uAC00 \uC774\uC5B4\uBC1B\uC73C\uBA74
+      \uCCAB \uD074\uB9AD\uC758 \uC9C4\uD589\uB3C4\uAC00 \uB354 \uB9CE\uC774 \uCC2C\uB2E4.
+      \uCCAD\uC18C \uD55C \uBC88\uB9C8\uB2E4 \uCCAB \uAD50\uB300\uC5D0 \uC801\uC6A9\uB41C\uB2E4."
+    english: When a teammate takes over cleaning, their first click fills more. Once
+      per cleaning.
+  - korean: "\uAE34 \uC190\uC7A1\uC774 \uC194"
+    english: Long-Handled Brush
+  - korean: "\uCCAD\uC18C\uB300\uC5D0 \uC870\uAE08 \uB35C \uAC00\uAE4C\uC774 \uAC00\uB3C4
+      \uCCAD\uC18C\uB97C \uC2DC\uC791\uD560 \uC218 \uC788\uB2E4."
+    english: You can start cleaning from a little farther away.
+  - korean: "\uC7A5\uC804 \uB208\uAE08\uD310"
+    english: Loading Gauge
+  - korean: "\uC7A5\uC804 \uD0C0\uC774\uBC0D\uC758 \uC131\uACF5 \uAD6C\uAC04\uC774
+      \uB113\uC5B4\uC9C4\uB2E4."
+    english: The reload timing window gets wider.
+  - korean: "\uD3EC\uD0C4 \uD68C\uC218\uD310"
+    english: Shell Catch Plate
+  - korean: "\uC7A5\uC804 \uD0C0\uC774\uBC0D\uC774 \uC131\uACF5 \uAD6C\uAC04\uC744
+      \uC0B4\uC9DD \uBC97\uC5B4\uB098\uBA74 \uD3EC\uD0C4\uC774 \uC801\uC7AC\uD568\uC73C\uB85C
+      \uB3CC\uC544\uAC04\uB2E4."
+    english: If a reload just misses the window, the shell goes back into the rack.
+  - korean: "\uC7A5\uC804\uB300 \uD638\uCD9C\uBCA8"
+    english: Loader's Bell
+  - korean: "\uC801\uC7AC\uD568\uC774 \uBE44\uC5C8\uC744 \uB54C \uC7A5\uC804\uC218\uAC00
+      \uC9C0\uD558\uCE35 \uB3D9\uB8CC\uC5D0\uAC8C \uD3EC\uD0C4 \uC694\uCCAD \uC2E0\uD638\uB97C
+      \uBCF4\uB0BC \uC218 \uC788\uB2E4."
+    english: When the rack is empty, the loader automatically asks the cellar crew
+      for shells.
+  - korean: "\uC7A5\uC804\uB300 \uBCF4\uC870 \uBC1C\uD310"
+    english: Loader's Step
+  - korean: "\uC7A5\uC804\uC5D0 \uC2E4\uD328\uD558\uBA74 \uADF8 \uC790\uB9AC\uC5D0\uC11C
+      \uD55C \uBC88 \uB354 \uC7A5\uC804\uC744 \uC2DC\uB3C4\uD560 \uC218 \uC788\uB2E4."
+    english: After a failed reload you can try once more without losing the shell.
+  - korean: "\uB300\uD3EC \uC724\uD65C\uC81C"
+    english: Cannon Grease
+  - korean: "\uC870\uC900 \uC911 \uD3EC\uC2E0\uC774 \uD754\uB4E4\uB9AC\uB294 \uC9C4\uD3ED\uC774
+      \uC904\uC5B4\uB4E0\uB2E4."
+    english: The barrel sways less while aiming.
+  - korean: "\uBBF8\uC138 \uC870\uC900 \uC190\uC7A1\uC774"
+    english: Fine Aim Grip
+  - korean: "\uC2A4\uD2F1\uC744 \uC0B4\uC9DD \uAE30\uC6B8\uC600\uC744 \uB54C \uC870\uC900\uC810\uC774
+      \uCC9C\uCC9C\uD788 \uC6C0\uC9C1\uC5EC \uC791\uC740 \uAC01\uB3C4 \uC870\uC815\uC774
+      \uC26C\uC6CC\uC9C4\uB2E4."
+    english: Tilting the stick slightly moves the aim slowly, making small adjustments
+      easier.
+  - korean: "\uC815\uBC00 \uC870\uC900\uACBD"
+    english: Precision Sight
+  - korean: "\uC870\uC900\uC810\uC744 \uC7A0\uAE50 \uAC19\uC740 \uC704\uCE58\uC5D0
+      \uC720\uC9C0\uD558\uBA74 \uC608\uC0C1 \uCC29\uD0C4 \uBC94\uC704\uAC00 \uC881\uC544\uC9C4\uB2E4."
+    english: Holding the aim still for a moment narrows the landing area.
+  - korean: "\uAE34 \uC2EC\uC9C0"
+    english: Long Fuse
+  - korean: "\uC810\uD654\uBD80\uD130 \uBC1C\uC0AC\uAE4C\uC9C0 \uC2DC\uAC04\uC774
+      \uB298\uC5B4\uB098 \uC6C0\uC9C1\uC774\uB294 \uCD94\uACA9\uB300\uB97C \uB530\uB77C
+      \uC870\uC900\uD560 \uC5EC\uC720\uAC00 \uC0DD\uAE34\uB2E4."
+    english: More time from lighting to firing, so you can track moving pursuers.
+  - korean: "\uD3EC\uC218\uC11D \uD574\uC81C \uB808\uBC84"
+    english: Seat Release Lever
+  - korean: "\uBC1C\uC0AC \uC9C1\uD6C4 \uD3EC\uC218\uC11D\uC5D0\uC11C \uB354 \uBE68\uB9AC
+      \uB0B4\uB824\uC640 \uCCAD\uC18C\uB098 \uB2E4\uB978 \uC791\uC5C5\uC744 \uD558\uB7EC
+      \uAC08 \uC218 \uC788\uB2E4."
+    english: Leave the gunner seat sooner after firing to clean or help elsewhere.
+  - korean: "\uBC18\uB3D9 \uBC1B\uCE68\uB300"
+    english: Recoil Mount
+  - korean: "\uC544\uAD70 \uB300\uD3EC\uB97C \uC3E0 \uB54C \uAC11\uD310\uC5D0 \uC804\uB2EC\uB418\uB294
+      \uCDA9\uACA9\uC774 \uC904\uC5B4\uB4E0\uB2E4."
+    english: Firing the cannon shakes the deck less.
+  - korean: "\uCD94\uACA9\uBCD1 \uAD00\uCE21\uACBD"
+    english: Pursuer Scope
+  - korean: "\uC870\uC900\uC810\uACFC \uAC00\uC7A5 \uAC00\uAE4C\uC6B4 \uCD94\uACA9\uBCD1\uC758
+      \uC774\uB3D9 \uBC29\uD5A5\uC744 \uD654\uC0B4\uD45C\uB85C \uBCF4\uC5EC \uC900\uB2E4."
+    english: Shows which way the pursuer nearest your aim is moving.
+  - korean: "\uD6C8\uB828\uC6A9 \uC544\uB839"
+    english: Training Dumbbells
+  - korean: "\uC878\uAC1C\uAC00 \uD798\uC744 \uAE38\uB7EC \uD3EC\uD0C4\uC744 \uB4E4\uACE0
+      \uC774\uB3D9\uD560 \uB54C \uC18D\uB3C4\uAC00 \uB35C \uC904\uC5B4\uB4E0\uB2E4."
+    english: Minions slow down less while carrying shells.
+  - korean: "\uD3EC\uD0C4 \uB354\uBBF8 \uC9D1\uAC8C"
+    english: Shell Tongs
+  - korean: "\uC9C0\uD558 \uD3EC\uD0C4 \uB354\uBBF8\uC5D0\uC11C \uD3EC\uD0C4\uC744
+      \uAEBC\uB0B4\uB294 \uD0C0\uC774\uBC0D\uC758 \uC131\uACF5 \uAD6C\uAC04\uC774
+      \uB113\uC5B4\uC9C4\uB2E4."
+    english: The timing window for taking shells from the cellar pile gets wider.
+  - korean: "\uD3EC\uD0C4 \uBC1B\uCE68 \uC7A5\uAC11"
+    english: Shell Gloves
+  - korean: "\uC190\uC5D0\uC11C \uBBF8\uB044\uB7EC\uC9C0\uB294 \uD3EC\uD0C4\uC744
+      \uBD99\uC7A1\uB294 \uD0C0\uC774\uBC0D\uC758 \uC131\uACF5 \uAD6C\uAC04\uC774
+      \uB113\uC5B4\uC9C4\uB2E4."
+    english: The timing window for catching a slipping shell gets wider.
+  - korean: "\uD3EC\uD0C4 \uC6B4\uBC18 \uBA5C\uBE75"
+    english: Shell Sling
+  - korean: "\uC57D\uD55C \uCDA9\uACA9\uC744 \uBC1B\uC558\uC744 \uB54C \uB4E4\uACE0
+      \uC788\uB294 \uD3EC\uD0C4\uC774 \uC190\uC5D0\uC11C \uB35C \uBBF8\uB044\uB7EC\uC9C4\uB2E4."
+    english: Carried shells slip less from light bumps.
+  - korean: "\uB113\uC740 \uC801\uC7AC \uBC1B\uCE68"
+    english: Wide Rack Tray
+  - korean: "\uD3EC\uD0C4\uC744 \uB0B4\uB824\uB193\uC744 \uC218 \uC788\uB294 \uC801\uC7AC\uD568
+      \uC8FC\uBCC0 \uBC94\uC704\uAC00 \uB113\uC5B4\uC9C4\uB2E4."
+    english: You can drop shells into the rack from a wider area.
+  - korean: "\uACC4\uB2E8 \uC804\uB2EC \uC120\uBC18"
+    english: Stair Shelf
+  - korean: "\uC9C0\uD558\uCE35 \uC878\uAC1C\uAC00 \uC120\uBC18\uC5D0 \uC62C\uB9B0
+      \uD3EC\uD0C4 \uD55C \uBC1C\uC744 \uAC11\uD310 \uCABD \uB3D9\uB8CC\uAC00 \uBC14\uB85C
+      \uBC1B\uC544 \uAC08 \uC218 \uC788\uB2E4."
+    english: Cellar minions can leave a shell on the stair shelf for deck crew to
+      pick up.
+  - korean: "\uC7A5\uB09C \uBC29\uC9C0 \uB36E\uAC1C"
+    english: Mischief Cover
+  - korean: "\uC2A4\uD14C\uC774\uC9C0\uB9C8\uB2E4 \uC655\uC790\uB098 \uACF5\uC8FC\uAC00
+      \uC801\uC7AC\uD568\uC5D0\uC11C \uD3EC\uD0C4\uC744 \uAEBC\uB0B4 \uBC84\uB9AC\uB294
+      \uC7A5\uB09C\uC744 \uD55C \uBC88 \uB9C9\uB294\uB2E4."
+    english: Once per stage, stops the prince or princess from pulling a shell out
+      of the rack.
+  - korean: "\uACBD\uB7C9 \uC608\uBE44 \uBC14\uD034"
+    english: Light Spare Wheel
+  - korean: "\uC608\uBE44 \uBC14\uD034\uB97C \uB4E4\uACE0 \uC218\uB9AC \uC9C0\uC810\uAE4C\uC9C0
+      \uC774\uB3D9\uD558\uB294 \uC18D\uB3C4\uAC00 \uBE68\uB77C\uC9C4\uB2E4."
+    english: Carry the spare wheel to the repair spot faster.
+  - korean: "\uBC14\uD034 \uC7A5\uCC29 \uAC00\uC774\uB4DC"
+    english: Wheel Mounting Guide
+  - korean: "\uC218\uB9AC \uCCAB \uB2E8\uACC4\uC778 '\uBC14\uD034 \uB07C\uC6B0\uAE30'\uC758
+      \uC131\uACF5 \uAD6C\uAC04\uC774 \uB113\uC5B4\uC9C4\uB2E4."
+    english: The timing window for 'Fit the wheel' gets wider.
+  - korean: "\uCC28\uCD95 \uD540 \uACE0\uC815 \uC9D1\uAC8C"
+    english: Axle Pin Clamp
+  - korean: "\uC218\uB9AC \uB9C8\uC9C0\uB9C9 \uB2E8\uACC4\uC778 '\uCC28\uCD95 \uD540
+      \uACE0\uC815'\uC758 \uC131\uACF5 \uAD6C\uAC04\uC774 \uB113\uC5B4\uC9C4\uB2E4."
+    english: The timing window for 'Pin the axle' gets wider.
+  - korean: "\uBCF4\uC870 \uC9C0\uC9C0\uB300"
+    english: Support Strut
+  - korean: "\uBC14\uD034\uAC00 \uBE60\uC838 \uC788\uB294 \uB3D9\uC548 \uB9C8\uCC28\uC758
+      \uC8FC\uD589 \uC18D\uB3C4\uAC00 \uB35C \uB5A8\uC5B4\uC9C4\uB2E4."
+    english: The cart loses less speed while a wheel is missing.
+  - korean: "\uB9C8\uCC28\uC758 \uCD5C\uB300 \uB0B4\uAD6C\uB3C4\uAC00 \uB298\uC5B4\uB09C\uB2E4.
+      \uAD6C\uB9E4\uD560 \uB54C \uB298\uC5B4\uB09C \uB9CC\uD07C \uD604\uC7AC \uB0B4\uAD6C\uB3C4\uB3C4
+      \uCC44\uC6CC\uC9C4\uB2E4."
+    english: The cart's max durability goes up, and current durability is filled
+      by the same amount.
+  - korean: "\uCDA9\uB3CC \uC644\uCDA9\uD310"
+    english: Bumper Pads
+  - korean: "\uD1B5\uB098\uBB34\uB098 \uBC14\uC704\uC5D0 \uBD80\uB52A\uD78C \uB4A4
+      \uB9C8\uCC28\uAC00 \uC6D0\uB798 \uC18D\uB3C4\uB97C \uB418\uCC3E\uAE30\uAE4C\uC9C0
+      \uAC78\uB9AC\uB294 \uC2DC\uAC04\uC774 \uC904\uC5B4\uB4E0\uB2E4."
+    english: The cart recovers its speed sooner after hitting logs or rocks.
+  - korean: "\uC815\uBE44 \uC548\uB0B4\uB4F1"
+    english: Repair Lantern
+  - korean: "\uC5B4\uB290 \uCE35\uC5D0 \uC788\uB4E0 \uBE60\uC9C4 \uBC14\uD034\uC758
+      \uC704\uCE58\uC640 \uB0A8\uC740 \uC218\uB9AC \uB2E8\uACC4\uB97C \uD655\uC778\uD560
+      \uC218 \uC788\uB2E4."
+    english: From either floor, see which wheel fell off and how many repair steps
+      remain.
+  - korean: "\uB450\uD23C\uD55C \uC88C\uC11D \uCFE0\uC158"
+    english: Plush Seat Cushion
+  - korean: "\uB9C8\uCC28\uAC00 \uD754\uB4E4\uB9B4 \uB54C \uC544\uC774\uAC00 \uC88C\uC11D\uC5D0\uC11C
+      \uB5A8\uC5B4\uC9C8 \uD655\uB960\uC774 \uB0AE\uC544\uC9C4\uB2E4."
+    english: Children are less likely to fall off their seats when the cart shakes.
+  - korean: "\uD3EC\uB300\uAE30"
+    english: Baby Sling
+  - korean: "\uB180\uB780 \uC544\uC774\uB97C \uC548\uACE0 \uB354 \uC9E7\uC740 \uAC70\uB9AC\uB97C
+      \uAC78\uC5B4\uB3C4 \uB2EC\uB798\uAE30 \uAC8C\uC774\uC9C0\uAC00 \uCC2C\uB2E4."
+    english: A startled child is soothed with a shorter walk.
+  - korean: "\uC740\uBC29\uC6B8 \uB538\uB791\uC774"
+    english: Silver Rattle
+  - korean: "\uC544\uC774\uAC00 \uC9C0\uB8E8\uD574\uD574 \uB2EC\uB798\uAE30\uAC00
+      \uBA48\uCDC4\uC744 \uB54C, \uC548\uC740 \uCC44 \uB538\uB791\uC774\uB97C \uD754\uB4E4\uC5B4
+      \uD55C \uBC88 \uB2E4\uC2DC \uB2EC\uB7A0 \uC218 \uC788\uB2E4."
+    english: Once per stage, keeps a bored child from stopping the soothing while
+      carried.
+  - korean: "\uD3BC\uCCD0 \uBCF4\uB294 \uADF8\uB9BC\uCC45"
+    english: Pop-up Picture Book
+  - korean: "\uB2E4\uC2DC \uC549\uD78C \uC544\uC774\uAC00 \uC88C\uC11D\uC5D0 \uBA38\uBB34\uB294
+      \uC2DC\uAC04\uC774 \uAE38\uC5B4\uC9C4\uB2E4."
+    english: A reseated child stays in their seat longer.
+  - korean: "\uACE0\uC815\uC2DD \uAC04\uC2DD \uB0C4\uBE44"
+    english: Fixed Snack Pot
+  - korean: "\uAC04\uC2DD\uC744 \uB9CC\uB4E4\uB2E4\uAC00 \uB9C8\uCC28\uAC00 \uD754\uB4E4\uB824\uB3C4
+      \uC870\uB9AC \uAC8C\uC774\uC9C0\uAC00 \uB35C \uAE4E\uC778\uB2E4."
+    english: Cooking progress drops less when the cart shakes.
+  - korean: "\uB4E0\uB4E0\uD55C \uAC04\uC2DD \uB808\uC2DC\uD53C"
+    english: Hearty Recipe
+  - korean: "\uAC04\uC2DD \uD55C \uBC88\uC73C\uB85C \uC544\uC774\uC758 \uBC30\uACE0\uD514\uC744
+      \uB354 \uB9CE\uC774 \uC904\uC778\uB2E4."
+    english: One snack fills a child's hunger more.
+  - korean: "\uC30D\uB465\uC774 \uC0C1\uD0DC\uD310"
+    english: Twin Status Board
+  - korean: "\uC9C0\uD558\uCE35\uC5D0\uC11C\uB3C4 \uC5B4\uB290 \uC544\uC774\uAC00
+      \uBC30\uACE0\uD508\uC9C0, \uB204\uAC00 \uB180\uB77C\uC11C \uC6B0\uB294\uC9C0
+      \uD655\uC778\uD560 \uC218 \uC788\uB2E4."
+    english: Check from the cellar which child is hungry or crying.
+  - korean: "\uCD9C\uBC1C\uC6A9 \uB2F9\uADFC \uBB36\uC74C"
+    english: Carrot Bundle
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC5D0\uC11C \uB9C8\uCC28\uAC00
+      \uC5B4\uB290 \uC815\uB3C4 \uC18D\uB3C4\uB97C \uB0B8 \uC0C1\uD0DC\uB85C \uCD9C\uBC1C\uD55C\uB2E4."
+    english: Next stage, the cart starts already moving at a good pace.
+  - korean: "\uD3EC\uD0C4 \uBCF4\uAE09 \uC0C1\uC790"
+    english: Shell Supply Crate
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uB97C \uC2DC\uC791\uD560 \uB54C
+      \uAC11\uD310 \uC801\uC7AC\uD568\uC5D0 \uD3EC\uD0C4 \uB450 \uBC1C\uC774 \uCD94\uAC00\uB41C\uB2E4."
+    english: Next stage starts with two extra shells in the deck rack.
+  - korean: "\uAE30\uB984 \uBA39\uC778 \uCCAD\uC18C\uCC9C"
+    english: Oiled Cleaning Cloth
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC758 \uCCAB \uD3EC\uC2E0 \uCCAD\uC18C\uB294
+      \uAC8C\uC774\uC9C0\uAC00 \uC808\uBC18 \uCC2C \uC0C1\uD0DC\uC5D0\uC11C \uC2DC\uC791\uD55C\uB2E4."
+    english: Next stage, the first barrel cleaning starts half done.
+  - korean: "\uBE44\uC0C1 \uBC14\uD034 \uAFB8\uB7EC\uBBF8"
+    english: Spare Wheel Kit
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC5D0\uC11C \uCC98\uC74C \uBC14\uD034\uAC00
+      \uBE60\uC9C0\uBA74 \uD574\uB2F9 \uC218\uB9AC \uC9C0\uC810 \uC606\uC5D0 \uC608\uBE44
+      \uBC14\uD034 \uD55C \uAC1C\uAC00 \uB193\uC778\uB2E4."
+    english: Next stage, the first lost wheel can be fixed without fetching a spare.
+  - korean: "\uCD9C\uBC1C \uC804 \uAE34\uAE09 \uC218\uB9AC"
+    english: Emergency Repair
+  - korean: "\uC911\uAC04 \uBCF4\uACE0 \uC911 \uCC28\uCCB4 \uB0B4\uAD6C\uB3C4\uB97C
+      \uD68C\uBCF5\uD558\uACE0 \uC774\uD0C8\uD55C \uBC14\uD034\uB97C \uC7A5\uCC29\uD55C\uB2E4."
+    english: Restores durability and remounts a lost wheel right away, during the
+      report.
+  - korean: "\uBBF8\uB9AC \uB9CC\uB4E0 \uAC04\uC2DD"
+    english: Ready-made Snack
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC758 \uAC11\uD310\uC5D0 \uBC14\uB85C
+      \uBA39\uC77C \uC218 \uC788\uB294 \uAC04\uC2DD \uD55C \uAC1C\uAC00 \uB193\uC778\uB2E4."
+    english: Next stage, a crew member starts holding a snack ready to feed.
+  - korean: "\uB9C8\uC655\uC758 \uACA9\uB824 \uAE43\uBC1C"
+    english: Demon Lord's Banner
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC5D0\uC11C \uD55C \uBC88 \uD3BC\uCCD0,
+      \uC7A0\uC2DC \uBAA8\uB4E0 \uC878\uAC1C\uC758 \uBE48\uC190 \uC774\uB3D9 \uC18D\uB3C4\uB97C
+      \uB192\uC778\uB2E4."
+    english: Next stage, unfurls at the start and briefly speeds up empty-handed
+      minions.
+  - korean: "\uBE44\uC0C1\uC6A9 \uD3EC\uD0C4 \uC548\uC804\uB048"
+    english: Shell Safety Strap
+  - korean: "\uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0\uC5D0\uC11C \uC878\uAC1C\uAC00
+      \uD3EC\uD0C4\uC744 \uB193\uCE58\uB294 \uC21C\uAC04 \uD55C \uBC88 \uC790\uB3D9\uC73C\uB85C
+      \uBD99\uC7A1\uC544 \uC900\uB2E4."
+    english: Next stage, the first time a shell would slip, it is caught automatically.
+  - korean: "\uC7A5\uC804 \uC2E4\uD328 \xB7 \uD3EC\uD0C4\uC774 \uC801\uC7AC\uD568\uC5D0
+      \uB0A8\uC558\uB2E4"
+    english: "Reload failed \xB7 The shell stayed in the rack"
+  - korean: "\uC120\uBC18\uC5D0 \uC62C\uB9AC\uAE30"
+    english: Put on shelf
+  - korean: "\uC120\uBC18\uC5D0\uC11C \uBC1B\uAE30"
+    english: Take from shelf
+  - korean: "\uACC4\uB2E8 \uC120\uBC18\uC5D0 \uD3EC\uD0C4\uC744 \uC62C\uB824 \uB450\uC138\uC694"
+    english: Leave the shell on the stair shelf
+  - korean: "\uACC4\uB2E8 \uC120\uBC18\uC758 \uD3EC\uD0C4\uC744 \uBC1B\uC544 \uAC00\uC138\uC694"
+    english: Take the shell from the stair shelf
+  - korean: "\uBE44\uC0C1 \uBC14\uD034 \uAFB8\uB7EC\uBBF8\uB85C \uBC14\uB85C \uC218\uB9AC\uD558\uC138\uC694"
+    english: Repair now with the spare wheel kit
+  - korean: "{0}\uBC88 \uBC14\uD034 \uACE0\uC7A5 \xB7 \uC218\uB9AC {1}/{2}\uB2E8\uACC4"
+    english: "Wheel {0} broken \xB7 Repair step {1}/{2}"

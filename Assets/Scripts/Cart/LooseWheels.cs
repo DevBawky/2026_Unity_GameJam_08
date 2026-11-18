@@ -61,10 +61,13 @@ public sealed partial class CartStations
         wheelEverDetached = true;
         wheelRepairSteps = 0;
         SetTireAlpha(0f);
-        cart.SpeedMultiplier = wheelLossSpeedMultiplier;
+        cart.SpeedMultiplier = WheelLossSpeed;
         AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f);
         Publish();
     }
+
+    // 보조 지지대가 있으면 바퀴가 빠져도 속도가 덜 떨어진다.
+    private float WheelLossSpeed => Owns(ShopPerk.SupportStrut) ? Mathf.Max(wheelLossSpeedMultiplier, SupportStrutSpeed) : wheelLossSpeedMultiplier;
 
     private void RepairWheel()
     {
