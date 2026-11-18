@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c16620fac37a784b9e9656a3277040f, type: 3}
-  m_Name: Wave_02
+  m_Name: Stage01_Wave01
   m_EditorClassIdentifier: Assembly-CSharp::WaveSO
-  startTime: 10
+  startTime: 2
   spawns:
   - unit: {fileID: 11400000, guid: 0c15eef4cd363f741ad2b76160912d95, type: 2}
-    count: 5
-  speedMin: 0.03
+    count: 3
+  speedMin: 0.02
   speedMax: 0.02
-  attackMultiplier: 1.2
+  attackMultiplier: 1
