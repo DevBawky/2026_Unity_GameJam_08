@@ -93,6 +93,8 @@ public sealed class CartStations : NetworkBehaviour
     private const int StationCount = 8;
     public const ulong NoStationOwner = ulong.MaxValue;
     public static bool Running => Instance != null && Instance.IsSpawned && Instance.flow == StageFlow.Running;
+    // 웹판처럼 시작 대기·진행 중에만 이모티콘을 보낸다 (업그레이드 선택의 숫자키와 겹치지 않게).
+    public static bool EmoteAllowed => Instance != null && Instance.IsSpawned && (Instance.flow == StageFlow.Waiting || Instance.flow == StageFlow.Running);
     private SpriteRenderer cartBody;
     private SpriteRenderer detachedTire;
     private float detachedTireAlpha;
