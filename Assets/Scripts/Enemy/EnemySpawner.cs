@@ -2,27 +2,53 @@ using UnityEngine;
 
 // 스폰 영역 중심에 둔다(카메라 최대 범위 밖). 스테이지 시작부터 경과 시간이 웨이브 waveStartTime을 지나면
 // 그 웨이브의 몬스터를 한 프레임에 전부 영역 안 무작위 위치에 소환한다.
+// 다음 스테이지로 넘어가면 웨이브를 처음부터 다시 돌린다.
 public class EnemySpawner : MonoBehaviour
 {
-    [SerializeField] StageSO stage;
-    [SerializeField] SpriteRenderer cartBody;
-    [SerializeField] CartStations cartStations; // 몬스터 공격 → 마차 내구도
-    [SerializeField] Vector2 areaSize = new(4f, 8f);
+    [SerializeField] private StageSO stage;
+    [SerializeField] private SpriteRenderer cartBody;
+    [SerializeField] private CartStations cartStations;
+    [SerializeField] private Vector2 areaSize = new(4f, 8f);
 
-    float elapsed;
-    int nextWave;
+    private float elapsed;
+    private int nextWave;
+    private int stageNumber;
 
-    void OnEnable() => Enemy.CartHit += cartStations.ReceiveCollision;
-    void OnDisable() => Enemy.CartHit -= cartStations.ReceiveCollision;
-
-    void Update()
+    private void OnEnable()
     {
+        if (cartStations == null)
+        {
+            Debug.LogWarning($"[{name}] cartStations가 비어 있어 몬스터 공격이 마차 내구도에 반영되지 않습니다", this);
+            return;
+        }
+        Enemy.CartHit += cartStations.ReceiveCollision;
+        stageNumber = cartStations.StageNumber;
+    }
+
+    private void OnDisable()
+    {
+        if (cartStations != null) Enemy.CartHit -= cartStations.ReceiveCollision;
+    }
+
+    private void Update()
+    {
+        if (cartStations != null && cartStations.StageNumber != stageNumber) RestartWaves();
+
         elapsed += Time.deltaTime;
         while (nextWave < stage.waves.Count && stage.waves[nextWave].waveStartTime <= elapsed)
             SpawnWave(stage.waves[nextWave++]);
     }
 
-    void SpawnWave(WaveSO wave)
+    // 남은 몬스터와 날아가던 화살(둘 다 이 오브젝트의 자식)을 치우고 타이머를 처음으로 돌린다.
+    private void RestartWaves()
+    {
+        stageNumber = cartStations.StageNumber;
+        elapsed = 0f;
+        nextWave = 0;
+        for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
+    }
+
+    private void SpawnWave(WaveSO wave)
     {
         foreach (var s in wave.spawns)
             for (int i = 0; i < s.count; i++)
@@ -33,7 +59,7 @@ public class EnemySpawner : MonoBehaviour
             }
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(transform.position, areaSize);

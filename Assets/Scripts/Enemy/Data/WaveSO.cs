@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
+using System.Collections.Generic;
 
 // 웨이브 하나. waveStartTime(스테이지 시작 기준 초)에 spawns 전체를 한 프레임에 소환한다.
 // 수(count)는 기획자가 "스테이지 기본 수 × 웨이브 배율"로 계산해 직접 입력한다.
@@ -17,7 +17,7 @@ public class WaveSO : ScriptableObject
         [Min(0)] public int count;
     }
 
-    const float RecommendedSpeedSpread = 0.05f; // 몬스터 간 속도 차이 권장 상한(미확정)
+    private const float RecommendedSpeedSpread = 0.05f; // 몬스터 간 속도 차이 권장 상한(미확정)
 
     [Tooltip("스테이지 시작부터 몇 초 뒤에 등장하는지. 이 시점에 아래 몬스터 전부를 한 번에 소환한다")]
     [FormerlySerializedAs("startTime")]
@@ -40,7 +40,7 @@ public class WaveSO : ScriptableObject
 
     public float AttackOf(UnitSO unit) => unit.attackPower * attackMultiplier;
 
-    void OnValidate()
+    private void OnValidate()
     {
         speedMin = Mathf.Min(speedMin, 0.99f); // 1 이상이면 속도 계수가 0 이하가 된다
         if (speedMin + speedMax > RecommendedSpeedSpread)

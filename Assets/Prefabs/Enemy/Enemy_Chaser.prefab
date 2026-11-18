@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2081267188488558442}
   - component: {fileID: 4752786287999990334}
   - component: {fileID: 6103588802494584681}
+  - component: {fileID: 8417490295067727796}
   m_Layer: 0
   m_Name: Enemy_Chaser
   m_TagString: Untagged
@@ -107,7 +108,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc080e78481c78346868230c5003327b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  rope: {fileID: 2081267188488558442}
 --- !u!120 &2081267188488558442
 LineRenderer:
   serializedVersion: 3
@@ -291,3 +291,15 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &8417490295067727796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534948089611357973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cec5dc0a0f18c0348b0e109b839189b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyRope

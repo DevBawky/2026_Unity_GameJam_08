@@ -17,7 +17,7 @@ public class RopeSkillSO : ScriptableObject
     [Tooltip("중첩 계수. 효과 = 1개당 값 × 로프 수^계수\n1 = 로프 수에 정비례, 0.5 = 갈수록 덜 늘어남, 0 = 중첩 안 됨")]
     [Min(0)] public float stackExponent = 1f;
 
-    float Stack(int ropes) => ropes <= 0 ? 0f : Mathf.Pow(ropes, stackExponent);
+    private float Stack(int ropes) => ropes <= 0 ? 0f : Mathf.Pow(ropes, stackExponent);
 
     public float CartSpeedMultiplier(int ropes) => 1f - Mathf.Min(maxCartSlow, cartSlowPerRope * Stack(ropes));
 

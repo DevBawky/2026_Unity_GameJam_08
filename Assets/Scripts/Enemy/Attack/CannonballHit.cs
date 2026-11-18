@@ -8,7 +8,7 @@ public class CannonballHit : MonoBehaviour
     [Tooltip("몬스터에게 주는 피해. 몬스터 HP 이상이면 한 방에 처치")]
     [Min(0)] public float damage = 1f;
 
-    void OnTriggerEnter2D(Collider2D other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.TryGetComponent(out Enemy enemy)) return;
         enemy.TakeDamage(damage);

@@ -44,7 +44,7 @@ public class UnitSO : ScriptableObject
     [Tooltip("로프 스킬. 사거리 안에서 공격 대신 로프를 건다")]
     public RopeSkillSO ropeSkill;
 
-    void OnValidate()
+    private void OnValidate()
     {
         if (type == UnitType.Archer && arrowPrefab == null) Debug.LogWarning($"[{name}] 궁수인데 화살 프리팹이 비어 있습니다", this);
         if (type == UnitType.Chaser && ropeSkill == null) Debug.LogWarning($"[{name}] 추격조인데 로프 스킬이 비어 있습니다", this);

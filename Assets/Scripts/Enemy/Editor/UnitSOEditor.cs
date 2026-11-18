@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEditor;
+using System.Collections.Generic;
 
 // UnitSO 인스펙터: 선택한 몬스터 종류에 필요한 칸만 보여준다.
 [CustomEditor(typeof(UnitSO))]

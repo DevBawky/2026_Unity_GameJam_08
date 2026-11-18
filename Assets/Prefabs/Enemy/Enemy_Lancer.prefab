@@ -106,7 +106,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc080e78481c78346868230c5003327b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  rope: {fileID: 0}
 --- !u!50 &7272773754595071933
 Rigidbody2D:
   serializedVersion: 5
