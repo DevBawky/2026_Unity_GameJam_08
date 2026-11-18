@@ -63,7 +63,7 @@ public class Enemy : MonoBehaviour
 
         if (Unit.type == UnitType.Chaser)
         {
-            if (rope != null) rope.Attach(Unit.ropeSkill, goal);
+            if (rope != null) rope.Attach(Unit.ropeSkill, target.transform, goal);
             return;
         }
 

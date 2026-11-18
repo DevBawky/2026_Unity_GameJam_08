@@ -1,30 +1,31 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
+// 대포 조준. 대포 스테이션에 있는 동안 조준선과 조준점을 보여 주고,
+// 모바일 조이스틱·마우스·방향키·게임패드로 방향을 정한다(오른쪽 땅 쪽으로만).
+// 충격을 받으면 잠시 조준이 흔들린다.
 public sealed class CannonAim : MonoBehaviour
 {
+    private const float MinInputSqr = 0.04f;
+    private const float MinAimX = 0.05f;
+    private const float LineDrawRatio = 0.95f;
+
     [SerializeField] private Transform muzzle;
     [SerializeField] private LineRenderer aimLine;
     [SerializeField] private SpriteRenderer crosshair;
     [SerializeField] private Camera gameCamera;
     [SerializeField] private MobileJoystick aimJoystick;
     [SerializeField, Min(1f)] private float lineLength = 8f;
+
     private PlayerTiming timing;
-    private LineRenderer crosshairHorizontal;
-    private LineRenderer crosshairVertical;
     private Vector2 direction = Vector2.right;
     private Vector2 displayedDirection = Vector2.right;
     private float impactTime;
     private float impactDuration;
     private float impactDegrees;
+
     public Vector2 Direction => displayedDirection;
-    public void ApplyImpact(float degrees, float duration)
-    {
-        impactDegrees = Mathf.Max(0f, degrees);
-        impactDuration = Mathf.Max(0.01f, duration);
-        impactTime = impactDuration;
-    }
     public Transform Muzzle => muzzle;
     public float LineLength => lineLength;
 
@@ -32,77 +33,67 @@ public sealed class CannonAim : MonoBehaviour
     {
         timing = GetComponent<PlayerTiming>();
         if (gameCamera == null) gameCamera = Camera.main;
-        if (crosshair == null && aimLine != null)
-        {
-            crosshairHorizontal = CreateCrosshairLine("Crosshair Horizontal");
-            crosshairVertical = CreateCrosshairLine("Crosshair Vertical");
-        }
     }
-    private LineRenderer CreateCrosshairLine(string objectName)
+
+    public void ApplyImpact(float degrees, float duration)
     {
-        LineRenderer line = Instantiate(aimLine, transform);
-        line.name = objectName;
-        line.positionCount = 2;
-        line.useWorldSpace = true;
-        line.widthMultiplier = 1.5f;
-        line.enabled = false;
-        return line;
+        impactDegrees = Mathf.Max(0f, degrees);
+        impactDuration = Mathf.Max(0.01f, duration);
+        impactTime = impactDuration;
     }
+
     private void Update()
     {
-        bool aiming = timing != null && timing.IsCannonFocus && muzzle != null;
-        if (aimLine != null) aimLine.enabled = aiming;
-        if (crosshair != null) crosshair.enabled = aiming;
-        if (crosshairHorizontal != null) crosshairHorizontal.enabled = aiming;
-        if (crosshairVertical != null) crosshairVertical.enabled = aiming;
+        bool aiming = timing.IsCannonFocus && muzzle != null;
+        aimLine.enabled = aiming;
+        crosshair.enabled = aiming;
         if (!aiming)
         {
             displayedDirection = direction;
-            if (impactTime > 0f) impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
+            impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
             return;
         }
-        if (aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.Direction.sqrMagnitude > 0.04f)
+
+        ReadInput();
+        float jitter = impactTime > 0f ? Random.Range(-impactDegrees, impactDegrees) * (impactTime / impactDuration) : 0f;
+        displayedDirection = Quaternion.Euler(0f, 0f, jitter) * direction;
+        impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
+
+        Vector3 origin = muzzle.position;
+        aimLine.SetPosition(0, origin);
+        aimLine.SetPosition(1, origin + (Vector3)displayedDirection * (lineLength * LineDrawRatio));
+        crosshair.transform.position = origin + (Vector3)displayedDirection * lineLength;
+    }
+
+    private void ReadInput()
+    {
+        if (aimJoystick != null && aimJoystick.gameObject.activeInHierarchy && aimJoystick.Direction.sqrMagnitude > MinInputSqr)
+        {
             SetDirection(aimJoystick.Direction);
-        else if (Mouse.current != null && Mouse.current.leftButton.isPressed && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
+            return;
+        }
+        if (Mouse.current != null && Mouse.current.leftButton.isPressed && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
         {
             Vector3 screen = Mouse.current.position.ReadValue();
             screen.z = Mathf.Abs(muzzle.position.z - gameCamera.transform.position.z);
             SetDirection(gameCamera.ScreenToWorldPoint(screen) - muzzle.position);
+            return;
         }
-        else
-        {
-            Vector2 input = Vector2.zero;
-            if (Keyboard.current != null)
-                input = new Vector2((Keyboard.current.rightArrowKey.isPressed ? 1 : 0) - (Keyboard.current.leftArrowKey.isPressed ? 1 : 0),
-                    (Keyboard.current.upArrowKey.isPressed ? 1 : 0) - (Keyboard.current.downArrowKey.isPressed ? 1 : 0));
-            if (Gamepad.current != null && Gamepad.current.rightStick.ReadValue().sqrMagnitude > 0.04f)
-                input = Gamepad.current.rightStick.ReadValue();
-            if (input.sqrMagnitude > 0.04f) SetDirection(input);
-        }
-        float jitter = impactTime > 0f ? Random.Range(-impactDegrees, impactDegrees) * (impactTime / impactDuration) : 0f;
-        displayedDirection = Quaternion.Euler(0f, 0f, jitter) * direction;
-        if (impactTime > 0f) impactTime = Mathf.Max(0f, impactTime - Time.deltaTime);
-        Vector3 origin = muzzle.position;
-        Vector3 endpoint = origin + (Vector3)displayedDirection * lineLength;
-        if (aimLine != null)
-        {
-            aimLine.SetPosition(0, origin);
-            aimLine.SetPosition(1, origin + (Vector3)displayedDirection * (lineLength * 0.95f));
-        }
-        if (crosshair != null) crosshair.transform.position = endpoint;
-        if (crosshairHorizontal != null)
-        {
-            crosshairHorizontal.SetPosition(0, endpoint + Vector3.left * 0.2f);
-            crosshairHorizontal.SetPosition(1, endpoint + Vector3.right * 0.2f);
-            crosshairVertical.SetPosition(0, endpoint + Vector3.down * 0.2f);
-            crosshairVertical.SetPosition(1, endpoint + Vector3.up * 0.2f);
-        }
+
+        Vector2 input = Vector2.zero;
+        if (Keyboard.current != null)
+            input = new Vector2((Keyboard.current.rightArrowKey.isPressed ? 1 : 0) - (Keyboard.current.leftArrowKey.isPressed ? 1 : 0),
+                (Keyboard.current.upArrowKey.isPressed ? 1 : 0) - (Keyboard.current.downArrowKey.isPressed ? 1 : 0));
+        if (Gamepad.current != null && Gamepad.current.rightStick.ReadValue().sqrMagnitude > MinInputSqr)
+            input = Gamepad.current.rightStick.ReadValue();
+        if (input.sqrMagnitude > MinInputSqr) SetDirection(input);
     }
+
+    // 마차에서 오른쪽 땅을 향해서만 조준한다.
     private void SetDirection(Vector2 value)
     {
         if (value.sqrMagnitude < 0.001f) return;
-        // Aim from the cart towards the ground on the right.
-        value.x = Mathf.Max(value.x, 0.05f);
+        value.x = Mathf.Max(value.x, MinAimX);
         direction = value.normalized;
     }
 }

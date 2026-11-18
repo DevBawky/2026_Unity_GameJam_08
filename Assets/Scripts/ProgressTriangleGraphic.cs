@@ -1,7 +1,10 @@
 using UnityEngine;
-public sealed class ProgressTriangleGraphic : UnityEngine.UI.MaskableGraphic
+using UnityEngine.UI;
+
+// 진행 거리 표시용 아래를 가리키는 삼각형.
+public sealed class ProgressTriangleGraphic : MaskableGraphic
 {
-    protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vertices)
+    protected override void OnPopulateMesh(VertexHelper vertices)
     {
         vertices.Clear();
         Rect rect = rectTransform.rect;
