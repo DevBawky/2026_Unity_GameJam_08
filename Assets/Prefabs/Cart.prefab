@@ -451,7 +451,7 @@ GameObject:
   - component: {fileID: 4805966699855018758}
   - component: {fileID: 4641809855658451046}
   m_Layer: 0
-  m_Name: Bomb_Ready
+  m_Name: Bomb_Load
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -633,7 +633,7 @@ GameObject:
   - component: {fileID: 1070759166927480487}
   - component: {fileID: 548520786200099789}
   m_Layer: 0
-  m_Name: Bomb_Store
+  m_Name: Bomb_Storage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
