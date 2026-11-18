@@ -60,7 +60,7 @@ public sealed partial class CartStations
     public RunCheckpoint Capture(string[] keys)
     {
         Publish();
-        var enemies=FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        var enemies=Enemy.Active.ToArray();
         return new RunCheckpoint {
             StageEntry=stageEntryJson, KingReply=KingReply.Value.ToString(),
             LooseWheels=Enumerable.Range(0,LooseWheels.Count).Select(i=>LooseWheels[i]).ToArray(),
