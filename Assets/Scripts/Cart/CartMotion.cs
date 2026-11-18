@@ -1,23 +1,31 @@
 using UnityEngine;
 
-// 마차는 화면에 고정, 속도·거리만 소유한다. 배경은 WorldScroller가 Speed를 읽어 움직인다.
-// 속도를 바꾸는 쪽(고삐, 말, 피격 등)은 SetTargetSpeed만 호출한다.
 public class CartMotion : MonoBehaviour
 {
-    [SerializeField] float cruiseSpeed = 5f;   // m/s (1 unit = 1 m)
-    [SerializeField] float acceleration = 3f;  // m/s²
-
+    [SerializeField] private float cruiseSpeed = 5f;
+    [SerializeField] private float acceleration = 3f;
+    [SerializeField] private float speedGain = 1f;
+    [SerializeField] private float maximumHorseSpeed = 10f;
+    [SerializeField] private float turnRate = 3f;
+    [SerializeField] private float maxHeading = 25f;
     public float Speed { get; private set; }
     public float TargetSpeed { get; private set; }
     public float Distance { get; private set; }
-
-    void Awake() => TargetSpeed = cruiseSpeed;
-
-    public void SetTargetSpeed(float speed) => TargetSpeed = Mathf.Max(0f, speed);
-
-    void Update()
+    public float Heading { get; private set; }
+    public float LeftHorseSpeed { get; private set; }
+    public float RightHorseSpeed { get; private set; }
+    private void Awake() { LeftHorseSpeed = RightHorseSpeed = cruiseSpeed; TargetSpeed = cruiseSpeed; }
+    public void SetTargetSpeed(float speed) { LeftHorseSpeed = RightHorseSpeed = Mathf.Max(0f, speed); }
+    public void BoostHorse(bool right)
     {
+        if (right) RightHorseSpeed = Mathf.Min(maximumHorseSpeed, RightHorseSpeed + speedGain);
+        else LeftHorseSpeed = Mathf.Min(maximumHorseSpeed, LeftHorseSpeed + speedGain);
+    }
+    private void Update()
+    {
+        TargetSpeed = (LeftHorseSpeed + RightHorseSpeed) * 0.5f;
         Speed = Mathf.MoveTowards(Speed, TargetSpeed, acceleration * Time.deltaTime);
+        Heading = Mathf.Clamp(Heading + (RightHorseSpeed - LeftHorseSpeed) * turnRate * Time.deltaTime, -maxHeading, maxHeading);
         Distance += Speed * Time.deltaTime;
     }
 }
