@@ -28,8 +28,10 @@ public sealed partial class CartStations
     {
         HorseMood.Runaway => 1.60f,
         HorseMood.Tired => .55f,
-        _ => 1f + .35f * HorseRage.Value.Value
+        _ => 1f + .35f * (Owns(ShopPerk.ImprovedWhip) ? ImprovedWhipStrength : 1f) * HorseRage.Value.Value
     };
+
+    internal float SteeringSpeed => DriverSteeringSpeed * (Owns(ShopPerk.SteeringReins) ? SteeringReinsResponse : 1f);
 
     internal float DriverSteering
     {
@@ -66,7 +68,7 @@ public sealed partial class CartStations
         if (!IsServer) return;
         var rage = HorseRage.Value;
         if (rage.Mood != HorseMood.Normal || rage.RestTicks > RageRestTicks - WhipCooldownTicks) return;
-        rage.Value = Mathf.Min(1f, rage.Value + 1f / 8f);
+        rage.Value = Mathf.Min(1f, rage.Value + (Owns(ShopPerk.OatFeed) ? OatFeedRageRate : 1f) / 8f);
         rage.RestTicks = RageRestTicks;
         if (rage.Value >= 1f)
         {

@@ -78,7 +78,7 @@ public sealed class CartMotion : NetworkBehaviour
         Distance += Speed * dt;
         ScrollDistance += ScrollVelocity.x * dt;
         Vector3 position = transform.position;
-        Lane = Mathf.Clamp(position.y + stations.DriverSteering * CartStations.DriverSteeringSpeed
+        Lane = Mathf.Clamp(position.y + stations.DriverSteering * stations.SteeringSpeed
             * stations.WorldPerWebUnit * dt, -LateralLimit, LateralLimit);
         position.y = Lane;
         transform.position = position;

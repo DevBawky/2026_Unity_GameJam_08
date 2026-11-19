@@ -42,7 +42,7 @@ public sealed partial class CartStations
     }
 
     private float DrivingYAt(float seconds, int direction, float delay) =>
-        Mathf.Clamp(cart.transform.position.y + direction * DriverSteeringSpeed * WorldPerWebUnit * Mathf.Max(0, seconds - delay),
+        Mathf.Clamp(cart.transform.position.y + direction * SteeringSpeed * WorldPerWebUnit * Mathf.Max(0, seconds - delay),
             -cart.LateralLimit, cart.LateralLimit);
 
     private NetworkPlayer EvasionDriver(out int direction)

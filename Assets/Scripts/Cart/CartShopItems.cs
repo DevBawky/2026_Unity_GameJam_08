@@ -13,8 +13,7 @@ public sealed partial class CartStations
 
     // 효과 수치. 상품 설명에 맞춘 기본값이며, 밸런스는 여기서 조정한다.
     internal const float LightWheelsSpeedBonus = 1.2f, LightWheelsLimitRate = 1.08f;
-    internal const float ImprovedWhipStrength = 1.4f, SteeringReinsResponse = 1.6f;
-    internal const int OatFeedRestTicks = 60, BlindersAngryTicks = 45;
+    internal const float ImprovedWhipStrength = 1.4f, SteeringReinsResponse = 1.6f, OatFeedRageRate = .75f;
     internal const float TelescopeWarningRate = 1.5f;
     internal const float BrakeSlowFactor = .55f, BrakeSeconds = 1.2f, BrakeCooldown = 8f;
     internal const int BrushTapGain = 2, RelayTapBonus = 3;

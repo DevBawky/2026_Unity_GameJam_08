@@ -199,7 +199,10 @@ public sealed class PlayerWorkHud : MonoBehaviour
     {
         bool nearFirst = game.RoyalNearby(first, child);
         bool nearSecond = game.RoyalNearby(second, child);
-        bool visible = nearFirst || nearSecond;
+        // 쌍둥이 상태판: 지하층에 있으면 아이가 멀리 있어도 상태를 띄운다.
+        bool board = game.Owns(ShopPerk.TwinStatusBoard) && !child.InCellar
+            && (first.InCellar || second != null && second.InCellar);
+        bool visible = nearFirst || nearSecond || board;
         row.panel.gameObject.SetActive(visible);
         if (!visible) return false;
         string viewer = second == null ? "" : nearFirst && nearSecond ? "  P1 · P2" : nearFirst ? "  P1" : "  P2";
