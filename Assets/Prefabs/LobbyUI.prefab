@@ -5363,6 +5363,7 @@ GameObject:
   - component: {fileID: 7444567095481231463}
   - component: {fileID: 775730801994462286}
   - component: {fileID: 780144277827816315}
+  - component: {fileID: 4525324355747466826}
   m_Layer: 0
   m_Name: Text | Label
   m_TagString: Untagged
@@ -5489,6 +5490,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4525324355747466826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3487264499247021087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b461fd9412666e4bad6342c538b72f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  table: {fileID: 11400000, guid: 9c6befcce8020cb4fb7c1b061c7d0782, type: 2}
 --- !u!1 &3536262784803194352
 GameObject:
   m_ObjectHideFlags: 0
@@ -8892,6 +8906,7 @@ GameObject:
   - component: {fileID: 8250873255693383158}
   - component: {fileID: 9044529905270330363}
   - component: {fileID: 1229656512290040196}
+  - component: {fileID: 1067858575048844390}
   m_Layer: 0
   m_Name: Text | Body
   m_TagString: Untagged
@@ -9022,6 +9037,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1067858575048844390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5610506325572393204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b461fd9412666e4bad6342c538b72f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  table: {fileID: 11400000, guid: 9c6befcce8020cb4fb7c1b061c7d0782, type: 2}
 --- !u!1 &5626709874056541709
 GameObject:
   m_ObjectHideFlags: 0
@@ -11243,6 +11271,7 @@ GameObject:
   - component: {fileID: 2635366096279737983}
   - component: {fileID: 7393802886951592581}
   - component: {fileID: 702096131030534288}
+  - component: {fileID: 849641539226772823}
   m_Layer: 0
   m_Name: Text | Loading
   m_TagString: Untagged
@@ -11369,6 +11398,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &849641539226772823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7570352590121864678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b461fd9412666e4bad6342c538b72f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  table: {fileID: 11400000, guid: 9c6befcce8020cb4fb7c1b061c7d0782, type: 2}
 --- !u!1 &7626707541717674751
 GameObject:
   m_ObjectHideFlags: 0

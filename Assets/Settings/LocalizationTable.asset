@@ -782,8 +782,20 @@ MonoBehaviour:
   - korean: "\uCD08"
     english: s
   - korean: "\uB0A8\uC740 \uAC70\uB9AC {0:N0} m"
-    english: "{0:N0} m remaining"
+    english: '{0:N0} m remaining'
   - korean: "\uC8FC\uD589 \uAC70\uB9AC {0:N0} m"
-    english: "{0:N0} m traveled"
+    english: '{0:N0} m traveled'
   - korean: "\uB0B4\uAD6C\uB3C4 {0}/{1} \xB7 \uCDA9\uACA9 \uBC29\uC5B4 {2}%"
-    english: "Durability {0}/{1} · Impact protection {2}%"
+    english: "Durability {0}/{1} \xB7 Impact protection {2}%"
+  - korean: "\uC88C\uC11D \uD0A4 \uC624\uB958"
+    english: Invalid seat key.
+  - korean: "\uBC29\uC5D0 \uC5F0\uACB0\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+    english: Could not connect to the room.
+  - korean: "<size=30><color=#F2C14E>\uAE30\uD68D\uC790</color></size>\n<size=10>
+      </size>\n<size=50><b>\uC591\uBA85\uC9C4</b></size>\n<size=44> </size>\n<size=30><color=#F2C14E>\uD504\uB85C\uADF8\uB798\uBA38</color></size>\n<size=10>
+      </size>\n<size=50><b>\uC724\uBBFC\uD601\n\uC815\uD64D\uC7AC</b></size>\n<size=44>
+      </size>\n<size=30><color=#F2C14E>\uC544\uD2F0\uC2A4\uD2B8</color></size>\n<size=10>
+      </size>\n<size=50><b>\uC774\uC9C4\uC218</b></size>"
+    english: "<size=30><color=#F2C14E>Planner</color></size>\n<size=10> </size>\n<size=50><b>\uC591\uBA85\uC9C4</b></size>\n<size=44>
+      </size>\n<size=30><color=#F2C14E>Programmers</color></size>\n<size=10> </size>\n<size=50><b>\uC724\uBBFC\uD601\n\uC815\uD64D\uC7AC</b></size>\n<size=44>
+      </size>\n<size=30><color=#F2C14E>Artist</color></size>\n<size=10> </size>\n<size=50><b>\uC774\uC9C4\uC218</b></size>"
