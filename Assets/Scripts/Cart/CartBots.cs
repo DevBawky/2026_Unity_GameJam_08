@@ -11,10 +11,10 @@ public sealed partial class CartStations
         foreach (var player in gameScene.Players)
         {
             if (!player.Assigned.Value || player == bot) continue;
-            if (!player.Bot.Value && player.Timing.IsInActionArea(action)) return false;
+            if (!player.Bot.Value && TimingArea.IsRoyal(action) && player.Timing.IsInActionArea(action)) return false;
             if (player.Bot.Value && player.Slot.Value < bot.Slot.Value && botJobs[player.Slot.Value] == (int)action) return false;
         }
-        return true;
+        return TimingArea.IsRoyal(action) || !PlayerHasPriority(action);
     }
     private StationAction? BotJob(NetworkPlayer bot, bool driverNeededElsewhere)
     {
@@ -32,8 +32,11 @@ public sealed partial class CartStations
             var child = action == StationAction.Princess ? Princess.Value : Prince.Value;
             if (child.Pose != RiderPose.Seated && child.Pose != RiderPose.Carried && BotCanTake(action,bot)) return action;
         }
-        if (wheelDetached && BotCanTake(StationAction.WheelRack,bot))
-            return wheelRepairSteps > 0 ? StationAction.WheelRepair : StationAction.WheelRack;
+        if (wheelDetached)
+        {
+            var wheelJob = wheelRepairSteps > 0 ? StationAction.WheelRepair : StationAction.WheelRack;
+            if (BotCanTake(wheelJob, bot)) return wheelJob;
+        }
         if ((Prince.Value.Hunger >= 70 || Princess.Value.Hunger >= 70) && BotCanTake(StationAction.Kitchen, bot))
         {
             bool fedSoon = false;
@@ -52,36 +55,48 @@ public sealed partial class CartStations
 
     private void AdvanceBots()
     {
+        botSteering = 0f;
         var driver = EvasionDriver(out int direction);
         foreach (var bot in gameScene.Players)
         {
             if (!bot.Bot.Value || !bot.Assigned.Value) continue;
             int slot = bot.Slot.Value;
-            if (fuseLit && gunner == bot) continue;
             var walk = bot.GetComponent<PlayerMovement>();
             if (bot.Holding.Value)
             {
                 if (bot.Timing.TimingSuccess(StationAction.ShellPile,true,NetworkManager.ServerTime.Time)) ResolveShellHold(bot,true);
                 continue;
             }
-            if (bot != driver && CarriedChild(bot,out var child) && child.Upset)
+            bool carryingChild = CarriedChild(bot, out var child);
+            if (carryingChild)
             {
-                botJobs[slot] = -1;
-                Vector2 pos = bot.transform.position;
-                Bounds deck = cartBody.bounds;
-                if (child.Bored) walk.WalkBot(walk.StairPoint(true) + Vector2.right, true, Step);
-                else
+                ReleaseStations(bot.NetworkObjectId);
+                bot.CookingHeld.Value = false;
+                if (child.Upset)
                 {
-                    float x = walkingRight[slot] ? deck.max.x - .15f : deck.min.x + .15f;
-                    if (Mathf.Abs(pos.x - x) < .15f) walkingRight[slot] = !walkingRight[slot];
-                    walk.WalkBot(new Vector2(x, pos.y), bot.InCellar, Step);
+                    botJobs[slot] = -1;
+                    WalkToSoothe(bot, walk, child, slot);
+                    continue;
                 }
+            }
+            if (!carryingChild && fuseLit && gunner == bot)
+            {
+                if (PlayerHasPriority(StationAction.Cannon)) YieldBotStation(bot, walk, StationAction.Cannon);
                 continue;
             }
+            if (!carryingChild && botJobs[slot] >= 0)
+            {
+                var previous = (StationAction)botJobs[slot];
+                if (!TimingArea.IsRoyal(previous) && bot.Timing.IsInActionArea(previous) && PlayerHasPriority(previous))
+                {
+                    YieldBotStation(bot, walk, previous);
+                    continue;
+                }
+            }
             StationAction? choice;
-            if (HoldsStation(StationAction.Cannon, bot) && HasWork(CannonAction, bot)) choice = CannonAction;
+            if (carryingChild) choice = IsCarrier(Prince.Value, bot) ? StationAction.RoyalFamily : StationAction.Princess;
+            else if (HoldsStation(StationAction.Cannon, bot) && HasWork(CannonAction, bot)) choice = CannonAction;
             else if (bot == driver) choice = StationAction.Driver;
-            else if (CarriedChild(bot, out _)) choice = IsCarrier(Prince.Value,bot) ? StationAction.RoyalFamily : StationAction.Princess;
             else choice = BotJob(bot, driver != null);
             botJobs[slot] = choice.HasValue ? (int)choice.Value : -1;
             if (!choice.HasValue)
@@ -90,31 +105,42 @@ public sealed partial class CartStations
                 continue;
             }
             var action = choice.Value;
-            bool cellar = action is StationAction.Kitchen or StationAction.WheelRack or StationAction.WheelRepair or StationAction.ShellPile;
-            var area = bot.Timing.AreaFor(action);
-            if (area == null) continue;
-            Vector2 dest = action == StationAction.WheelRepair && detachedTire != null ?
-                (Vector2)WheelWorkPoint + Vector2.up * NetworkPlayer.CellarOffset : (Vector2)area.position;
-            if (bot.CompletedStation.Value == (int)action)
+            bool royal = TimingArea.IsRoyal(action);
+            if (!royal && PlayerHasPriority(action))
             {
-                float sign = dest.x < cartBody.bounds.center.x ? 1 : -1;
-                dest.x += sign * (Mathf.Abs(area.rect.width * area.lossyScale.x) + .5f);
+                YieldBotStation(bot, walk, action);
+                continue;
             }
-            walk.WalkBot(dest,cellar,Step);
-            bool reached = bot.InCellar == cellar && bot.Timing.IsInActionArea(action);
+            bool cellar = action is StationAction.Kitchen or StationAction.WheelRack or StationAction.WheelRepair or StationAction.ShellPile;
+            Vector2 dest;
+            if (royal)
+            {
+                bool princess = action == StationAction.Princess;
+                var target = princess ? Princess.Value : Prince.Value;
+                cellar = !carryingChild && target.InCellar;
+                dest = RoyalInteractionPosition(target, princess ? 1 : 0);
+            }
+            else
+            {
+                var area = bot.Timing.AreaFor(action);
+                if (area == null) continue;
+                dest = action == StationAction.WheelRepair && detachedTire != null
+                    ? WheelWorkPoint + Vector3.up * NetworkPlayer.CellarOffset : area.position;
+                if (bot.CompletedStation.Value == (int)action)
+                {
+                    float sign = dest.x < cartBody.bounds.center.x ? 1 : -1;
+                    dest.x += sign * (Mathf.Abs(area.rect.width * area.lossyScale.x) + .5f);
+                }
+            }
+            walk.WalkBot(dest, cellar, Step);
+            bool reached = bot.InCellar == cellar && (royal ? WithinRoyalInteraction(action, bot) : bot.Timing.IsInActionArea(action));
             bot.CookingHeld.Value = action == StationAction.Kitchen && reached;
             if (!reached || bot.CompletedStation.Value == (int)action) continue;
-            bool royal = TimingArea.IsRoyal(action);
             if (!royal) ReserveStation(bot,(int)action);
             if (!CanUse(action,bot)) continue;
             if (action == StationAction.Driver)
             {
-                if (bot != driver || careTicks < nextDodgeWhip) continue;
-                bool right = direction > 0;
-                var uv = horseWhipZones[right ? 1 : 0].SteeringArea.center;
-                bot.DriverAim.Value = new Vector2(2f * uv.x - 1f, right ? uv.y : uv.y - 1f);
-                StrikeHorse(bot, bot.DriverAim.Value);
-                nextDodgeWhip = careTicks + DodgeWhipTicks;
+                botSteering = bot == driver ? direction : 0f;
                 continue;
             }
             if (careTicks < nextBotAction[slot]) continue;
@@ -139,5 +165,34 @@ public sealed partial class CartStations
                 nextBotAction[slot] = careTicks + 8;
             }
         }
+    }
+
+    private void WalkToSoothe(NetworkPlayer bot, PlayerMovement walk, RiderState child, int slot)
+    {
+        Vector2 position = bot.transform.position;
+        Bounds bounds = bot.InCellar ? cartBody.bounds : DeckMovementBounds;
+        const float turnDistance = .15f;
+        float left = bounds.min.x + turnDistance;
+        float right = bounds.max.x - turnDistance;
+        bool goRight = walkingRight[slot];
+        if (child.Bored && !bot.InCellar)
+            goRight = cart.transform.TransformPoint(child.BoredFrom).x < bounds.center.x;
+        else if (Mathf.Abs(position.x - (goRight ? right : left)) < turnDistance)
+            goRight = !goRight;
+        walkingRight[slot] = goRight;
+        walk.WalkBot(new Vector2(goRight ? right : left, position.y), bot.InCellar, Step);
+    }
+
+    private void YieldBotStation(NetworkPlayer bot, PlayerMovement walk, StationAction action)
+    {
+        ReleaseStations(bot.NetworkObjectId);
+        bot.CookingHeld.Value = false;
+        if (!bot.Timing.IsInActionArea(action)) return;
+        Vector2 center = action == StationAction.WheelRepair
+            ? WheelWorkPoint + Vector3.up * NetworkPlayer.CellarOffset
+            : bot.Timing.AreaFor(action).position;
+        float inward = center.x < cartBody.bounds.center.x ? 1f : -1f;
+        Vector2 position = bot.transform.position;
+        walk.WalkBot(new Vector2(center.x + inward * 48f * WorldPerWebUnit, position.y), bot.InCellar, Step);
     }
 }

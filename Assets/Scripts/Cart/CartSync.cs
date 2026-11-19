@@ -26,8 +26,8 @@ public sealed partial class CartStations
     {
         if (!IsSpawned || !IsServer) return;
         State.Value = new CartNetworkState { Flow=flow, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
-            StageStart=stageStartDistance, Stage=stageNumber, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
-            RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1,
+            StageStart=stageStartDistance, Stage=stageNumber, StageTick=careTicks, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
+            RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1, DamagedTires=damagedTires,
             Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel, CleaningTaps=cleaningTaps,
             Loaded=loaded, Firing=fuseLit, Wheel=wheelDetached, EverWheel=wheelEverDetached };
         Failure.Value = new FixedString64Bytes(FailureReason);
@@ -38,16 +38,12 @@ public sealed partial class CartStations
         stageStartDistance=v.StageStart; stageNumber=Mathf.Max(1,v.Stage); depositedShells=v.Stored; shellsInPile=v.Pile; lostShells=v.Lost;
         cleaningTaps = v.CleaningTaps;
         wheelRepairSteps=v.RepairSteps; cushionAxleLevel=v.Cushion; horseLevel=v.Horse; precisionLevel=v.Precision;
-        loaded=v.Loaded; fuseLit=v.Firing; wheelDetached=v.Wheel; wheelEverDetached=v.EverWheel;
-        for (int i = 0; i < tires.Count; i++)
-        {
-            if (missingWheelSprite != null) tires[i].sprite = tireSprites[i];
-            var color = tires[i].color;
-            color.a = tireAlphas[i];
-            tires[i].color = color;
-        }
-        detachedTire=v.Tire>=0 && v.Tire<tires.Count ? tires[v.Tire] : null;
-        if (detachedTire != null) SetTireAlpha(wheelRepairSteps==0 ? 0f : tireAlphas[v.Tire]);
+        loaded=v.Loaded; fuseLit=v.Firing; wheelEverDetached=v.EverWheel;
+        detachedTire=v.Wheel && v.Tire>=0 && v.Tire<tires.Count ? tires[v.Tire] : null;
+        wheelDetached = detachedTire != null;
+        // Older checkpoints stored a single detached tire.
+        damagedTires = v.DamagedTires != 0 || !wheelDetached ? v.DamagedTires : 1 << v.Tire;
+        for (int i = 0; i < tires.Count; i++) RefreshTireArtwork(i);
         Refresh();
     }
 }

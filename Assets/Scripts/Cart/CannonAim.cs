@@ -20,8 +20,8 @@ public sealed class CannonAim : MonoBehaviour
     public Vector2 Direction { get; private set; } = Vector2.right;
     public float LineLength { get; private set; } = 8f;
     public float Accuracy { get; private set; }
-    public Bounds LandingBounds => spreadRing != null && spreadRing.enabled
-        ? spreadRing.bounds : new Bounds(muzzle.position + (Vector3)Direction * LineLength, Vector3.zero);
+    public Vector2 Target { get; private set; }
+    public Bounds LandingBounds { get; private set; }
 
     private void Awake()
     {
@@ -29,16 +29,17 @@ public sealed class CannonAim : MonoBehaviour
         if (gameCamera == null) gameCamera = Camera.main;
     }
 
-    public static Vector2 AimPoint(Vector2 cursor, Vector2 origin, CartStations game, double time, out Vector2 spread, out float accuracy)
+    public static Vector2 AimPoint(Vector2 cursor, Vector2 pivot, CartStations game, double time,
+        out Vector2 spread, out float accuracy, int? simulationTick = null)
     {
         float scale = game.WorldPerWebUnit;
-        double tick = System.Math.Floor(time * 30);
+        int tick = simulationTick ?? game.CannonTick;
         float wave = .105f*Sin(tick*.105) + .045f*Sin(tick*.21+.9);
         float shake = game.WorkShakeAt(time, out float shakePhase);
         float roll = .017f*Sin(tick*.28) + .012f*Sin(tick*.53);
         if (game.IsFiring)
         {
-            double end = System.Math.Round(game.FuseDeadline.Value*30);
+            double end = tick + System.Math.Round((game.FuseDeadline.Value - time) * 30d);
             double lit = tick-end+75;
             roll += Mathf.Clamp01((float)lit/8f)*(.23f*Sin(lit*.31+end*.618)+.085f*Sin(lit*.67-end*.618));
         }
@@ -50,10 +51,16 @@ public sealed class CannonAim : MonoBehaviour
             * (1f - .72f * Mathf.Pow(falloff, 1.5f));
         float miss = (1f-accuracy)/.68f;
         spread = new Vector2(12+38*miss,9+34*miss)*scale;
-        float originShake = shake * Sin(tick * .37 * 3) * 3f;
-        float angle = Mathf.Clamp(Mathf.Atan2(y - originShake,x)+motion,-1.1f,1.1f);
+        Vector2 origin = Origin(pivot, game, time, tick);
+        float angle = Mathf.Clamp(Mathf.Atan2(y + (pivot.y - origin.y) / scale, x) - motion, -1.1f, 1.1f);
         float edge = game.Cart.LateralLimit+134*scale-spread.y-6*scale;
-        return new Vector2(origin.x+x*scale,Mathf.Clamp(origin.y+(originShake+Mathf.Tan(angle)*x)*scale,-edge,edge));
+        return new Vector2(origin.x+x*scale, Mathf.Clamp(origin.y + Mathf.Tan(angle)*x*scale, -edge, edge));
+    }
+
+    internal static Vector2 Origin(Vector2 pivot, CartStations game, double time, int tick)
+    {
+        float shake = game.WorkShakeAt(time, out _);
+        return pivot + Vector2.down * (shake * Sin(tick * .37 * 3) * 3f * game.WorldPerWebUnit);
     }
 
     private static float Sin(double radians) => (float)System.Math.Sin(radians);
@@ -68,11 +75,11 @@ public sealed class CannonAim : MonoBehaviour
     {
         var game = CartStations.Instance;
         bool aiming = game != null && CartStations.Running && actor.IsSpawned && actor.Assigned.Value && muzzle != null &&
-            game.IsLoaded && game.HoldsStation(StationAction.Cannon, actor) &&
+            game.CannonAction == StationAction.Cannon && game.HoldsStation(StationAction.Cannon, actor) &&
             (!game.IsFiring || game.Gunner.Value == actor.NetworkObjectId);
-        if (crosshair != null) crosshair.enabled = aiming;
-        if (aimLine != null) aimLine.enabled = aiming;
-        if (spreadRing != null) spreadRing.enabled = aiming;
+        if (crosshair != null) crosshair.enabled = false;
+        if (aimLine != null) aimLine.enabled = false;
+        if (spreadRing != null) spreadRing.enabled = false;
         if (!aiming) { if (actor.IsSpawned) cursor = actor.Aim.Value; return; }
 
         if (actor.Local)
@@ -106,17 +113,10 @@ public sealed class CannonAim : MonoBehaviour
         else cursor = actor.Aim.Value;
         var target = AimPoint(cursor, muzzle.position, game, actor.NetworkManager.ServerTime.Time, out var spread, out var accuracy);
         Accuracy = accuracy;
-        Vector2 delta = target - (Vector2)muzzle.position;
+        Target = target;
+        LandingBounds = new Bounds(target, spread * 2f);
+        Vector2 delta = target - Origin(muzzle.position, game, actor.NetworkManager.ServerTime.Time, game.CannonTick);
         Direction = delta.normalized;
         LineLength = delta.magnitude;
-        if (aimLine != null) { aimLine.SetPosition(0,muzzle.position + (Vector3)Direction * game.CannonBarrelLength); aimLine.SetPosition(1,target); }
-        if (crosshair != null) crosshair.transform.position = target;
-        if (spreadRing != null)
-        {
-            spreadRing.transform.position = target;
-            var parentScale = spreadRing.transform.parent.lossyScale;
-            var size = spreadRing.sprite.bounds.size;
-            spreadRing.transform.localScale = new Vector3(2*spread.x/(size.x*parentScale.x),2*spread.y/(size.y*parentScale.y),1);
-        }
     }
 }

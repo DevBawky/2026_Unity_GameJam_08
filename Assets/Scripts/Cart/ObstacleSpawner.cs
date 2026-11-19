@@ -93,6 +93,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
         pendingPrefab = prefabs[Random.Range(0, prefabs.Length)];
         pendingY = Random.value < 0.5f ? cart.LateralLimit : -cart.LateralLimit;
         pendingRemaining = warningSeconds * (stations.Owns(ShopPerk.DriverTelescope) ? CartStations.TelescopeWarningRate : 1f);
+        stations.PlayCartCueRpc(GameSfx.DangerPulse);
         if (warningPrefab != null)
         {
             pendingMarker = Instantiate(warningPrefab, new Vector3(SpawnX, pendingY, 0f), Quaternion.identity);
@@ -187,7 +188,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
             if (previous.x < hitEnd && next.x >= hitStart && Mathf.Abs(next.y - cartY) < HitHalfWidth(obstacle))
             {
                 cart.ApplyObstacleSlow(obstacle.SlowFactor, obstacle.SlowSeconds * (stations.Owns(ShopPerk.CrashPad) ? CartStations.CrashPadRate : 1f));
-                stations.ReceiveCollision(obstacle.Damage);
+                stations.ReceiveCollision(obstacle.Damage, new Vector2(Mathf.Max(previous.x, hitStart), next.y));
                 obstacle.GetComponent<NetworkObject>().Despawn(true);
                 active.RemoveAt(i);
                 if (stations.Failed) return;

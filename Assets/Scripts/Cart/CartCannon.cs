@@ -22,7 +22,35 @@ public sealed partial class CartStations
     public StationAction CannonAction => NeedsCleaning ? StationAction.CannonCleaning : loaded ? StationAction.Cannon : StationAction.Reload;
     public Transform CannonPivot => cannonMuzzle;
     public readonly NetworkVariable<CannonShotVisual> LastCannonShot = new(new CannonShotVisual { Time = -1d });
-    public float CannonBarrelLength => 44f * WorldPerWebUnit * (1f + .17f * Barrel.Value);
+    internal int CannonTick => IsServer ? careTicks : State.Value.StageTick;
+    internal float CannonCaliber => Projectile.ScaleFor(Barrel.Value);
+
+    internal Vector3 CartArtworkOffset(double now)
+    {
+        Vector2 pivot = CannonPivot.position;
+        return CannonRecoilOffset(now) + (Vector3)(CannonAim.Origin(pivot, this, now, CannonTick) - pivot);
+    }
+
+    internal Vector3 CannonRecoilOffset(double now)
+    {
+        var shot = LastCannonShot.Value;
+        float age = (float)((now - shot.Time) * 30d);
+        if (shot.Time < 0d || age < 0f || age >= 15f || SettingsPanel.ReducedMotion) return Vector3.zero;
+        float t = 1f - age / 15f;
+        Vector3 direction = Quaternion.Euler(0f, 0f, shot.Angle) * Vector3.right;
+        return (-direction * (18f * Mathf.Cos(age * .76f)) + Vector3.down * (10f * Mathf.Cos(age * 1.38f)))
+            * (t * t * WorldPerWebUnit);
+    }
+
+    public Vector3 RenderedMuzzle(Vector2 direction, double now)
+    {
+        var shot = LastCannonShot.Value;
+        float recoil = shot.Time < 0d ? -1f : (float)((now - shot.Time) * 30d);
+        var scale = CartArtwork.BarrelScale(IsFiring, (float)((FuseDeadline.Value - now) * 30d), recoil);
+        return CannonPivot.position + (Vector3)direction * (40f * WorldPerWebUnit * CannonCaliber * scale.x);
+    }
+
+    public float FuseDuration => CartRules.Active.fuseSeconds * (Owns(ShopPerk.LongFuse) ? LongFuseRate : 1f);
     public NetworkPlayer CannonOperator
     {
         get
@@ -61,8 +89,9 @@ public sealed partial class CartStations
     private void StartFuse(float initial = -1f)
     {
         fuseLit = true;
-        fuseRemaining = initial < 0f ? CartRules.Active.fuseSeconds * (Owns(ShopPerk.LongFuse) ? LongFuseRate : 1f) : initial;
+        fuseRemaining = initial < 0f ? FuseDuration : initial;
         FuseDeadline.Value = NetworkManager.ServerTime.Time + fuseRemaining;
+        if (fuseRemaining > 0f) PlayCartCueRpc(GameSfx.FuseBurn);
     }
 
     private void AdvanceFuse()
@@ -73,18 +102,22 @@ public sealed partial class CartStations
         if (fuseRemaining > 0.00001f) return;
         var shooter = gunner;
         int shooterScoreOwnerVersion = gunnerScoreOwnerVersion;
+        double now = NetworkManager.ServerTime.Time;
+        int tick = careTicks + 1;
         var target = CannonAim.AimPoint(shooter != null ? shooter.Aim.Value : Vector2.zero, cannonMuzzle.position,
-            this, NetworkManager.ServerTime.Time, out var spread, out _);
+            this, now, out var spread, out _, tick);
         // Isolate shot scatter from child, horse and wave random rolls.
-        uint seed = randomState ^ unchecked((uint)(careTicks+1)*1597334677u);
+        uint seed = randomState ^ unchecked((uint)(tick + 1) * 1597334677u);
         seed = unchecked(seed*1664525u+1013904223u);
         float angle = 2f*Mathf.PI*(seed/4294967296f);
         seed = unchecked(seed*1664525u+1013904223u);
         float radius = Mathf.Sqrt(seed/4294967296f);
         target += Vector2.Scale(spread, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle))) * radius;
-        Vector2 direction = (target - (Vector2)cannonMuzzle.position).normalized;
+        Vector2 origin = CannonAim.Origin(cannonMuzzle.position, this, now, tick);
+        Vector2 direction = (target - origin).normalized;
+        Vector2 opening = origin + direction * (44f * WorldPerWebUnit * CannonCaliber);
         float angleDegrees = Vector2.SignedAngle(Vector2.right, direction);
-        LastCannonShot.Value = new CannonShotVisual { Time = NetworkManager.ServerTime.Time, Angle = angleDegrees };
+        LastCannonShot.Value = new CannonShotVisual { Time = now, Angle = angleDegrees };
         loaded = false;
         cleaningTaps = 0;
         fuseLit = false;
@@ -92,13 +125,13 @@ public sealed partial class CartStations
         if (gunner != null && !gunner.Bot.Value && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(Owns(ShopPerk.ReleaseLever) ? ReleaseLeverTicks : PostShotTicks);
         else EndPostShot();
         float recoil = Owns(ShopPerk.RecoilMount) ? RecoilMountRate : 1f;
-        AddImpactEffects(recoilAnxietyIncrease * recoil, recoilShakeStrength * recoil, CannonShock * recoil, .25f * recoil, cannon: true);
+        AddImpactEffects(recoilAnxietyIncrease * recoil, 0f, CannonShock * recoil, .0625f * recoil, cannon: true);
         var rotation = Quaternion.Euler(0f, 0f, angleDegrees);
-        var projectile = Instantiate(shellPrefab, cannonMuzzle.position + (Vector3)direction * CannonBarrelLength, rotation).GetComponent<Projectile>();
+        var projectile = Instantiate(shellPrefab, opening, rotation).GetComponent<Projectile>();
         projectile.SetCaliber(Barrel.Value);
         projectile.SetShooter(shooter, shooterScoreOwnerVersion);
+        projectile.Launch(target, Projectile.FlightSpeed * WorldPerWebUnit);
         projectile.NetworkObject.Spawn(true);
-        projectile.Launch(target, 1750f * WorldPerWebUnit);
         Refresh();
     }
 

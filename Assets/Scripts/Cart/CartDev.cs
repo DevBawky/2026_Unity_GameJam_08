@@ -4,7 +4,7 @@ using Unity.Netcode;
 public sealed partial class CartStations
 {
     public bool DevInvincible { get; set; }
-    public void DevRepair() { if (!IsServer) return; durability = Capacity; if (wheelDetached) RepairWheel(); Refresh(); }
+    public void DevRepair() { if (!IsServer) return; durability = Capacity; RepairAllWheels(); Refresh(); }
     public void DevCalm()
     {
         if (!IsServer) return;

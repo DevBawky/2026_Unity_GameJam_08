@@ -23,7 +23,7 @@ public sealed class CartRules : ScriptableObject
     public Card repair = new("수리", 3, 35);
     public Card precision = new("정밀 도구", 4, 0.027f);
     public Card stabilizer = new("대포 고정대", 4, 1);
-    public Card barrel = new("대구경 포신", 6, 0.25f);
+    public Card barrel = new("대구경 포신", 6, 0.17f);
     public Card hull = new("강화 차체", 6, 20);
     public Card porter = new("운반 장구", 4, 0.2f);
     public Card cushion = new("완충 차축", 5, 0.78f);
@@ -43,6 +43,10 @@ public sealed class CartRules : ScriptableObject
     [Min(0)] public int childReseatScore = 20;
     [Min(0)] public int wheelInstallScore = 8;
     [Min(0)] public int wheelRepairScore = 12;
+
+    [Header("작업 발판 활성화")]
+    [Tooltip("작업 발판과 겹쳐야 하는 플레이어 몸 스프라이트 사각 영역의 최소 비율 (%)")]
+    [Range(1f, 100f)] public float requiredPlayerOverlapPercent = 50f;
 
     private static CartRules active;
     public static CartRules Active

@@ -33,7 +33,20 @@ public class Enemy : NetworkBehaviour
     public Vector2 PreviousPosition { get; private set; }
     private Vector2 knockVelocity;
     private float knockLeft;
+    private Vector2 cannonDeathVelocity;
+    private int cannonSlideTicks;
+    private readonly NetworkVariable<double> startledUntil = new();
+    public float StartledRemaining => IsSpawned ? Mathf.Max(0f, (float)(startledUntil.Value - NetworkManager.ServerTime.Time)) : 0f;
+    private float StartledPace => StartledRemaining > 0f ? .75f : 1f;
+
+    internal void Startle()
+    {
+        if (IsServer && cavalry != null && !Knocked && Health.Value > 0f)
+            startledUntil.Value = NetworkManager.ServerTime.Time + 2d;
+    }
+
     public bool Knocked => airborne.Value;
+    internal bool IsCavalry => cavalry != null;
     public bool IsApproaching => IsSpawned && !Knocked && Health.Value > 0f &&
         VisualPose.Value.StrikeAt < 0d && (rope == null || !rope.Attached);
     public bool KnockAway(Vector2 velocity)
@@ -78,11 +91,12 @@ public class Enemy : NetworkBehaviour
             Debug.LogWarning($"[{name}] 추격조 프리팹에 EnemyRope가 없어 로프를 걸지 않습니다", this);
     }
 
-    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,KnockLeft=knockLeft,KnockVelocity=knockVelocity,Angle=transform.eulerAngles.z,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,EngagementAge=engagementAge,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike,
+    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,KnockLeft=knockLeft,KnockVelocity=knockVelocity,Angle=transform.eulerAngles.z,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,StartledRemaining=StartledRemaining,EngagementAge=engagementAge,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike,
         StrikeTarget=VisualPose.Value.Target, StrikeAge=VisualPose.Value.StrikeAt < 0d ? -1f : (float)(NetworkManager.ServerTime.Time-VisualPose.Value.StrikeAt),
         AttackSlotKey=AttackSlot+1 };
     public void Restore(PursuerCheckpoint saved)
     {
+        startledUntil.Value=NetworkManager.ServerTime.Time + saved.StartledRemaining;
         knockLeft=saved.KnockLeft;knockVelocity=saved.KnockVelocity;transform.rotation=Quaternion.Euler(0,0,saved.Angle);
         hp=saved.Health;speed=saved.Speed;attack=saved.Damage;attackTimer=saved.Wait;sinceStrike=saved.SinceStrike;engagementAge=saved.EngagementAge;Health.Value=hp;
         airborne.Value = knockLeft > 0f;
@@ -91,7 +105,7 @@ public class Enemy : NetworkBehaviour
             ? NetworkManager.ServerTime.Time - saved.StrikeAge : -1d, Target = saved.StrikeTarget, DeathAt = -1d };
     }
 
-    public bool TakeDamage(float damage, bool blast = false)
+    public bool TakeDamage(float damage, bool blast, Vector2 impulse, Vector2 point)
     {
         if (!IsSpawned || !IsServer || Knocked || VisualPose.Value.DeathKind != 0 || !CartStations.Running) return false;
         hp -= Mathf.Max(0f,damage);
@@ -103,8 +117,18 @@ public class Enemy : NetworkBehaviour
             return true;
         }
         Active.Remove(this);
+        if (rope != null && rope.Attached) rope.Detach();
         if (TryGetComponent(out Collider2D collider)) collider.enabled = false;
-        VisualPose.Value = new CavalryPose { DeathAt = NetworkManager.ServerTime.Time, StrikeAt = -1d, DeathKind = blast ? 2 : 1 };
+        transform.position += Vector3.right * (8f * CartStations.Instance.WorldPerWebUnit);
+        cannonDeathVelocity = impulse;
+        cannonSlideTicks = 16;
+        VisualPose.Value = new CavalryPose
+        {
+            DeathAt = NetworkManager.ServerTime.Time,
+            StrikeAt = -1d,
+            DeathKind = blast ? 2 : 1,
+            HitPoint = point
+        };
         return true;
     }
 
@@ -118,7 +142,18 @@ public class Enemy : NetworkBehaviour
         if (!IsSpawned || !IsServer || !CartStations.Running || Unit==null || target==null) return;
         if (VisualPose.Value.DeathKind != 0)
         {
-            if (NetworkManager.ServerTime.Time - VisualPose.Value.DeathAt >= 1d) NetworkObject.Despawn(true);
+            if (NetworkManager.ServerTime.Time - VisualPose.Value.DeathAt >= 1d)
+            {
+                NetworkObject.Despawn(true);
+                return;
+            }
+            transform.position += CartStations.Instance.Cart.ScrollVelocity * dt;
+            if (cannonSlideTicks > 0)
+            {
+                transform.position += (Vector3)(cannonDeathVelocity * dt);
+                cannonDeathVelocity *= .965f;
+                cannonSlideTicks--;
+            }
             return;
         }
         PreviousPosition = transform.position;
@@ -141,7 +176,7 @@ public class Enemy : NetworkBehaviour
         sinceStrike += dt;
         if (sinceStrike < 0.8f)
         {
-            transform.position += Vector3.right * (speed * dt);
+            transform.position += Vector3.right * (speed * StartledPace * dt);
             return;
         }
         Vector3 pos = transform.position;
@@ -153,7 +188,7 @@ public class Enemy : NetworkBehaviour
             : Vector2.Distance(pos, goal) <= (lance ? .10f : Unit.attackRange);
         if (!inRange)
         {
-            transform.position = Vector3.MoveTowards(pos, goal, speed * (sinceStrike < 2.2f ? 0.4f : 1f) * EnemyRope.MonsterSpeedMultiplier * dt);
+            transform.position = Vector3.MoveTowards(pos, goal, speed * StartledPace * (sinceStrike < 2.2f ? 0.4f : 1f) * EnemyRope.MonsterSpeedMultiplier * dt);
             return;
         }
 

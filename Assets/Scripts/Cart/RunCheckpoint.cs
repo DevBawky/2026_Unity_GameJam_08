@@ -11,8 +11,8 @@ public struct SeatCheckpoint
     public string ScoreOwnerKey;
     public int CompletedStationKey; // Zero also means no completed station in older saves.
     public Vector3 Position;
-    public Vector2 Aim, DriverAim;
-    public bool HasWhipAim, FacingRight;
+    public Vector2 Aim;
+    public bool FacingRight;
     public bool Shell, Wheel, Snack, Holding;
     public float HoldRemaining, Cooking;
     public float ShellSafetyRemaining;
@@ -25,7 +25,7 @@ public struct PursuerCheckpoint
     public float KnockLeft, Angle;
     public Vector3 Position;
     public float Health, Speed, Damage, Wait, SinceStrike, EngagementAge;
-    public float StrikeAge;
+    public float StrikeAge, StartledRemaining;
     public Vector2 StrikeTarget;
     public int AttackSlotKey;
 }
@@ -39,7 +39,9 @@ public struct ShotCheckpoint
     public bool Landed;
     public int Caliber;
     public int ShooterSeatKey, ShooterScoreOwnerVersion;
-    public int[] HitEnemies;
+    // Read aliases from checkpoints written before the seat-key score merge.
+    public int ShooterSlotKey, ShooterOwnerVersion;
+    public int[] HitEnemies, NearMissEnemies, StartledEnemies;
 }
 [Serializable]
 public sealed class RunCheckpoint
@@ -56,12 +58,12 @@ public sealed class RunCheckpoint
     public float MountAge, ShotVisualAge, ShotVisualAngle;
     public bool HasShotVisual;
     public float ShockStrength, ShockPhase;
-    public int Wave, CareTicks, GunnerSlot, AP, Report, Round, Barrel, Stabilizer, Porter, Hull, RightWounds, LeftWounds, PrincePoints, PrincessPoints;
+    public int Wave, CareTicks, GunnerSlot, AP, Report, Round, Barrel, Stabilizer, Porter, Hull, PrincePoints, PrincessPoints;
     public int GunnerScoreOwnerVersion;
     public uint RandomState;
     public RiderState Prince, Princess;
-    public HorseCondition LeftHorse, RightHorse;
-    public int[] Seated, Crying, Grace, Votes, HorseRest;
+    public HorseRageState HorseRage;
+    public int[] Seated, Crying, Grace, Votes;
     public double[] Attention;
     public SeatCheckpoint[] Seats;
     public string[] SeatKeys;
@@ -91,12 +93,12 @@ public sealed partial class CartStations
             GunnerSlot=gunner==null?-1:gunner.Slot.Value,
             GunnerScoreOwnerVersion = gunner != null && gunner.ScoreOwnerVersion == gunnerScoreOwnerVersion ? gunnerScoreOwnerVersion : 0,
             AP=Affection.Value, Report=Report.Value, Round=ShopRound.Value, Barrel=Barrel.Value, Stabilizer=Stabilizer.Value,
-            Porter=Porter.Value, Hull=Hull.Value, RightWounds=RightWounds.Value, LeftWounds=LeftWounds.Value,
-            LeftHorse=LeftHorse.Value, RightHorse=RightHorse.Value,
+            Porter=Porter.Value, Hull=Hull.Value,
+            HorseRage=HorseRage.Value,
             Prince=Prince.Value, Princess=Princess.Value, PrincePoints=PrincePoints.Value, PrincessPoints=PrincessPoints.Value,
-            CareTicks=careTicks, RandomState=randomState, Seated=seated, Crying=crying, Grace=ignoreWanderUntil, HorseRest=nextHorseRest, Attention=attentionSum,
+            CareTicks=careTicks, RandomState=randomState, Seated=seated, Crying=crying, Grace=ignoreWanderUntil, Attention=attentionSum,
             Votes=Enumerable.Range(0,4).Select(i=>Votes[i]).ToArray(), SeatKeys=keys, Seats=gameScene.Players.Select(p=>new SeatCheckpoint {
-                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,FacingRight=p.FacingRight.Value,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
+                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,FacingRight=p.FacingRight.Value,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
                 Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-now),Cooking=p.CookProgress.Value,
                 ShellSafetyRemaining=(float)Math.Max(0,p.ShellSafeUntil-now),CompletedStationKey=p.CompletedStation.Value+1,
                 Score=p.Score.Value,ScoreOwnerVersion=p.ScoreOwnerVersion,ScoreOwnerKey=p.ScoreOwnerKey
@@ -136,14 +138,11 @@ public sealed partial class CartStations
         }
         if (legacyCannonSlot >= 0)
             StationOwners[(int)StationAction.Cannon] = gameScene.Players[legacyCannonSlot].NetworkObjectId;
-        if(detachedTire!=null) detachedTireAlpha=tireAlphas[tires.IndexOf(detachedTire)];
         Affection.Value=data.AP;Report.Value=data.Report;ShopRound.Value=data.Round;
         Barrel.Value=data.Barrel;Stabilizer.Value=data.Stabilizer;Porter.Value=data.Porter;Hull.Value=data.Hull;
-        LeftHorse.Value=data.LeftHorse; RightHorse.Value=data.RightHorse;
-        RightWounds.Value=data.RightWounds;LeftWounds.Value=data.LeftWounds;
+        HorseRage.Value=data.HorseRage;
         Prince.Value=data.Prince;Princess.Value=data.Princess;PrincePoints.Value=data.PrincePoints;PrincessPoints.Value=data.PrincessPoints;
         careTicks=data.CareTicks;randomState=data.RandomState;
-        data.HorseRest?.CopyTo(nextHorseRest, 0);
         data.Seated.CopyTo(seated,0);data.Crying.CopyTo(crying,0);data.Attention.CopyTo(attentionSum,0);data.Grace.CopyTo(ignoreWanderUntil,0);
         for(int i=0;i<4;i++)
         {
@@ -163,8 +162,6 @@ public sealed partial class CartStations
         foreach(var saved in data.Shots)
         {
             var shot=Instantiate(shellPrefab,saved.Position,saved.Rotation).GetComponent<Projectile>();
-            if (saved.ShooterSeatKey > 0 && saved.ShooterSeatKey <= gameScene.Players.Length)
-                shot.SetShooter(gameScene.Players[saved.ShooterSeatKey - 1], saved.ShooterScoreOwnerVersion);
             shot.SetCaliber(saved.Caliber);shot.NetworkObject.Spawn(true);shot.Restore(saved,enemies);
         }
         if (fuseLit || data.PostShotRemaining > 0)

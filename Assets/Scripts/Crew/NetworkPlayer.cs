@@ -1,0 +1,448 @@
+using System;
+using TMPro;
+using Unity.Collections;
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public struct PlayerTaskState : INetworkSerializeByMemcpy, IEquatable<PlayerTaskState>
+{
+    public int Action;
+    public bool Visible;
+    public float Target, Width, Angle, Speed;
+    public double Time;
+    public bool Equals(PlayerTaskState v) => Action==v.Action && Visible==v.Visible && Target==v.Target && Width==v.Width && Angle==v.Angle && Speed==v.Speed && Time==v.Time;
+}
+
+// Scene-authored player: owner reads input, host validates shared outcomes.
+[RequireComponent(typeof(NetworkObject))]
+public sealed class NetworkPlayer : NetworkBehaviour
+{
+    public NetworkVariable<bool> Bot = new(false);
+    public NetworkVariable<bool> Assigned = new(false);
+    public NetworkVariable<int> Slot = new(-1);
+    public NetworkVariable<FixedString64Bytes> Nickname = new();
+    public readonly NetworkVariable<int> Score = new();
+    internal string ScoreOwnerKey { get; private set; }
+    // The host uses this generation to attribute shots to the player who lit the fuse.
+    internal int ScoreOwnerVersion { get; private set; }
+    public NetworkVariable<bool> Carrying = new(false);
+    public NetworkVariable<bool> CookingHeld = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<float> DriverSteer = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<int> Emote = new();
+    public NetworkVariable<double> EmoteTime = new(-10);
+    public bool SecondLocal => Local && LobbySession.LocalSeats == 2 && Slot.Value == 1;
+    public bool UsesMobileControls => !SecondLocal && GameplayControlMode.IsMobile;
+    public bool TouchHeld {get; set;}
+    public NetworkVariable<bool> SpareWheel = new();
+    public NetworkVariable<bool> Snack = new();
+    // The completed station becomes available to this player again after stepping outside it.
+    public NetworkVariable<int> CompletedStation = new(-1);
+    public NetworkVariable<float> CookProgress = new();
+    public bool InCellar => transform.localPosition.y > CellarOffset * 0.5f;
+    public const float CellarOffset = 64f;
+    public bool HandsFree => !Carrying.Value && !SpareWheel.Value && !Snack.Value
+        && CartStations.Instance != null && !CartStations.Instance.IsCarryingChild(this);
+    public NetworkVariable<bool> Holding = new(false);
+    public NetworkVariable<double> HoldDeadline = new();
+    internal double ShellSafeUntil { get; set; }
+    public NetworkVariable<PlayerTaskState> TaskState = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<Vector2> Aim = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public readonly NetworkVariable<bool> FacingRight = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    [SerializeField] private GameObject carriedShell;
+    [SerializeField] private GameObject namePanel;
+    [SerializeField] private TMP_Text nameLabel;
+    [SerializeField] private SpriteRenderer body;
+    [SerializeField] private SpriteRenderer carriedItem;
+    [SerializeField] private CrewSpriteSet crewSprites;
+    [SerializeField] private PlayerTiming timing;
+    [SerializeField] private CannonAim cannon;
+    [Header("Emote")]
+    [SerializeField] private GameObject emoteBubble;
+    [SerializeField] private Image emoteIcon;
+    [Tooltip("캐릭터 옆 이모티콘 말풍선 표시 시간(초)")]
+    [SerializeField, Min(0f)] private float emoteBubbleSeconds = 2.6f;
+    // 모든 클라이언트에서 이모티콘을 받았을 때 (보낸 플레이어, 0부터 시작하는 이모티콘 번호).
+    public static event Action<NetworkPlayer, int> Emoted;
+    private float emoteHideTime;
+    private double lastActionTime = -1;
+    private float nextRequestTime;
+    private float nextReservationTime;
+    private int shownEmote;
+    private bool shown;
+    private bool carryingShown;
+    private static readonly int LocalOutline = Shader.PropertyToID("_LocalOutline");
+    private MaterialPropertyBlock outlineProperties;
+    private bool outlineShown;
+    private Vector3 previousArtPosition;
+    private FixedString64Bytes shownName;
+    public bool Local => IsSpawned && Assigned.Value && !Bot.Value && NetworkObject.IsOwner;
+    public static NetworkPlayer LocalPlayer { get; private set; }
+    public PlayerTiming Timing => timing;
+    public CannonAim Cannon => cannon;
+    internal SpriteRenderer BodyArtwork => body;
+
+    public override void OnNetworkSpawn()
+    {
+        Assigned.OnValueChanged += AssignmentChanged;
+        Bot.OnValueChanged += AssignmentChanged;
+        RefreshAssignment();
+        body.enabled = false;
+        namePanel.SetActive(false);
+        carriedShell.SetActive(false);
+        // mainGame처럼 말풍선을 아직 배치하지 않은 씬에서는 팀 알림만 뜬다.
+        if (emoteBubble != null) emoteBubble.SetActive(false);
+        EmoteTime.OnValueChanged += EmoteReceived;
+        previousArtPosition = transform.localPosition;
+    }
+    // Emote(1~7)가 EmoteTime보다 먼저 선언돼 있어 이 시점에 이미 새 값이다.
+    private void EmoteReceived(double before, double after)
+    {
+        if (Emote.Value > 0) Emoted?.Invoke(this, Emote.Value - 1);
+    }
+    public override void OnGainedOwnership() => RefreshAssignment();
+    public override void OnLostOwnership() { if (LocalPlayer == this) LocalPlayer = null; }
+    private void AssignmentChanged(bool before, bool after) => RefreshAssignment();
+    private void RefreshAssignment()
+    {
+        if (Local && !SecondLocal)
+        {
+            if (LocalPlayer == null || !LocalPlayer.Local || LocalPlayer.SecondLocal) LocalPlayer = this;
+        }
+        else if (LocalPlayer == this) LocalPlayer = null;
+    }
+    private void Update()
+    {
+        bool active = IsSpawned && Assigned.Value;
+        if (shown != active) { shown = active; body.enabled = active; namePanel.SetActive(active); }
+        ShowLocalOutline(Local);
+        bool carrying = active && Carrying.Value && crewSprites == null;
+        if (carryingShown != carrying) { carryingShown = carrying; carriedShell.SetActive(carrying); }
+        if (emoteBubble != null && emoteBubble.activeSelf && (!active || Time.unscaledTime >= emoteHideTime)) emoteBubble.SetActive(false);
+        if (!active) return;
+        if (crewSprites != null) DrawCrew();
+        if (IsServer && CompletedStation.Value >= 0 && !timing.InsideCompletedArea((StationAction)CompletedStation.Value))
+            CompletedStation.Value = -1;
+        if (Local)
+        {
+            if (LocalPlayer == null) RefreshAssignment();
+            bool cooking = timing.IsAt(StationAction.Kitchen) && IsInteractionHeld();
+            if (cooking != CookingHeld.Value) CookingHeld.Value = cooking;
+        }
+        bool showEmote=Emote.Value>0 && NetworkManager.ServerTime.Time-EmoteTime.Value<3;
+        if (shownName != Nickname.Value || shownEmote != (showEmote ? Emote.Value : 0))
+        {
+            shownName=Nickname.Value; shownEmote=showEmote ? Emote.Value : 0;
+            nameLabel.text=shownName.ToString()+(showEmote ? " · "+LocalizationTable.T(CrewControls.Messages[shownEmote-1]) : "");
+        }
+        if (IsServer && CartStations.Running && Holding.Value && NetworkManager.ServerTime.Time >= HoldDeadline.Value)
+            CartStations.Instance.ResolveShellHold(this, false);
+    }
+
+    private bool IsInteractionHeld()
+    {
+        if (UsesMobileControls) return TouchHeld;
+        var keys = Keyboard.current;
+        if (SecondLocal) return keys?.enterKey.isPressed == true;
+        var pad = Gamepad.current;
+        return keys?.spaceKey.isPressed == true || pad?.buttonSouth.isPressed == true
+            || pad?.rightTrigger.isPressed == true;
+    }
+
+    private void DrawCrew()
+    {
+        var stations = CartStations.Instance;
+        var pose = stations != null ? stations.CrewPose(this) : CrewSpriteSet.Pose.Idle;
+        if (!crewSprites.HasWalkFrames || carriedItem == null)
+        {
+            body.sprite = crewSprites.Get(Slot.Value, pose);
+            return;
+        }
+        Vector3 delta = transform.localPosition - previousArtPosition;
+        previousArtPosition = transform.localPosition;
+        bool moving = delta.sqrMagnitude > .000004f && delta.sqrMagnitude < 4f;
+        if (moving && Mathf.Abs(delta.x) > .001f && (Local || IsServer && Bot.Value))
+        {
+            bool facing = delta.x > 0f;
+            if (FacingRight.Value != facing) FacingRight.Value = facing;
+        }
+        int tick = Mathf.Max(0, (int)System.Math.Floor(NetworkManager.ServerTime.Time * 30d));
+        body.sprite = crewSprites.Walk(Mathf.Clamp(Slot.Value, 0, 3), tick, moving);
+        int order = WorldDepth.Order(transform.position, true);
+        body.sortingOrder = order;
+        body.flipX = FacingRight.Value;
+        carriedItem.sprite = crewSprites.Equipment(pose);
+        carriedItem.enabled = carriedItem.sprite != null;
+        carriedItem.flipX = body.flipX;
+        carriedItem.sortingOrder = order + 1;
+        var offset = carriedItem.transform.localPosition;
+        offset.x = Mathf.Abs(offset.x) * (body.flipX ? 1 : -1);
+        carriedItem.transform.localPosition = offset;
+    }
+
+    private void ShowLocalOutline(bool visible)
+    {
+        if (crewSprites == null || outlineShown == visible) return;
+        outlineShown = visible;
+        outlineProperties ??= new MaterialPropertyBlock();
+        body.GetPropertyBlock(outlineProperties);
+        outlineProperties.SetFloat(LocalOutline, visible ? 1f : 0f);
+        body.SetPropertyBlock(outlineProperties);
+    }
+    public void Assign(ulong client, int slot, FixedString64Bytes nickname, string seatKey = null)
+    {
+        if (!IsServer) return;
+        bool samePlayer = seatKey != null ? seatKey == ScoreOwnerKey :
+            ScoreOwnerKey == null && Assigned.Value && !Bot.Value && OwnerClientId == client;
+        if (!samePlayer)
+        {
+            Score.Value = 0;
+            ScoreOwnerVersion++;
+        }
+        ScoreOwnerKey = seatKey;
+        Slot.Value = slot;
+        Nickname.Value = nickname;
+        // A host-owned bot must stay a bot until its new owner is assigned.
+        NetworkObject.ChangeOwnership(client);
+        Bot.Value = false;
+        Assigned.Value = true;
+        RefreshAssignment();
+    }
+    public void TakeBotControl(int slot)
+    {
+        if (!IsServer) return;
+        if (Assigned.Value && !Bot.Value) ScoreOwnerVersion++;
+        Bot.Value = true;
+        Slot.Value = slot;
+        Nickname.Value = new FixedString64Bytes(LocalizationTable.F("도우미 {0}", slot + 1));
+        if (OwnerClientId != NetworkManager.ServerClientId) NetworkObject.RemoveOwnership();
+        Assigned.Value = true;
+        RefreshAssignment();
+    }
+    public void Release()
+    {
+        if (!IsServer) return;
+        var game = CartStations.Instance;
+        int keep = game.HoldsStation(StationAction.Cannon, this) ? (int)StationAction.Cannon : -1;
+        game.ReleaseStations(NetworkObjectId, keep);
+        if (game.Votes.Count > Slot.Value) game.Votes[Slot.Value] = -1;
+        TakeBotControl(Slot.Value);
+        game.TallyChoices();
+    }
+
+    internal void AwardScore(int points)
+    {
+        if (!IsServer || !IsSpawned || !Assigned.Value || Bot.Value || points <= 0) return;
+        Score.Value += Math.Min(points, int.MaxValue - Score.Value);
+        // 개인 점수는 공용 상점 AP에도 쌓인다.
+        if (CartStations.Instance != null)
+        {
+            var affection = CartStations.Instance.Affection;
+            affection.Value += Math.Min(points, int.MaxValue - affection.Value);
+        }
+    }
+
+    internal void RestoreScore(SeatCheckpoint saved)
+    {
+        string savedOwner = string.IsNullOrEmpty(saved.ScoreOwnerKey) ? null : saved.ScoreOwnerKey;
+        if (!Bot.Value && savedOwner != ScoreOwnerKey)
+        {
+            Score.Value = 0;
+            ScoreOwnerVersion = Math.Max(ScoreOwnerVersion, saved.ScoreOwnerVersion + 1);
+            return;
+        }
+        ScoreOwnerKey = savedOwner;
+        Score.Value = Math.Max(0, saved.Score);
+        ScoreOwnerVersion = Math.Max(Bot.Value ? 0 : 1, saved.ScoreOwnerVersion);
+    }
+
+    public void RestoreSeat(SeatCheckpoint saved)
+    {
+        transform.localPosition = saved.Position;
+        RestoreSeatRpc(saved.Position, saved.Aim, saved.FacingRight);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void RestoreSeatRpc(Vector3 localPosition, Vector2 aim, bool facingRight)
+    {
+        if (!IsOwner) return;
+        Aim.Value = aim;
+        FacingRight.Value = facingRight;
+        DriverSteer.Value = 0f;
+        transform.localPosition = localPosition;
+        var sync = GetComponent<OwnerNetworkTransform>();
+        if (sync != null && sync.CanCommitToTransform)
+            sync.Teleport(sync.InLocalSpace ? localPosition : transform.position,
+                sync.InLocalSpace ? transform.localRotation : transform.rotation, transform.localScale);
+    }
+
+    public void SendShopHeart(int slot) { if (Local && CartStations.Instance != null) ShopHeartRpc(slot, CartStations.Instance.ShopRound.Value); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ShopHeartRpc(int slot, int round) => CartStations.Instance?.AddShopHeart(this, slot, round);
+
+    public void SendShopBuy(int slot) { if (Local && CartStations.Instance != null) ShopBuyRpc(slot, CartStations.Instance.ShopRound.Value); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ShopBuyRpc(int slot, int round)
+    {
+        var game = CartStations.Instance;
+        if (game != null && round == game.ShopRound.Value) game.BuyShopItem(this, slot);
+    }
+
+    public void SendEmote(int id) { if(Local) EmoteRpc(id); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void EmoteRpc(int id)
+    {
+        if(!Assigned.Value || id<1 || id>7 || NetworkManager.ServerTime.Time-EmoteTime.Value<0.3) return;
+        Emote.Value=id; EmoteTime.Value=NetworkManager.ServerTime.Time;
+    }
+
+    public void SubmitChoice(int choice)
+    {
+        var game = CartStations.Instance;
+        if (Local && game != null) VoteRpc(choice, game.ShopRound.Value, game.StageNumber);
+    }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void VoteRpc(int choice, int round, int stage) => CartStations.Instance.ReceiveChoice(this, choice, round, stage);
+
+    public void RequestStation(int action)
+    {
+        if (!Local || (action >= 0 && Time.unscaledTime < nextReservationTime)) return;
+        nextReservationTime = Time.unscaledTime + 0.2f;
+        ReserveRpc(action);
+    }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ReserveRpc(int action)
+    {
+        if (CartStations.Instance != null) CartStations.Instance.ReserveStation(this, action);
+    }
+    [Rpc(SendTo.ClientsAndHost)]
+    private void WorkResultRpc(bool loaded) { if (Local) timing.ShowResult(loaded); }
+    public void ShowWorkResult(bool loaded) => WorkResultRpc(loaded);
+
+    // 장전에 실패했지만 상점 효과로 포탄이 적재함에 남았을 때.
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShellReturnedRpc() { if (Local) timing.ShowShellReturned(); }
+    public void ShowShellReturned() => ShellReturnedRpc();
+
+    private PlayerMovement movement;
+    private PlayerMovement Movement => movement != null ? movement : movement = GetComponent<PlayerMovement>();
+
+    // 조준점이 같은 자리에 머문 시간(정밀 조준경). Aim이 바뀔 때마다 모든 피어에서 다시 센다.
+    private Vector2 steadyAim;
+    private double steadySince;
+    public float AimSteadySeconds
+    {
+        get
+        {
+            double now = NetworkManager.ServerTime.Time;
+            if ((Aim.Value - steadyAim).sqrMagnitude > .0004f) { steadyAim = Aim.Value; steadySince = now; }
+            return (float)(now - steadySince);
+        }
+    }
+
+    public void PullBrake() { if (Local) BrakeRpc(); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void BrakeRpc() => CartStations.Instance?.PullBrake(this);
+
+    public bool CanUseStairShelf()
+    {
+        var stations = CartStations.Instance;
+        return stations != null && Movement != null && stations.CanUseStairShelf(this, Movement.StairPoint(false), Movement.StairPoint(true));
+    }
+    public void RequestStairShelf() { if (Local) StairShelfRpc(); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void StairShelfRpc()
+    {
+        var stations = CartStations.Instance;
+        if (stations != null && Movement != null) stations.UseStairShelf(this, Movement.StairPoint(false), Movement.StairPoint(true));
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void CookingImpactRpc(float before, float after)
+    {
+        if (Local) timing.ShowCookingImpact(before, after);
+    }
+
+    internal void ShowCookingImpact(float before, float after)
+    {
+        if (!Bot.Value) CookingImpactRpc(before, after);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void WorkCueRpc(GameSfx cue)
+    {
+        if (Local) SoundManager.PlayCue(cue);
+    }
+
+    internal void PlayWorkCue(GameSfx cue)
+    {
+        if (!Bot.Value) WorkCueRpc(cue);
+    }
+
+    public void Request(StationAction action, bool hold = false)
+    {
+        bool rateLimited = !hold && action != StationAction.CannonCleaning && action != StationAction.Driver;
+        if (!Local || (rateLimited && Time.unscaledTime < nextRequestTime)) return;
+        if (rateLimited) nextRequestTime = Time.unscaledTime + 0.12f;
+        var stations = CartStations.Instance;
+        var care = TimingArea.IsRoyal(action) ? stations.AvailableCare(action, this) : CareAction.None;
+        ActionRpc(action, NetworkManager.ServerTime.Time, hold, stations.StageNumber, care);
+    }
+
+    public void RequestStoredShell()
+    {
+        if (Local && CartStations.Running) AddStoredShellRpc(CartStations.Instance.StageNumber);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void AddStoredShellRpc(int stage) => CartStations.Instance?.AddStoredShell(this, stage);
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ActionRpc(StationAction action, double inputTime, bool hold, int stage, CareAction care)
+    {
+        var stations = CartStations.Instance;
+        if (!Assigned.Value || stations == null || stage != stations.StageNumber || !CartStations.Running) return;
+        double now = NetworkManager.ServerTime.Time;
+        if ((double.IsNaN(inputTime) || double.IsInfinity(inputTime)) || inputTime < now - .35 || inputTime > now + .1) return;
+        if (hold)
+        {
+            if (Holding.Value && inputTime <= HoldDeadline.Value && inputTime >= HoldDeadline.Value - CartRules.Active.shellHoldSeconds)
+                stations.ResolveShellHold(this, timing.TimingSuccess(action, true, inputTime));
+            return;
+        }
+        if (Holding.Value) return;
+        bool rateLimited = action != StationAction.CannonCleaning && action != StationAction.Driver;
+        if ((rateLimited && now-lastActionTime < 0.12) || !timing.IsInActionArea(action) || !stations.CanUse(action,this)) return;
+        if (TimingArea.IsRoyal(action) && care != stations.AvailableCare(action, this)) return;
+        if (rateLimited) lastActionTime = now;
+        if (action == StationAction.ShellDeposit) stations.Enter(action,this);
+        else if (action == StationAction.Cannon) stations.Ignite(this);
+        else if (action == StationAction.Driver) stations.WhipHorse(this);
+        else if (action != StationAction.ShellPile && action != StationAction.Reload && action != StationAction.WheelRepair
+            || timing.TimingSuccess(action, false, inputTime)) stations.Succeed(action,this);
+        else stations.Fail(action, this, timing.NearMiss(action, inputTime));
+    }
+    // TeamEmotes가 아이콘을 골라 호출한다.
+    public void ShowEmoteBubble(Sprite icon)
+    {
+        if (emoteBubble == null) return;
+        emoteIcon.sprite = icon;
+        emoteHideTime = Time.unscaledTime + emoteBubbleSeconds;
+        emoteBubble.SetActive(true);
+    }
+    public void PublishTask(int action, bool visible, float target, float width, float angle, float speed)
+    {
+        if (!Local) return;
+        var v = TaskState.Value;
+        if (v.Action==action && v.Visible==visible && v.Target==target && v.Width==width && v.Speed==speed) return;
+        TaskState.Value = new PlayerTaskState { Action=action, Visible=visible, Target=target, Width=width, Angle=angle, Speed=speed, Time=NetworkManager.ServerTime.Time };
+    }
+    public override void OnNetworkDespawn()
+    {
+        ShowLocalOutline(false);
+        Assigned.OnValueChanged -= AssignmentChanged;
+        Bot.OnValueChanged -= AssignmentChanged;
+        EmoteTime.OnValueChanged -= EmoteReceived;
+        if (LocalPlayer == this) LocalPlayer = null;
+    }
+}

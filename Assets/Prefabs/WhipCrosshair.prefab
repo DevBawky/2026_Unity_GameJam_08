@@ -77,9 +77,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 45
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 40
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 36a75bc8fa3033067b70a9cd99027d36, type: 3}
   m_Color: {r: 0.065, g: 0.055, b: 0.09, a: 1}
@@ -168,9 +168,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 45
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 40
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 36a75bc8fa3033067b70a9cd99027d36, type: 3}
   m_Color: {r: 0.065, g: 0.055, b: 0.09, a: 1}
@@ -259,9 +259,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 45
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 40
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 36a75bc8fa3033067b70a9cd99027d36, type: 3}
   m_Color: {r: 0.065, g: 0.055, b: 0.09, a: 1}
@@ -350,9 +350,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 45
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 40
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 36a75bc8fa3033067b70a9cd99027d36, type: 3}
   m_Color: {r: 0.065, g: 0.055, b: 0.09, a: 1}
@@ -445,9 +445,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 46
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 41
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 36a75bc8fa3033067b70a9cd99027d36, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

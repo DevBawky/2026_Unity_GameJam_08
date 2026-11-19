@@ -13,10 +13,16 @@ public sealed class HorseWhipZone : MonoBehaviour
     [SerializeField] private SpriteRenderer hoofShadow, hitchStrap;
     [SerializeField] private Transform hitchPoint;
     [SerializeField] private int walkOffset;
+    [SerializeField] private LineRenderer[] speedTrails;
     private static readonly Vector3[] Hooves =
     {
         new(30,84,77), new(29,87,82), new(23,101,83), new(20,103,82),
         new(14,101,82), new(19,105,82), new(39,87,81), new(39,87,81)
+    };
+    private static readonly Vector2[] SaddlePixels =
+    {
+        new(55,36), new(55,37), new(55,39), new(55,40),
+        new(53,41), new(54,39), new(53,36), new(53,37)
     };
     private float phase;
     private float lastFrame;
@@ -26,6 +32,9 @@ public sealed class HorseWhipZone : MonoBehaviour
     public void ShowGallop(bool running, bool wounded, HorseMood mood, float time)
     {
         if (gallopVisual == null) return;
+        var game = CartStations.Instance;
+        bool animate = running && !SettingsPanel.ReducedMotion;
+        if (game != null) ShowSpeedTrails(animate && mood == HorseMood.Runaway, game.WorldPerWebUnit, time);
         var sequence = wounded ? woundedGallop : gallop;
         float rate = mood switch
         {
@@ -34,25 +43,61 @@ public sealed class HorseWhipZone : MonoBehaviour
             HorseMood.Runaway => 2.05f,
             _ => 1f
         };
-        if (v12Walk != null && v12Walk.Length == 8 && CartStations.Instance != null)
+        if (v12Walk != null && v12Walk.Length == SaddlePixels.Length && game != null)
         {
-            int frame = running ? Mathf.Max(0, Mathf.FloorToInt(time * 14f * rate) + walkOffset) % 8 : 3;
+            int frame = animate
+                ? (Mathf.FloorToInt(game.StageDistance * 1.1f) + walkOffset) % SaddlePixels.Length : 3;
             gallopVisual.sprite = v12Walk[frame];
-            float unit = CartStations.Instance.WorldPerWebUnit;
+            float unit = game.WorldPerWebUnit;
             hoofShadow.enabled = true;
             HoofShadow.Place(hoofShadow, gallopVisual, Hooves[frame], 128f, 84f, unit, 8f);
-            float start = transform.position.x - 15f * unit;
-            hitchStrap.transform.position = new Vector3((start + hitchPoint.position.x) * .5f,
-                transform.position.y - 8f * unit, transform.position.z);
-            Vector3 parent = hitchStrap.transform.parent.lossyScale;
-            Vector3 native = hitchStrap.sprite.bounds.size;
-            hitchStrap.transform.localScale = new Vector3(Mathf.Abs(hitchPoint.position.x - start) / (native.x * Mathf.Abs(parent.x)),
-                26f * unit / (native.y * Mathf.Abs(parent.y)), 1f);
+            PoseHitch(frame, unit);
             return;
         }
         if (running) phase += Mathf.Clamp(time - lastFrame, 0f, .1f) * rate;
         lastFrame = time;
         gallopVisual.sprite = sequence.FrameAt(phase + gallopOffset, true);
+    }
+
+    private void ShowSpeedTrails(bool visible, float unit, float time)
+    {
+        if (speedTrails == null) return;
+        Vector3 origin = gallopVisual.transform.position;
+        for (int i = 0; i < speedTrails.Length; i++)
+        {
+            var trail = speedTrails[i];
+            trail.enabled = visible;
+            if (!visible) continue;
+            float drift = Mathf.Repeat(time * 150f + walkOffset * 5f + i * 11f, 27f);
+            trail.transform.position = origin + new Vector3(56f + drift, 4f + (1 - i) * 14f, 0f) * unit;
+            trail.SetPosition(1, trail.transform.InverseTransformVector(Vector3.right * (24f * unit)));
+            trail.widthMultiplier = 2f * unit;
+        }
+    }
+
+    private void PoseHitch(int frame, float unit)
+    {
+        Sprite horseSprite = gallopVisual.sprite;
+        Vector2 saddle = SaddlePixels[frame];
+        Vector2 saddleLocal = (new Vector2(saddle.x, horseSprite.rect.height - saddle.y) - horseSprite.pivot)
+            / horseSprite.pixelsPerUnit;
+        Vector3 saddleWorld = gallopVisual.transform.TransformPoint(saddleLocal);
+        Vector2 span = hitchPoint.position - saddleWorld;
+
+        Sprite strap = hitchStrap.sprite;
+        Vector2 hook = new(3f, strap.rect.height - 3f);
+        Vector2 bolt = new(80f, strap.rect.height - 13f);
+        float verticalScale = 1.58f * unit;
+        float rise = (bolt.y - hook.y) * verticalScale;
+        float run = Mathf.Sqrt(Mathf.Max(.0001f, span.sqrMagnitude - rise * rise));
+        Vector2 pixelScale = new(run / (bolt.x - hook.x), verticalScale);
+        var rotation = Quaternion.Euler(0f, 0f, Vector2.SignedAngle(new Vector2(run, rise), span));
+        Vector3 hookOffset = rotation * Vector2.Scale(hook - strap.pivot, pixelScale);
+        Transform renderer = hitchStrap.transform;
+        Vector3 parent = renderer.parent.lossyScale;
+        renderer.SetPositionAndRotation(saddleWorld - hookOffset, rotation);
+        renderer.localScale = new Vector3(pixelScale.x * strap.pixelsPerUnit / parent.x,
+            pixelScale.y * strap.pixelsPerUnit / parent.y, 1f);
     }
     public Bounds SpriteBounds
     {
