@@ -34,7 +34,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public const int WheelRepairStepsNeeded = 2;
     [SerializeField] private ParticleSystem impactDust;
     [SerializeField] private AudioSource impactAudio;
-    [SerializeField] private AudioClip cannonSound, hitSound;
+    [SerializeField] private AudioClip cannonSound, cannonLandingSound, hitSound;
     [SerializeField] private AudioSource music;
     [SerializeField] private AudioClip[] stageMusic;
     [SerializeField] private CameraRig secondCamera;
@@ -64,7 +64,6 @@ public sealed partial class CartStations : NetworkBehaviour
     [Tooltip("빠져서 굴러가는 바퀴 그림 프리팹")]
     [SerializeField] private SpriteRenderer looseWheelPrefab;
     [SerializeField] private Sprite missingWheelSprite;
-    private float muzzleFlashStart = float.NegativeInfinity;
 
     [Header("Stage")]
     [SerializeField, Min(1)] private int stageNumber = 1;
@@ -74,7 +73,6 @@ public sealed partial class CartStations : NetworkBehaviour
     [SerializeField, Min(0f)] private float collisionAnxietyIncrease = 0.06f;
     [SerializeField, Min(0f)] private float recoilAnxietyIncrease = 0.04f;
     [SerializeField, Min(0f)] private float impactShakeStrength = 0.3f;
-    [SerializeField, Min(0f)] private float recoilShakeStrength = 0.2f;
     [SerializeField, Min(0.01f)] private float shakeDuration = 0.45f;
 
     [Header("Wheel")]
@@ -127,10 +125,13 @@ public sealed partial class CartStations : NetworkBehaviour
 
     public CartMotion Cart => cart;
     // The reference deck spans 331 units. Use the authored deck width for world-space gameplay distances.
+    public Vector3 WebPosition(float x, float y) => cart.transform.TransformPoint(new Vector3((x - 527.5f) * WorldPerWebUnit, -y * WorldPerWebUnit));
     public float WorldPerWebUnit => cartBody.bounds.size.x / 331f;
+    public NetworkPlayer[] Crew => gameScene.Players;
     public Vector3 RingOffset(NetworkPlayer player) =>
         player.SecondLocal && secondCamera != null && secondCamera.CameraActive ? secondCamera.ShakeOffset : cameraRig.ShakeOffset;
     public SpriteRenderer CartBody => cartBody;
+    internal SpriteRenderer DeckArtwork { get; private set; }
     public bool Failed => flow == StageFlow.Failed;
     public string FailureReason { get; private set; } = "CART DESTROYED";
     public bool ChoosingUpgrade => flow == StageFlow.ChoosingUpgrade;
@@ -153,6 +154,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public bool IsLoaded => loaded;
     public bool IsDeposited => depositedShells > 0;
     public int DepositedShells => depositedShells;
+    public int ShellStock => shellsInPile;
     public bool IsFiring => fuseLit;
 
     private void Awake()
@@ -163,6 +165,7 @@ public sealed partial class CartStations : NetworkBehaviour
         foreach (SpriteRenderer renderer in cart.GetComponentsInChildren<SpriteRenderer>(true))
         {
             if (renderer.name == "CartBody") cartBody = renderer;
+            else if (renderer.name == "Wagon Deck Sprite") DeckArtwork = renderer;
             else if (renderer.name.StartsWith("Tire ") && renderer.sprite != null)
             {
                 tires.Add(renderer);
@@ -170,6 +173,7 @@ public sealed partial class CartStations : NetworkBehaviour
                 tireSprites.Add(renderer.sprite);
             }
         }
+        chairStarts = royalChairs == null ? System.Array.Empty<Vector3>() : System.Array.ConvertAll(royalChairs, chair => chair.localPosition);
         ResetStageState();
     }
 
@@ -210,10 +214,11 @@ public sealed partial class CartStations : NetworkBehaviour
     }
 
     public static event System.Action<float> SimulationStep;
+    internal static event System.Action<float> CannonProjectileStep;
     private void AdvanceGame()
     {
         foreach (var player in gameScene.Players)
-            if (player.Assigned.Value && player.Carrying.Value && !player.Holding.Value
+            if (player.Assigned.Value && !player.Bot.Value && player.Carrying.Value && !player.Holding.Value
                 && player.Timing.IsInActionArea(StationAction.ShellDeposit)) Enter(StationAction.ShellDeposit, player);
         AdvanceBots();
         cart.Advance(Step);
@@ -221,11 +226,12 @@ public sealed partial class CartStations : NetworkBehaviour
         if (!Running) return;
         RingCallBell();
         if (!wheelEverDetached && StageDistance >= forcedWheelLossDistance) DetachWheel();
-        AdvanceFuse();
-        waveSpawner.Advance(Step);
-        Waves.Value = waveSpawner.SpawnedWaves;
         SimulationStep?.Invoke(Step);
         AdvanceWheels();
+        AdvanceFuse();
+        CannonProjectileStep?.Invoke(Step);
+        waveSpawner.Advance(Step);
+        Waves.Value = waveSpawner.SpawnedWaves;
         if (!Running) return;
         AdvanceCare();
         if (Endless.Value && shellsInPile == 0) shellsInPile = StartShellsInPile;

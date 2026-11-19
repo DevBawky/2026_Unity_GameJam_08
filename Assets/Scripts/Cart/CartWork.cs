@@ -9,6 +9,7 @@ public sealed partial class CartStations
         if (!IsServer || action != StationAction.ShellDeposit || !actor.Carrying.Value) return;
         actor.Carrying.Value = false;
         depositedShells++;
+        actor.AwardScore(CartRules.ShellDeliveryScore);
         CompleteStation(action, actor);
         Refresh();
     }
@@ -32,6 +33,7 @@ public sealed partial class CartStations
                 break;
             case StationAction.CannonCleaning:
                 if (!NeedsCleaning) break;
+                actor.AwardScore(CartRules.CannonCleanScore);
                 cleaningTaps = Mathf.Min(CleaningTapsRequired, cleaningTaps + CleaningTapGain(actor));
                 if (cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
                 break;
@@ -39,6 +41,7 @@ public sealed partial class CartStations
                 if (!CanReload) break;
                 depositedShells--;
                 loaded = true;
+                actor.AwardScore(CartRules.ShellReloadScore);
                 actor.ShowWorkResult(true);
                 break;
             case StationAction.WheelRepair:
@@ -52,12 +55,14 @@ public sealed partial class CartStations
                 wheelRepairSteps++;
                 if (wheelRepairSteps == 1)
                 {
+                    actor.AwardScore(CartRules.WheelInstallScore);
                     WheelMount.Value = new WheelMountVisual { SlotKey = tires.IndexOf(detachedTire) + 1, Time = NetworkManager.ServerTime.Time };
                     SetTireAlpha(detachedTireAlpha);
                 }
                 if (wheelRepairSteps >= WheelRepairStepsNeeded)
                 {
                     CompleteStation(action, actor);
+                    actor.AwardScore(CartRules.WheelRepairScore);
                     RepairWheel();
                 }
                 break;
@@ -68,7 +73,7 @@ public sealed partial class CartStations
     public bool CanUse(StationAction action, NetworkPlayer actor)
     {
         if (TimingArea.IsRoyal(action)) return AvailableCare(action, actor) != CareAction.None;
-        return HoldsStation(action, actor) && HasWork(action, actor);
+        return HoldsStation(action, actor) && HasWork(action, actor) && actor.Timing.IsInActionArea(action);
     }
 
     public bool HasWork(StationAction action, NetworkPlayer actor)
@@ -106,17 +111,40 @@ public sealed partial class CartStations
         if (!IsServer || !actor.Assigned.Value) return;
         if (requested >= 0 && TimingArea.IsCannon((StationAction)requested)) requested = (int)StationAction.Cannon;
         ReleaseStations(actor.NetworkObjectId, requested);
-        if (!Running || actor.Holding.Value || requested < 0 || requested >= StationCount) return;
+        if (!Running || requested < 0 || requested >= StationCount) return;
         var action = (StationAction)requested;
-        if (action == StationAction.Stairs || actor.CompletedStation.Value == requested || TimingArea.IsRoyal(action)
-            || !(action == StationAction.Cannon ? actor.HandsFree : HasWork(action, actor)) || !actor.Timing.IsInActionArea(action)) return;
-        if (!actor.Bot.Value && action != StationAction.Cannon && StationOwners[requested] != NoStationOwner)
+        if (action == StationAction.Stairs || TimingArea.IsRoyal(action) || !CanClaimStation(action, actor)) return;
+        if (actor.Bot.Value && PlayerHasPriority(action)) return;
+
+        ulong incumbent = StationOwners[requested];
+        if (!actor.Bot.Value && incumbent != NoStationOwner && incumbent != actor.NetworkObjectId)
         {
             foreach (var other in gameScene.Players)
-                if (other.Bot.Value && StationOwners[requested] == other.NetworkObjectId)
-                    ReleaseStations(other.NetworkObjectId);
+            {
+                if (!other.Bot.Value || incumbent != other.NetworkObjectId) continue;
+                ReleaseStations(incumbent);
+                break;
+            }
         }
-        if (StationOwners[requested] == NoStationOwner) StationOwners[requested] = actor.NetworkObjectId;
+        if (StationOwners[requested] != NoStationOwner) return;
+        StationOwners[requested] = actor.NetworkObjectId;
+        if (action == StationAction.Cannon && !actor.Bot.Value && fuseLit && gunner != null && gunner.Bot.Value)
+        {
+            gunner = actor;
+            Gunner.Value = actor.NetworkObjectId;
+        }
+    }
+
+    private bool CanClaimStation(StationAction action, NetworkPlayer actor) =>
+        actor.Assigned.Value && !actor.Holding.Value && actor.CompletedStation.Value != (int)action
+        && (TimingArea.IsCannon(action) ? actor.HandsFree : HasWork(action, actor))
+        && actor.Timing.IsInActionArea(action);
+
+    private bool PlayerHasPriority(StationAction action)
+    {
+        foreach (var player in gameScene.Players)
+            if (!player.Bot.Value && CanClaimStation(action, player)) return true;
+        return false;
     }
 
     public void ReleaseStations(ulong client, int keep = -1)
@@ -137,11 +165,11 @@ public sealed partial class CartStations
             ulong owner = StationOwners[i];
             if (owner == NoStationOwner) continue;
             bool valid = false;
+            var action = (StationAction)i;
             if (Running)
                 foreach (var actor in gameScene.Players)
-                    if (actor.Assigned.Value && actor.NetworkObjectId == owner && !actor.Holding.Value
-                        && (i == (int)StationAction.Cannon ? actor.HandsFree : HasWork((StationAction)i, actor))
-                        && actor.Timing.IsInActionArea((StationAction)i)) { valid = true; break; }
+                    if (actor.NetworkObjectId == owner && CanClaimStation(action, actor)
+                        && (!actor.Bot.Value || !PlayerHasPriority(action))) { valid = true; break; }
             if (!valid)
             {
                 if (i == (int)StationAction.Cannon && postShotRemaining > 0 && Gunner.Value == owner) EndPostShot();

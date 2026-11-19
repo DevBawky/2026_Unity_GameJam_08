@@ -1,0 +1,2416 @@
+fileFormatVersion: 2
+guid: cc55908573b552c40b4bda43c7528c66
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8430185674981956220
+    second: CannonWave_0
+  - first:
+      213: 1934447648969707611
+    second: CannonWave_1
+  - first:
+      213: -545727019373218561
+    second: CannonWave_2
+  - first:
+      213: 2447964985135850648
+    second: CannonWave_3
+  - first:
+      213: 2617033179326397754
+    second: CannonWave_4
+  - first:
+      213: 7891670383869122062
+    second: CannonWave_5
+  - first:
+      213: 7045052351340095836
+    second: CannonWave_6
+  - first:
+      213: -7238037054368181270
+    second: CannonWave_7
+  - first:
+      213: 1584118058123927583
+    second: CannonWave_8
+  - first:
+      213: -7795940058801497577
+    second: CannonWave_9
+  - first:
+      213: -9165141011871638483
+    second: CannonWave_10
+  - first:
+      213: 883729682404258353
+    second: CannonWave_11
+  - first:
+      213: -4382541813413360364
+    second: CannonWave_12
+  - first:
+      213: 1214418868528662404
+    second: CannonWave_13
+  - first:
+      213: -7858873097917285914
+    second: CannonWave_14
+  - first:
+      213: 4740265556394175088
+    second: CannonWave_15
+  - first:
+      213: -651536271241897144
+    second: CannonWave_16
+  - first:
+      213: -5668484688432838017
+    second: CannonWave_17
+  - first:
+      213: -6245430599051705994
+    second: CannonWave_18
+  - first:
+      213: -5688018606505624382
+    second: CannonWave_19
+  - first:
+      213: 5113102692569054807
+    second: CannonWave_20
+  - first:
+      213: -7900885959983232562
+    second: CannonWave_21
+  - first:
+      213: 2483001669351643775
+    second: CannonWave_22
+  - first:
+      213: 6604045188183328222
+    second: CannonWave_23
+  - first:
+      213: 2978098608356485329
+    second: CannonWave_24
+  - first:
+      213: -4272046350595602455
+    second: CannonWave_25
+  - first:
+      213: 2614575620005253113
+    second: CannonWave_26
+  - first:
+      213: -24835236557550866
+    second: CannonWave_27
+  - first:
+      213: 8805214514061652369
+    second: CannonWave_28
+  - first:
+      213: -3631965180804898539
+    second: CannonWave_29
+  - first:
+      213: -3877434055241764270
+    second: CannonWave_30
+  - first:
+      213: 1611236119609387999
+    second: CannonWave_31
+  - first:
+      213: -7637340110040825561
+    second: CannonWave_32
+  - first:
+      213: -7207046520067098381
+    second: CannonWave_33
+  - first:
+      213: -6510986475203500668
+    second: CannonWave_34
+  - first:
+      213: -6065182237192481441
+    second: CannonWave_35
+  - first:
+      213: 1549685293674495501
+    second: CannonWave_36
+  - first:
+      213: -8760279462873420454
+    second: CannonWave_37
+  - first:
+      213: 7471071105489565111
+    second: CannonWave_38
+  - first:
+      213: 1354260572997602530
+    second: CannonWave_39
+  - first:
+      213: -4816996825679974627
+    second: CannonWave_40
+  - first:
+      213: -8953228959810263273
+    second: CannonWave_41
+  - first:
+      213: 4985623436375206785
+    second: CannonWave_42
+  - first:
+      213: 4309499443656603903
+    second: CannonWave_43
+  - first:
+      213: 4415360249780322163
+    second: CannonWave_44
+  - first:
+      213: -1561445585918368086
+    second: CannonWave_45
+  - first:
+      213: -568940970904231793
+    second: CannonWave_46
+  - first:
+      213: 1842457293511079097
+    second: CannonWave_47
+  - first:
+      213: -7958852301784192165
+    second: CannonWave_48
+  - first:
+      213: -9207449265254971290
+    second: CannonWave_49
+  - first:
+      213: 7306622535084729299
+    second: CannonWave_50
+  - first:
+      213: -6991417762889081451
+    second: CannonWave_51
+  - first:
+      213: -8549388650933274688
+    second: CannonWave_52
+  - first:
+      213: -4655901218765608994
+    second: CannonWave_53
+  - first:
+      213: -9147464163945195419
+    second: CannonWave_54
+  - first:
+      213: 301347384782122648
+    second: CannonWave_55
+  - first:
+      213: 2219919098735930319
+    second: CannonWave_56
+  - first:
+      213: -6918989483002083895
+    second: CannonWave_57
+  - first:
+      213: -1698237490206718977
+    second: CannonWave_58
+  - first:
+      213: 7083572552407324442
+    second: CannonWave_59
+  - first:
+      213: 3415280119253898346
+    second: CannonWave_60
+  - first:
+      213: -5406481595933919684
+    second: CannonWave_61
+  - first:
+      213: -7131044500677586274
+    second: CannonWave_62
+  - first:
+      213: 4618855298523836237
+    second: CannonWave_63
+  - first:
+      213: 5043810857511806364
+    second: CannonWave_64
+  - first:
+      213: -3201509384628516980
+    second: CannonWave_65
+  - first:
+      213: -9092841533759416017
+    second: CannonWave_66
+  - first:
+      213: 7884889702463283667
+    second: CannonWave_67
+  - first:
+      213: 6560497777475926001
+    second: CannonWave_68
+  - first:
+      213: 1491865423185926543
+    second: CannonWave_69
+  - first:
+      213: 7967246720975914030
+    second: CannonWave_70
+  - first:
+      213: 3865676721386670836
+    second: CannonWave_71
+  - first:
+      213: -3266543947930716158
+    second: CannonWave_72
+  - first:
+      213: 4540862824685618881
+    second: CannonWave_73
+  - first:
+      213: -1283986847392640498
+    second: CannonWave_74
+  - first:
+      213: 8833433000201731820
+    second: CannonWave_75
+  - first:
+      213: -7023058752403080523
+    second: CannonWave_76
+  - first:
+      213: 2991317240610901129
+    second: CannonWave_77
+  - first:
+      213: 8764572046735478385
+    second: CannonWave_78
+  - first:
+      213: -4909274964511490725
+    second: CannonWave_79
+  - first:
+      213: -2384590440909579547
+    second: CannonWave_80
+  - first:
+      213: 6118990191407813863
+    second: CannonWave_81
+  - first:
+      213: -1615137760855629638
+    second: CannonWave_82
+  - first:
+      213: 7800534310456093995
+    second: CannonWave_83
+  - first:
+      213: -3899589409575317690
+    second: CannonWave_84
+  - first:
+      213: -3461587572612054016
+    second: CannonWave_85
+  - first:
+      213: 8586970519677817082
+    second: CannonWave_86
+  - first:
+      213: 1391361711694020840
+    second: CannonWave_87
+  - first:
+      213: 6980963730081003107
+    second: CannonWave_88
+  - first:
+      213: -7030671413563015267
+    second: CannonWave_89
+  - first:
+      213: -7827488617523644097
+    second: CannonWave_90
+  - first:
+      213: -1026352508865676526
+    second: CannonWave_91
+  - first:
+      213: 4955023274545674931
+    second: CannonWave_92
+  - first:
+      213: 7971104282780666946
+    second: CannonWave_93
+  - first:
+      213: -1866529481124968147
+    second: CannonWave_94
+  - first:
+      213: 4216550202625703048
+    second: CannonWave_95
+  - first:
+      213: 280201651327805766
+    second: CannonWave_96
+  - first:
+      213: 2488875570421641764
+    second: CannonWave_97
+  - first:
+      213: -213144949740277177
+    second: CannonWave_98
+  - first:
+      213: 1259523625363405283
+    second: CannonWave_99
+  - first:
+      213: -6803276953026803469
+    second: CannonWave_100
+  - first:
+      213: -970351013877081511
+    second: CannonWave_101
+  - first:
+      213: -6359266984922805268
+    second: CannonWave_102
+  - first:
+      213: 5562773807679598602
+    second: CannonWave_103
+  - first:
+      213: 865278424673902384
+    second: CannonWave_104
+  - first:
+      213: -533470481114403001
+    second: CannonWave_105
+  - first:
+      213: -7376710809872370746
+    second: CannonWave_106
+  - first:
+      213: -6408850912863488274
+    second: CannonWave_107
+  - first:
+      213: 8724342450115108839
+    second: CannonWave_108
+  - first:
+      213: 8506942801599220508
+    second: CannonWave_109
+  - first:
+      213: 6782491257677418990
+    second: CannonWave_110
+  - first:
+      213: 5287629552570203128
+    second: CannonWave_111
+  - first:
+      213: 8102216175471506683
+    second: CannonWave_112
+  - first:
+      213: -6048990881079333927
+    second: CannonWave_113
+  - first:
+      213: 3747208457870423494
+    second: CannonWave_114
+  - first:
+      213: -6065309574546162008
+    second: CannonWave_115
+  - first:
+      213: 7765415816471035338
+    second: CannonWave_116
+  - first:
+      213: -9191744558130863855
+    second: CannonWave_117
+  - first:
+      213: 4844923585586278023
+    second: CannonWave_118
+  - first:
+      213: 4222742120317257300
+    second: CannonWave_119
+  - first:
+      213: 8127508034970554588
+    second: CannonWave_120
+  - first:
+      213: -2478387902037784217
+    second: CannonWave_121
+  - first:
+      213: -8307890525776834457
+    second: CannonWave_122
+  - first:
+      213: -4539897507426456160
+    second: CannonWave_123
+  - first:
+      213: 2842059026109609678
+    second: CannonWave_124
+  - first:
+      213: -4723708654884497268
+    second: CannonWave_125
+  - first:
+      213: 4115352364965589428
+    second: CannonWave_126
+  - first:
+      213: -5411827442204010391
+    second: CannonWave_127
+  - first:
+      213: 4256660268665605955
+    second: CannonWave_128
+  - first:
+      213: 5679428327527341789
+    second: CannonWave_129
+  - first:
+      213: 8586097336848603139
+    second: CannonWave_130
+  - first:
+      213: 6225574984711971330
+    second: CannonWave_131
+  - first:
+      213: -2058011217801936135
+    second: CannonWave_132
+  - first:
+      213: 8251222190924813911
+    second: CannonWave_133
+  - first:
+      213: -6015181984827454087
+    second: CannonWave_134
+  - first:
+      213: 6369330558523641083
+    second: CannonWave_135
+  - first:
+      213: 2471407586941910615
+    second: CannonWave_136
+  - first:
+      213: -6701429814611941693
+    second: CannonWave_137
+  - first:
+      213: -1065901967705111949
+    second: CannonWave_138
+  - first:
+      213: 786471385747399539
+    second: CannonWave_139
+  - first:
+      213: 7635124292443824191
+    second: CannonWave_140
+  - first:
+      213: 609736988953063622
+    second: CannonWave_141
+  - first:
+      213: -862842328463927309
+    second: CannonWave_142
+  - first:
+      213: 7805933989354652637
+    second: CannonWave_143
+  - first:
+      213: -4652426401234551974
+    second: CannonWave_144
+  - first:
+      213: -5406851944079736154
+    second: CannonWave_145
+  - first:
+      213: 2618192454836656000
+    second: CannonWave_146
+  - first:
+      213: -3521922915110605426
+    second: CannonWave_147
+  - first:
+      213: 1025811316930280824
+    second: CannonWave_148
+  - first:
+      213: -8075893696508830876
+    second: CannonWave_149
+  - first:
+      213: 3747262563014315446
+    second: CannonWave_150
+  - first:
+      213: 8593426832449439223
+    second: CannonWave_151
+  - first:
+      213: -6957561567369844725
+    second: CannonWave_152
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 1
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: CannonWave_000
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6b6029697dbdc2f4aad391114c31972c
+      internalID: -1551419465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_001
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b6e0751a9b19d974590fefeef4963fdd
+      internalID: 2047274112
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_002
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 751408014d87ba84ba65ff43e0aaaab8
+      internalID: 1238374710
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_003
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ff74c6af8926d1046a398e6bf281c7df
+      internalID: -1645668710
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_004
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 930169c34d5ad084c8cf430eb481693e
+      internalID: -964523786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_005
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 402b13b4877334843a791c914f472e6d
+      internalID: 1132006151
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_006
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6fd00194b6f3a86428c33f12f2febf7e
+      internalID: 1047186776
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_007
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6e74726da2e6d842b224294abc8f028
+      internalID: 1774013895
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_008
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aacab0e76f8909f4f8f557fa700d04b9
+      internalID: 545124552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_009
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 1764
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93115bfa1af89ca4687c581685837f5d
+      internalID: 929195666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_010
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 18936e727b0dd4a408a261a5c1dfe4ab
+      internalID: -688532650
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_011
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b646cf4cd5a8ab041b6deffda03b4cd7
+      internalID: 139512309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_012
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93499eb3712b63045a3b578282b7240b
+      internalID: -12261877
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_013
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7691fcfc56416944b998f5455687075c
+      internalID: -1901257764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_014
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9f2e52a3835f4624696e7949e56dc48f
+      internalID: -2056613507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_015
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7db0662e2c73c0c44b709b4c1c8afd4f
+      internalID: 908651372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_016
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e3287a9030977c44cb5fc9c71d8d80cb
+      internalID: 1190575976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_017
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0c4c4d2696d8e95438ad7214c38040a4
+      internalID: 1403391138
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_018
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 010130b1af591274ba3f5da723cd64c3
+      internalID: 2032530759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_019
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 1512
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5dce94e034c0f79489d3f690ea57d62c
+      internalID: 783246692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_020
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d489c4b83a37575448b8d5496bcf072b
+      internalID: -1947454024
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_021
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c80ec999f3666a141a140d8df150b380
+      internalID: 988252593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_022
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e1d01d9439e4ea4468db6e644bf75929
+      internalID: -632364001
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_023
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 77214cd305762374fb06db705c96d60c
+      internalID: 987315301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_024
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1256680aafbd7ff4db195cb750b25b5b
+      internalID: 250868699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_025
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4041b08e46f0cbf46bcd39101f6f161a
+      internalID: -903145313
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_026
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aab5b8e550e99e14a87ccaff59a60242
+      internalID: -513129816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_027
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3a97fdd6658cd2e478e951a7dbba3fe2
+      internalID: -224882385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_028
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2796f0081be6ca54fa978407d98e1c59
+      internalID: -1543719859
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_029
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 1260
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 993dfe41c3e780643b860d9f8aa09e5f
+      internalID: 1237944758
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_030
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3e83f3f5aa0459f4eb5ecf149275d9c7
+      internalID: 1901632290
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_031
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 708d800853c81ed4b8280b3798a3b969
+      internalID: -1638764816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_032
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 671b3dac8beb1704b9e9c5d74aeb3b36
+      internalID: 1922437429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_033
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 369faa5006fbd6a4084b778ac98fba65
+      internalID: 1040499811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_034
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b45165a81ddaaf04f85039329e8bbe8c
+      internalID: 1222661276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_035
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd79ea2d780fd934c978900eea9680c6
+      internalID: -1156558279
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_036
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd7e14b868705834da5ae612572571c8
+      internalID: 1301123827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_037
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8b7200f9e845a5d4f9b11960cb01f5de
+      internalID: -290987919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_038
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cf1f8403bd903d54190e42ff17b0b1fe
+      internalID: 1659965827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_039
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 1008
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0f7a579ff0fba354b86bdef99469676d
+      internalID: 302049169
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_040
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c883a47a65706574aa4ee06b4601a037
+      internalID: 561247532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_041
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c0af7f2775cf00145bf47c5e1d502120
+      internalID: 634909667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_042
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 139fce51c5a24ea48afe3a567a2c9131
+      internalID: 1609423206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_043
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca7eaaf86ae816c42990eacb132b2166
+      internalID: 768982513
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_044
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3313f0092d88e324d8414d6653af580a
+      internalID: 133952937
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_045
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2825da2ca37ba44f820d5a486f222d4
+      internalID: 2093023840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_046
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c5155416e974cd43b72f0e8a690f297
+      internalID: -326488231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_047
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fa18dd03d9b1aa441a2f72f2e21d913a
+      internalID: -1323705035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_048
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: db34f37a09b17c54dbc9a3c593f83e54
+      internalID: -1419398639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_049
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 756
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e2b10660776fc3c4487c6498281600a8
+      internalID: -476750953
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_050
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc95756394e7a844eb18815a2df46287
+      internalID: -1283491372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_051
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2e8566e4f8193f6498c48f084ddff5d9
+      internalID: -1083297332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_052
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6960b994642d58042a99a6793c4a9a23
+      internalID: -1630867887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_053
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f673c3eaab1911742b50a96aded07da8
+      internalID: 1683359974
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_054
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 76b8deabefeb08e4fafea33a08de9e5d
+      internalID: 636009558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_055
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d023edce24a6e04a83b8a65f0d50b24
+      internalID: 2054845771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_056
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ae4debc3f5fd60848924d39e93075931
+      internalID: -281503692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_057
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ef966555be57beb45b9e2ceeb64df382
+      internalID: 724354951
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_058
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9b5882390277f7941935890898e55e23
+      internalID: 286401625
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_059
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 504
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eeb9e714e0905de45a948ce55f038495
+      internalID: -1001207156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_060
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f690cfdc65969e24cb0cb5ea369f1f17
+      internalID: -1665282166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_061
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ddcf98fa21d12ba4aaebf5322b63ad1f
+      internalID: 716168947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_062
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 53ea828e99f7ae145a5177cdaf5faf2a
+      internalID: 1286406707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_063
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cca6c9415b13024469746bb0debea79d
+      internalID: -1557309814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_064
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a052242995d3d86418381a167b421939
+      internalID: 1327875377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_065
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17ba52fb22ef8164498e6b446511a564
+      internalID: 278575117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_066
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f5aea3059b0da3409a520f50277427a
+      internalID: -1871671404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_067
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f0fb92fc8c97ecd4ab281ef3a081ffd5
+      internalID: 71161403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_068
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2f84f04970db53a438f4c53c274980a0
+      internalID: -288897904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_069
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 252
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 26bbe5724123a7142afe02b59de16c45
+      internalID: 1370564605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_070
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0f19e0d512a796e4b9e00d4e5c7d43dc
+      internalID: 892082635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_071
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3f1f80b4e314ec742bc6ac582673d833
+      internalID: 1906418777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_072
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da40f351657cbd5469676e49523f4f7f
+      internalID: 964023396
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_073
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c09ce95366ee30c488c008a5eb8b3b5a
+      internalID: 1391060300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_074
+      rect:
+        serializedVersion: 2
+        x: 1136
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b93a89278c21c1342a26f07a30648402
+      internalID: 1544597366
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_075
+      rect:
+        serializedVersion: 2
+        x: 1420
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 251c2a2e58570844fb75920ae6d5bee4
+      internalID: -684179134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_076
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cabe67e0eefe484408255d60b8e3f98a
+      internalID: 689943593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_077
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3fd2f5ee3ceca0a4c8f413f963864859
+      internalID: -771918882
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_078
+      rect:
+        serializedVersion: 2
+        x: 2272
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 875ea9268a99cc84884931dc59ad5644
+      internalID: 1903721101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CannonWave_079
+      rect:
+        serializedVersion: 2
+        x: 2556
+        y: 0
+        width: 284
+        height: 252
+      alignment: 9
+      pivot: {x: 0.024647888, y: 0.4563492}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 85e82bbbdc0cd0a4b8a1d20d71c872bb
+      internalID: -771300891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 8f4cc2dcb1bb106488504c35b5fa00dc
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      CannonWave_000: -1551419465
+      CannonWave_001: 2047274112
+      CannonWave_002: 1238374710
+      CannonWave_003: -1645668710
+      CannonWave_004: -964523786
+      CannonWave_005: 1132006151
+      CannonWave_006: 1047186776
+      CannonWave_007: 1774013895
+      CannonWave_008: 545124552
+      CannonWave_009: 929195666
+      CannonWave_010: -688532650
+      CannonWave_011: 139512309
+      CannonWave_012: -12261877
+      CannonWave_013: -1901257764
+      CannonWave_014: -2056613507
+      CannonWave_015: 908651372
+      CannonWave_016: 1190575976
+      CannonWave_017: 1403391138
+      CannonWave_018: 2032530759
+      CannonWave_019: 783246692
+      CannonWave_020: -1947454024
+      CannonWave_021: 988252593
+      CannonWave_022: -632364001
+      CannonWave_023: 987315301
+      CannonWave_024: 250868699
+      CannonWave_025: -903145313
+      CannonWave_026: -513129816
+      CannonWave_027: -224882385
+      CannonWave_028: -1543719859
+      CannonWave_029: 1237944758
+      CannonWave_030: 1901632290
+      CannonWave_031: -1638764816
+      CannonWave_032: 1922437429
+      CannonWave_033: 1040499811
+      CannonWave_034: 1222661276
+      CannonWave_035: -1156558279
+      CannonWave_036: 1301123827
+      CannonWave_037: -290987919
+      CannonWave_038: 1659965827
+      CannonWave_039: 302049169
+      CannonWave_040: 561247532
+      CannonWave_041: 634909667
+      CannonWave_042: 1609423206
+      CannonWave_043: 768982513
+      CannonWave_044: 133952937
+      CannonWave_045: 2093023840
+      CannonWave_046: -326488231
+      CannonWave_047: -1323705035
+      CannonWave_048: -1419398639
+      CannonWave_049: -476750953
+      CannonWave_050: -1283491372
+      CannonWave_051: -1083297332
+      CannonWave_052: -1630867887
+      CannonWave_053: 1683359974
+      CannonWave_054: 636009558
+      CannonWave_055: 2054845771
+      CannonWave_056: -281503692
+      CannonWave_057: 724354951
+      CannonWave_058: 286401625
+      CannonWave_059: -1001207156
+      CannonWave_060: -1665282166
+      CannonWave_061: 716168947
+      CannonWave_062: 1286406707
+      CannonWave_063: -1557309814
+      CannonWave_064: 1327875377
+      CannonWave_065: 278575117
+      CannonWave_066: -1871671404
+      CannonWave_067: 71161403
+      CannonWave_068: -288897904
+      CannonWave_069: 1370564605
+      CannonWave_070: 892082635
+      CannonWave_071: 1906418777
+      CannonWave_072: 964023396
+      CannonWave_073: 1391060300
+      CannonWave_074: 1544597366
+      CannonWave_075: -684179134
+      CannonWave_076: 689943593
+      CannonWave_077: -771918882
+      CannonWave_078: 1903721101
+      CannonWave_079: -771300891
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
