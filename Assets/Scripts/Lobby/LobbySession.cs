@@ -87,7 +87,8 @@ public sealed partial class LobbySession : MonoBehaviour
         PracticeTest = endless;
         manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes("P1");
         transport.SetConnectionData("127.0.0.1",0,"127.0.0.1");
-        if (!StartHost()) { LocalSeats = 0; Status = "연습을 시작하지 못했습니다."; return; }
+        if (!StartHost()) { LocalSeats = 0; Status = "연습을 시작하지 못했습니다."; SoundManager.PlayCue(GameSfx.UiReject); return; }
+        SoundManager.PlayCue(GameSfx.UiConfirm);
         StartGame();
     }
 
@@ -107,6 +108,7 @@ public sealed partial class LobbySession : MonoBehaviour
             if (!StartHost()) throw new InvalidOperationException("방을 시작하지 못했습니다.");
             roster.Code.Value = new Unity.Collections.FixedString64Bytes(RoomCode);
             Status = "방 코드를 친구에게 공유하세요.";
+            SoundManager.PlayCue(GameSfx.UiConfirm);
         }
         catch (OperationCanceledException) { }
         catch (Exception e) { await Failed(e); }
@@ -139,6 +141,7 @@ public sealed partial class LobbySession : MonoBehaviour
                 ? "연결 시간이 초과되었습니다. 방 코드를 확인해주세요." : manager.DisconnectReason);
             RoomCode = roster.Code.Value.ToString();
             Status = "방장이 게임을 시작할 때까지 기다려주세요.";
+            SoundManager.PlayCue(GameSfx.UiConfirm);
         }
         catch (OperationCanceledException) { }
         catch (Exception e) { await Failed(e); }
@@ -160,6 +163,7 @@ public sealed partial class LobbySession : MonoBehaviour
         admitted.Clear();
         RoomCode = "";
         Status = "연결 실패: " + error.Message;
+        SoundManager.PlayCue(GameSfx.UiReject);
         leaving = false;
     }
 

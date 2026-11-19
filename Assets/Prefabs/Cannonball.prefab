@@ -9,11 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 100001}
+  - component: {fileID: 8994423705316697708}
   - component: {fileID: 100003}
   - component: {fileID: 2323104292522340177}
   - component: {fileID: 6990772770256655388}
   - component: {fileID: 8534512125984773175}
-  - component: {fileID: 8994423705316697708}
   - component: {fileID: 1059349681821424901}
   m_Layer: 0
   m_Name: Cannonball
@@ -41,6 +41,33 @@ Transform:
   - {fileID: 9045537237324017080}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8994423705316697708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3070737423
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &100003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138,33 +165,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CannonballHit
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 1
---- !u!114 &8994423705316697708
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  m_InScenePlacedDisabledByDefault: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  m_InScenePlaced: 0
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!114 &1059349681821424901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,9 +288,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 30010
+  m_SortingLayerID: 1999933635
+  m_SortingLayer: 2
+  m_SortingOrder: 40
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1551419465, guid: cc55908573b552c40b4bda43c7528c66, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -379,9 +379,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 30000
+  m_SortingLayerID: 1999933635
+  m_SortingLayer: 2
+  m_SortingOrder: 30
   m_MaskInteraction: 0
   m_Sprite: {fileID: 1709306471, guid: 893b03f71275c7942820698e1c1136db, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -470,9 +470,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 30020
+  m_SortingLayerID: 1999933635
+  m_SortingLayer: 2
+  m_SortingOrder: 50
   m_MaskInteraction: 0
   m_Sprite: {fileID: -51357675, guid: a7d62a20b8765a34dbeb83d3399e5112, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

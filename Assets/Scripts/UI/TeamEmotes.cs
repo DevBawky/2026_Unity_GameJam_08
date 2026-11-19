@@ -69,11 +69,14 @@ public sealed class TeamEmotes : MonoBehaviour
     private void Show(NetworkPlayer player, int key)
     {
         if (key < 0 || key >= emotes.Count) return;
-        player.ShowEmoteBubble(emotes[key].icon);
+        var icon = emotes[key].icon;
+        if (icon == null) return;
+        player.ShowEmoteBubble(icon);
+        SoundManager.PlayCue(GameSfx.TeamBell);
         int slot = player.Slot.Value;
         if (notices == null || slot < 0 || slot >= notices.Length) return;
         var notice = notices[slot];
-        notice.icon.sprite = emotes[key].icon;
+        notice.icon.sprite = icon;
         notice.label.SetText(LocalizationTable.F("P{0} 플레이어가 {1}", slot + 1, LocalizationTable.T(emotes[key].message)));
         notice.HideAt = Time.unscaledTime + noticeSeconds;
     }

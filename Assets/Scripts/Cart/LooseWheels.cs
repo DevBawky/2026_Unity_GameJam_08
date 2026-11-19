@@ -30,45 +30,98 @@ public sealed partial class CartStations
         : detachedTire.transform.position + Vector3.up * (IsUpperWheel(detachedTire) ? -29f : 31f) * WorldPerWebUnit;
     public bool IsUpperWheel(SpriteRenderer tire) => tire.transform.position.y > cart.transform.position.y;
 
-    private void SetTireAlpha(float alpha)
+    public bool IsWheelMounted(int index) =>
+        (damagedTires & (1 << index)) == 0 || tires[index] == detachedTire && wheelRepairSteps > 0;
+
+    private void RefreshTireArtwork(int index)
     {
-        if (detachedTire == null) return;
-        Color color = detachedTire.color;
-        if (missingWheelSprite != null)
-        {
-            bool missing = alpha <= 0f;
-            detachedTire.sprite = missing ? missingWheelSprite : tireSprites[tires.IndexOf(detachedTire)];
-            alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
-        }
-        color.a = alpha;
-        detachedTire.color = color;
+        var tire = tires[index];
+        bool mounted = IsWheelMounted(index);
+        tire.sprite = mounted || missingWheelSprite == null ? tireSprites[index] : missingWheelSprite;
+        Color color = tire.color;
+        color.a = mounted || missingWheelSprite != null ? tireAlphas[index] : 0f;
+        tire.color = color;
     }
 
-    private void DetachWheel()
+    private void DetachWheel(Vector2? contact = null)
     {
-        if (wheelDetached || tires.Count == 0) return;
-        detachedTire = tires[(int)(Sample()*tires.Count)];
-        detachedTireAlpha = detachedTire.color.a;
-        LaunchWheel(detachedTire);
+        int index = -1;
+        if (contact is Vector2 point)
+        {
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < tires.Count; i++)
+            {
+                if (!IsWheelMounted(i)) continue;
+                float distance = ((Vector2)tires[i].transform.position - point).sqrMagnitude;
+                if (distance >= nearest) continue;
+                nearest = distance;
+                index = i;
+            }
+        }
+        else if (!wheelDetached && tires.Count > 0) index = (int)(Sample() * tires.Count);
+        if (index < 0) return;
+
+        var tire = tires[index];
+        float previousPace = cart.SpeedMultiplier;
+        LaunchWheel(tire);
+        damagedTires |= 1 << index;
         wheelDetached = true;
         wheelEverDetached = true;
-        wheelRepairSteps = 0;
-        SetTireAlpha(0f);
+        if (detachedTire == null || detachedTire == tire)
+        {
+            detachedTire = tire;
+            wheelRepairSteps = 0;
+            WheelMount.Value = default;
+        }
+        RefreshTireArtwork(index);
         cart.SpeedMultiplier = WheelLossSpeed;
-        AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f);
+        if (IsAxleBroken && previousPace > WheelLossSpeed) cart.ApplySpeedHit(WheelLossSpeed / previousPace);
+        AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f, wheel: true);
         Publish();
+    }
+
+    private bool IsAxleBroken
+    {
+        get
+        {
+            int front = 0, rear = 0;
+            float center = cartBody.bounds.center.x;
+            for (int i = 0; i < tires.Count; i++)
+            {
+                if ((damagedTires & (1 << i)) == 0) continue;
+                if (tires[i].transform.position.x < center) front++;
+                else rear++;
+            }
+            return front >= 2 || rear >= 2;
+        }
     }
 
     // 보조 지지대가 있으면 바퀴가 빠져도 속도가 덜 떨어진다.
-    private float WheelLossSpeed => Owns(ShopPerk.SupportStrut) ? Mathf.Max(wheelLossSpeedMultiplier, SupportStrutSpeed) : wheelLossSpeedMultiplier;
+    private float WheelLossSpeed => IsAxleBroken ? .18f
+        : Owns(ShopPerk.SupportStrut) ? Mathf.Max(wheelLossSpeedMultiplier, SupportStrutSpeed) : wheelLossSpeedMultiplier;
 
     private void RepairWheel()
     {
-        SetTireAlpha(detachedTireAlpha);
+        int index = tires.IndexOf(detachedTire);
+        if (index < 0) return;
+        damagedTires &= ~(1 << index);
+        RefreshTireArtwork(index);
+        wheelRepairSteps = 0;
         detachedTire = null;
-        wheelDetached = false;
-        cart.SpeedMultiplier = 1f;
+        for (int i = 0; i < tires.Count; i++)
+        {
+            if ((damagedTires & (1 << i)) == 0) continue;
+            detachedTire = tires[i];
+            break;
+        }
+        wheelDetached = detachedTire != null;
+        cart.SpeedMultiplier = wheelDetached ? WheelLossSpeed : 1f;
         Publish();
+    }
+
+    private void RepairAllWheels()
+    {
+        while (wheelDetached && detachedTire != null) RepairWheel();
     }
 
     public NetworkList<LooseWheelState> LooseWheels = new();
@@ -90,7 +143,7 @@ public sealed partial class CartStations
         while (wheelVisuals.Count < LooseWheels.Count)
         {
             var view=Instantiate(looseWheelPrefab);
-            view.transform.localScale=Vector3.one*(WorldPerWebUnit*100f);
+            view.transform.localScale=Vector3.one*(WorldPerWebUnit*150f);
             wheelVisuals.Add(view);
         }
         for (int i=wheelVisuals.Count-1;i>=0;i--)

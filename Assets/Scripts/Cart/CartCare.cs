@@ -35,7 +35,6 @@ public sealed partial class CartStations
     [SerializeField] private Sprite[] princessPoses;
     private readonly Vector2[] seats = new Vector2[2];
     [SerializeField] private Transform[] royalChairs;
-    [SerializeField] private UnityEngine.UI.Image[] royalMarkers;
     private Vector3[] chairStarts;
     private readonly NetworkVariable<CartWorkShock> royalSeatBounce = new();
     public NetworkVariable<RiderState> Prince = new(), Princess = new();
@@ -73,7 +72,7 @@ public sealed partial class CartStations
     public int CryingCount => (Prince.Value.Crying ? 1 : 0) + (Princess.Value.Crying ? 1 : 0);
     public float TimingWidthRate => CryingCount == 2 ? .60f : CryingCount == 1 ? .80f : 1f;
     public float WalkRate => CryingCount == 2 ? .75f : CryingCount == 1 ? .90f : 1f;
-    private float CookRate => CryingCount == 2 ? .65f : CryingCount == 1 ? .85f : 1f;
+    private float CookRate => 1.5f * (CryingCount == 2 ? .65f : CryingCount == 1 ? .85f : 1f);
     public bool CarriedChild(NetworkPlayer actor, out RiderState child)
     {
         child = Prince.Value;
@@ -172,11 +171,12 @@ public sealed partial class CartStations
                 continue;
             }
 
-            float loss = Mathf.Min(actor.CookProgress.Value, lostTicks * Step);
+            float before = actor.CookProgress.Value;
+            float loss = Mathf.Min(before, lostTicks * Step);
             if (loss > 0f)
             {
-                actor.CookProgress.Value -= loss;
-                actor.ShowCookingImpact(Mathf.FloorToInt(loss * 100f / cookSeconds + .5f));
+                actor.CookProgress.Value = before - loss;
+                actor.ShowCookingImpact(before / cookSeconds, actor.CookProgress.Value / cookSeconds);
             }
             if (!actor.CookingHeld.Value || !actor.HandsFree) continue;
 
@@ -184,6 +184,7 @@ public sealed partial class CartStations
             if (actor.CookProgress.Value < cookSeconds - .00001f) continue;
             actor.Snack.Value = true;
             actor.CookProgress.Value = 0f;
+            actor.PlayWorkCue(GameSfx.UiConfirm);
             CompleteStation(StationAction.Kitchen, actor);
         }
     }
@@ -191,10 +192,12 @@ public sealed partial class CartStations
     private void AdvanceChild(NetworkVariable<RiderState> field, int index)
     {
         var child=field.Value;
-        child.Hunger = Mathf.Min(100, child.Hunger + Step * 1.65f);
+        float hungerScale = index == 0 ? .75f : .5f;
+        float attentionScale = index == 0 ? .5f : .75f;
+        child.Hunger = Mathf.Min(100f, child.Hunger + Step * .4125f * hungerScale);
         if (child.Pose == RiderPose.Seated && careTicks >= ignoreWanderUntil[index])
         {
-            child.Attention = Mathf.Max(0, child.Attention - Step * 4.2f);
+            child.Attention = Mathf.Max(0f, child.Attention - Step * 1.05f * attentionScale);
             if (child.Attention <= 20)
             {
                 child.Pose = RiderPose.Wandering;
@@ -243,7 +246,7 @@ public sealed partial class CartStations
             case StationAction.Driver: WhipHorse(); break;
         }
         child.Mischief = 0;
-        Bounds bounds = CartBody.bounds;
+        Bounds bounds = child.InCellar ? CartBody.bounds : DeckMovementBounds;
         child.Destination = cart.transform.InverseTransformPoint(new Vector3(
             Mathf.Lerp(bounds.min.x, bounds.max.x, .1f + .8f * Sample()),
             Mathf.Lerp(bounds.min.y, bounds.max.y, .1f + .7f * Sample()), bounds.center.z));
@@ -322,26 +325,6 @@ public sealed partial class CartStations
             royalChairs[i].localPosition = chairStarts[i] + Vector3.up * lift;
         PlaceChild(Prince.Value,0, lift);
         PlaceChild(Princess.Value,1, lift);
-        if (royalMarkers is { Length: 2 })
-        {
-            ShowRoyalMarker(royalMarkers[0], Prince.Value);
-            ShowRoyalMarker(royalMarkers[1], Princess.Value);
-        }
-    }
-    private void ShowRoyalMarker(UnityEngine.UI.Image marker, RiderState child)
-    {
-        bool visible = false;
-        foreach (var player in Crew)
-        {
-            if (player == null || !player.Local || player.InCellar) continue;
-            if (child.Pose == RiderPose.Seated && player.Snack.Value
-                || child.Pose == RiderPose.Carried && !child.Upset && child.CarrierSlot == player.Slot.Value)
-            {
-                visible = true;
-                break;
-            }
-        }
-        marker.enabled = visible;
     }
 
     private void PlaceChild(RiderState child,int index, float lift)
@@ -374,7 +357,7 @@ public sealed partial class CartStations
         }
     }
 
-    private Vector3 RoyalInteractionPosition(RiderState child, int index) =>
+    internal Vector3 RoyalInteractionPosition(RiderState child, int index) =>
         cart.transform.TransformPoint(child.Pose is RiderPose.Seated or RiderPose.Carried ? seats[index] + Vector2.down * (40f * WorldPerWebUnit) : child.Position);
 
     public CareAction AvailableCare(StationAction action, NetworkPlayer actor)
@@ -402,7 +385,9 @@ public sealed partial class CartStations
             case CareAction.Attend:
                 if (!actor.Timing.IsInActionArea(station) || actor.CanUseStairShelf()
                     || child.Attention >= 100f || careTicks < child.AttentionHeartUntil) return;
-                child.Attention = Mathf.Min(100f, child.Attention + 20f);
+                float recovered = Mathf.Min(20f, 100f - child.Attention);
+                child.Attention += recovered;
+                actor.AwardScore(Mathf.RoundToInt(recovered));
                 child.AttentionHeartUntil = careTicks + 18;
                 child.AttentionHeartFrom = cart.transform.InverseTransformPoint(actor.transform.position);
                 var effect = index == 0 ? PrinceHeart : PrincessHeart;
@@ -419,7 +404,7 @@ public sealed partial class CartStations
                 ignoreWanderUntil[index] = careTicks + (Owns(ShopPerk.PictureBook) ? PictureBookTicks : 210);
                 break;
             case CareAction.Feed:
-                child.Hunger = Mathf.Max(0, child.Hunger - (Owns(ShopPerk.HeartyRecipe) ? HeartyRecipeHunger : 55));
+                child.Hunger = Mathf.Max(0f, child.Hunger - (Owns(ShopPerk.HeartyRecipe) ? HeartyRecipeHunger : 75f));
                 actor.Snack.Value = false;
                 break;
             case CareAction.PickUp:
@@ -435,6 +420,7 @@ public sealed partial class CartStations
                 return;
         }
         field.Value=child;
+        actor.PlayWorkCue(GameSfx.UiConfirm);
     }
 
     private void KnockDown(NetworkVariable<RiderState> field,float chance)

@@ -44,5 +44,11 @@ TagManager:
   - name: Player
     uniqueID: 904103861
     locked: 0
+  - name: Combat FX
+    uniqueID: 1999933635
+    locked: 0
+  - name: World Indicators
+    uniqueID: 3855277227
+    locked: 0
   m_RenderingLayers:
   - Default

@@ -337,14 +337,25 @@ public sealed class NetworkPlayer : NetworkBehaviour
     }
 
     [Rpc(SendTo.Owner)]
-    private void CookingImpactRpc(int percentLost)
+    private void CookingImpactRpc(float before, float after)
     {
-        if (Local) timing.ShowCookingImpact(percentLost);
+        if (Local) timing.ShowCookingImpact(before, after);
     }
 
-    internal void ShowCookingImpact(int percentLost)
+    internal void ShowCookingImpact(float before, float after)
     {
-        if (!Bot.Value) CookingImpactRpc(percentLost);
+        if (!Bot.Value) CookingImpactRpc(before, after);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void WorkCueRpc(GameSfx cue)
+    {
+        if (Local) SoundManager.PlayCue(cue);
+    }
+
+    internal void PlayWorkCue(GameSfx cue)
+    {
+        if (!Bot.Value) WorkCueRpc(cue);
     }
 
     public void Request(StationAction action, bool hold = false)

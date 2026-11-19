@@ -452,81 +452,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
   table: {fileID: 11400000, guid: 9c6befcce8020cb4fb7c1b061c7d0782, type: 2}
---- !u!1 &489371701833309514
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6729543043331053334}
-  - component: {fileID: 1489999304004917482}
-  - component: {fileID: 166471965259186278}
-  m_Layer: 5
-  m_Name: Dashed Repair Ring
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &6729543043331053334
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 489371701833309514}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2433446017489288134}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 58, y: 52}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &1489999304004917482
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 489371701833309514}
-  m_CullTransparentMesh: 1
---- !u!114 &166471965259186278
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 489371701833309514}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 2089542926098736990, guid: 229ace71ce3543d48b5c6c07b9499274, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &874960918285370049
 GameObject:
   m_ObjectHideFlags: 0
@@ -538,6 +463,7 @@ GameObject:
   - component: {fileID: 9102321949167964602}
   - component: {fileID: 327890255495398889}
   - component: {fileID: 5598289610109943472}
+  - component: {fileID: 6794793054398600820}
   m_Layer: 5
   m_Name: Station Label
   m_TagString: Untagged
@@ -603,6 +529,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &6794793054398600820
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 874960918285370049}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &1030136917431158871
 GameObject:
   m_ObjectHideFlags: 0
@@ -614,6 +563,7 @@ GameObject:
   - component: {fileID: 1400190266012961879}
   - component: {fileID: 1113194996401025018}
   - component: {fileID: 7384326573066982984}
+  - component: {fileID: 3672452813603433098}
   m_Layer: 5
   m_Name: Repair Label Plate
   m_TagString: Untagged
@@ -679,6 +629,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!223 &3672452813603433098
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1030136917431158871}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 25
+  m_TargetDisplay: 0
 --- !u!1 &1346226899440290389
 GameObject:
   m_ObjectHideFlags: 0
@@ -765,6 +738,7 @@ GameObject:
   - component: {fileID: 4036353210127748755}
   - component: {fileID: 896207989919119094}
   - component: {fileID: 4317863026691238131}
+  - component: {fileID: 541709833485561096}
   m_Layer: 0
   m_Name: Station Label
   m_TagString: Untagged
@@ -830,6 +804,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &541709833485561096
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616486072411470241}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &1664667926907626584
 GameObject:
   m_ObjectHideFlags: 0
@@ -1147,7 +1144,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4941041387274817065}
-  - {fileID: 6729543043331053334}
   - {fileID: 8911012515232677704}
   - {fileID: 1400190266012961879}
   m_Father: {fileID: 4095894912055479468}
@@ -1168,6 +1164,7 @@ GameObject:
   - component: {fileID: 3289035680895482380}
   - component: {fileID: 1992476257263703319}
   - component: {fileID: 8412383884540772947}
+  - component: {fileID: 8486044389287627310}
   m_Layer: 5
   m_Name: Station Label
   m_TagString: Untagged
@@ -1233,6 +1230,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &8486044389287627310
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090355017990337096}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &2226888845714184009
 GameObject:
   m_ObjectHideFlags: 0
@@ -1244,6 +1264,7 @@ GameObject:
   - component: {fileID: 749294872799368791}
   - component: {fileID: 2307244665305422106}
   - component: {fileID: 5156677358795574519}
+  - component: {fileID: 1137526272859065139}
   m_Layer: 5
   m_Name: Station Label
   m_TagString: Untagged
@@ -1309,6 +1330,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &1137526272859065139
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2226888845714184009}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &2310897945354645446
 GameObject:
   m_ObjectHideFlags: 0
@@ -1772,6 +1816,7 @@ GameObject:
   - component: {fileID: 5646902332094495172}
   - component: {fileID: 2597876775939286361}
   - component: {fileID: 4682100160020166539}
+  - component: {fileID: 8164727225112390503}
   m_Layer: 0
   m_Name: Station Label
   m_TagString: Untagged
@@ -1837,6 +1882,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &8164727225112390503
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2766467601390402067}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &2919701206174167429
 GameObject:
   m_ObjectHideFlags: 0
@@ -3235,6 +3303,7 @@ GameObject:
   - component: {fileID: 5771222570298577746}
   - component: {fileID: 1015170511619466391}
   - component: {fileID: 5764306216338043096}
+  - component: {fileID: 5266994679383653216}
   m_Layer: 5
   m_Name: Station Label
   m_TagString: Untagged
@@ -3300,6 +3369,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &5266994679383653216
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3972713909966802419}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &4132244187752349562
 GameObject:
   m_ObjectHideFlags: 0
@@ -3435,7 +3527,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.6171, y: -1.573}
+  m_AnchoredPosition: {x: -0.6171, y: -0.9667674}
   m_SizeDelta: {x: 0.87119997, y: 0.87119997}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1523740738861589841
@@ -4409,6 +4501,7 @@ GameObject:
   - component: {fileID: 7563550927766437098}
   - component: {fileID: 2139994310364188549}
   - component: {fileID: 7183369470580943753}
+  - component: {fileID: 1690246866519133855}
   m_Layer: 0
   m_Name: Station Label
   m_TagString: Untagged
@@ -4474,6 +4567,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &1690246866519133855
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5797244186510902746}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &5993942396976374287
 GameObject:
   m_ObjectHideFlags: 0
@@ -4831,7 +4947,6 @@ MonoBehaviour:
   marker: {fileID: 2433446017489288134}
   labelPlate: {fileID: 1400190266012961879}
   pad: {fileID: 5388759884527194726}
-  ring: {fileID: 166471965259186278}
   tool: {fileID: 3068653747433168118}
   labelBackground: {fileID: 7384326573066982984}
   label: {fileID: 6394899828744197537}
@@ -5979,6 +6094,7 @@ GameObject:
   - component: {fileID: 5048733691346337923}
   - component: {fileID: 5936082636129258381}
   - component: {fileID: 3471718516231303622}
+  - component: {fileID: 6086866666321237743}
   m_Layer: 0
   m_Name: Station Label
   m_TagString: Untagged
@@ -6044,6 +6160,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 25
+--- !u!223 &6086866666321237743
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7730683224539892622}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 10
+  m_TargetDisplay: 0
 --- !u!1 &7795266253058436443
 GameObject:
   m_ObjectHideFlags: 0
@@ -6858,7 +6997,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.6171, y: 62.427}
+  m_AnchoredPosition: {x: -0.6171, y: 63.033234}
   m_SizeDelta: {x: 0.87119997, y: 0.87119997}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7157565481575420530

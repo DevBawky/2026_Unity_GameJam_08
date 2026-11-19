@@ -1,6 +1,13 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
+internal enum GameSfx
+{
+    UiTick, UiConfirm, UiReject, TeamBell, DangerPulse, PursuitHorn, StoneFlight,
+    ImpactDirt, ImpactCart, AxleSnap, WheelFit, ShellMetal, CannonLoad, FuseBurn,
+    CannonFire, BrushScrub, WhipSnap, RoyalWhimper, CookSizzle, StageResult, DefeatSting
+}
+
 // 배경음·효과음을 재생하고 믹서 볼륨을 저장·적용한다. 씬이 바뀌어도 하나만 남는다.
 public sealed class SoundManager : MonoBehaviour
 {
@@ -16,6 +23,8 @@ public sealed class SoundManager : MonoBehaviour
     [SerializeField] private AudioMixer mixer;
     [SerializeField] private AudioSource bgmSource;
     [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioSource cookingSource;
+    [SerializeField] private AudioClip[] gameSfx;
 
     private void Awake()
     {
@@ -52,6 +61,24 @@ public sealed class SoundManager : MonoBehaviour
     public void PlaySfx(AudioClip clip)
     {
         if (clip != null) sfxSource.PlayOneShot(clip);
+    }
+
+    internal static bool PlayCue(GameSfx cue)
+    {
+        var manager = Instance;
+        int index = (int)cue;
+        if (manager == null || manager.gameSfx == null || index >= manager.gameSfx.Length) return false;
+        var clip = manager.gameSfx[index];
+        if (clip == null) return false;
+        manager.PlaySfx(clip);
+        return true;
+    }
+
+    internal void SetCooking(bool active)
+    {
+        if (cookingSource == null || active == cookingSource.isPlaying) return;
+        if (active) cookingSource.Play();
+        else cookingSource.Stop();
     }
 
     private void ApplyVolume(string parameter, float volume)

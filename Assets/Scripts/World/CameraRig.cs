@@ -14,6 +14,7 @@ public sealed class CameraRig : MonoBehaviour
     // 웹판 v10 앞길 시야: 일반 주행·마부석은 말·마차 묶음 중심을 화면 너비 55%에 두고, 마부석은 가로·세로 15% 더 넓게 본다.
     private const float ConvoyScreenX = 0.55f;
     private const float DriverViewRange = 1.15f;
+    private const float TelescopeRearShift = 300f;
     private const float TransitionSeconds = .5f;
 
     [Tooltip("말·마차 묶음의 가로 중심(월드 x). 말 앞끝~마차 뒤끝의 가운데 (웹판 convoyCenterX)")]
@@ -26,7 +27,7 @@ public sealed class CameraRig : MonoBehaviour
     [SerializeField] private NetworkPlayer secondSeat;
     [SerializeField] private bool secondary;
     [SerializeField] private bool matchWebFraming;
-    private (bool Split, bool Cellar, bool Carrying, StationAction? Station, bool Aiming) view;
+    private (bool Split, bool Cellar, bool Carrying, StationAction? Station, bool Aiming, bool Telescope) view;
     private Vector3 transitionPosition, shotPosition;
     private float transitionSize, transitionAge, shotSize;
     private bool wasPostShot;
@@ -75,7 +76,8 @@ public sealed class CameraRig : MonoBehaviour
     {
         if (actor.InCellar && (actor.Carrying.Value || actor.Holding.Value) && !actor.Timing.HasStationAccess) return false;
         if (!matchWebFraming && actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver)) return false;
-        return actor.Timing.HasStationAccess || actor.Carrying.Value || actor.Holding.Value || actor.Timing.IsCannonFocus;
+        return stations.AtTelescope(actor) || actor.Timing.HasStationAccess || actor.Carrying.Value || actor.Holding.Value
+            || actor.Timing.IsCannonFocus;
     }
     private void LateUpdate()
     {
@@ -114,17 +116,18 @@ public sealed class CameraRig : MonoBehaviour
         StationAction? station = player.HasStationAccess ? player.CurrentAction : null;
         bool aiming = !postShot && player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
         bool driving = station == StationAction.Driver;
-        bool carrying = !postShot && !driving && (follow.Carrying.Value || follow.Holding.Value);
-        bool atOwnStation = station.HasValue && !driving;
+        bool telescope = !postShot && !aiming && !driving && stations.AtTelescope(follow);
+        bool carrying = !postShot && !driving && !telescope && (follow.Carrying.Value || follow.Holding.Value);
+        bool atOwnStation = station.HasValue && !driving && !telescope;
         bool zooming = carrying || atOwnStation;
-        float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f) * (driving ? DriverViewRange : 1f);
+        float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f) * (driving || telescope ? DriverViewRange : 1f);
         bool inCellar = follow.InCellar;
         Vector3 destination = inCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z)
             : new Vector3(convoyCenterX - (ConvoyScreenX - 0.5f) * 2f * targetSize * cam.aspect, homePosition.y, homePosition.z);
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
         if (matchWebFraming)
-            MatchWebFraming(follow, driving, carrying, atOwnStation, aiming, ref destination, ref targetSize);
+            MatchWebFraming(follow, driving || telescope, carrying, atOwnStation, aiming, ref destination, ref targetSize);
         else if (aiming)
         {
             Vector3 muzzle = cannonAim.Muzzle.position;
@@ -148,7 +151,8 @@ public sealed class CameraRig : MonoBehaviour
             targetSize = Mathf.Max(targetSize, FitSize(visible.extents.x, visible.extents.y));
         }
 
-        var nextView = (split, inCellar, carrying, station, aiming);
+        if (telescope) destination.x += TelescopeRearShift * stations.WorldPerWebUnit;
+        var nextView = (split, inCellar, carrying, station, aiming, telescope);
         if (view.Cellar != inCellar || (view.Split != split && floorChanged))
         {
             view = nextView;

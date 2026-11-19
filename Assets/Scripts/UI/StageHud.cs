@@ -16,14 +16,12 @@ public sealed class StageHud : MonoBehaviour
     [SerializeField] private Button[] upgradeButtons;
     [SerializeField] private TMP_Text[] upgradeLabels;
     [SerializeField] private Image healthFill;
+    [SerializeField] private TMP_Text cartStatusLabel;
     [SerializeField] private RectTransform distanceMarker;
     [SerializeField] private TMP_Text distanceLabel;
     [SerializeField] private Image distanceFill;
 
     private int lastStatusKey = int.MinValue;
-    private int lastWave = -1;
-    private int lastProgressPercent = -1;
-
     private void Awake()
     {
         if (restartButton.TryGetComponent(out Button retry)) retry.onClick.AddListener(stations.Restart);
@@ -63,16 +61,22 @@ public sealed class StageHud : MonoBehaviour
     private void UpdateIndicators()
     {
         healthFill.fillAmount = Mathf.Clamp01(stations.Durability / stations.Capacity);
-        float progress = Mathf.Clamp01(stations.StageDistance / Mathf.Max(1f, stations.StageGoal));
-        if (distanceFill != null) distanceFill.fillAmount = 1f - progress;
-        distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(1f - progress, 0.5f);
-        distanceMarker.anchoredPosition = Vector2.zero;
-        int percent = stations.Endless.Value ? Mathf.FloorToInt(stations.StageDistance) : Mathf.CeilToInt(Mathf.Max(0,stations.StageGoal-stations.StageDistance));
-        if (distanceLabel != null && (percent != lastProgressPercent || lastWave != stations.Waves.Value))
+        if (cartStatusLabel != null)
         {
-            lastProgressPercent = percent;
-            lastWave = stations.Waves.Value;
-            distanceLabel.text = $"{percent} m   ·   W{stations.Waves.Value}";
+            int defense = Mathf.RoundToInt(Mathf.Clamp01(1f - stations.ImpactMultiplier) * 100f);
+            string status = LocalizationTable.F("내구도 {0}/{1} · 충격 방어 {2}%", Mathf.CeilToInt(stations.Durability),
+                Mathf.RoundToInt(stations.Capacity), defense);
+            if (cartStatusLabel.text != status) cartStatusLabel.SetText(status);
+        }
+        float distanceLeft = Mathf.Max(0f, stations.StageGoal - stations.StageDistance);
+        float remaining = Mathf.Clamp01(distanceLeft / Mathf.Max(1f, stations.StageGoal));
+        if (distanceFill != null) distanceFill.fillAmount = remaining;
+        distanceMarker.anchorMin = distanceMarker.anchorMax = new Vector2(remaining, 0.5f);
+        distanceMarker.anchoredPosition = Vector2.zero;
+        if (distanceLabel != null)
+        {
+            string text = LocalizationTable.F("남은 거리 {0:N0} m", Mathf.CeilToInt(distanceLeft));
+            if (distanceLabel.text != text) distanceLabel.SetText(text);
         }
     }
 

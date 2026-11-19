@@ -13,6 +13,7 @@ public sealed class HorseWhipZone : MonoBehaviour
     [SerializeField] private SpriteRenderer hoofShadow, hitchStrap;
     [SerializeField] private Transform hitchPoint;
     [SerializeField] private int walkOffset;
+    [SerializeField] private LineRenderer[] speedTrails;
     private static readonly Vector3[] Hooves =
     {
         new(30,84,77), new(29,87,82), new(23,101,83), new(20,103,82),
@@ -31,6 +32,9 @@ public sealed class HorseWhipZone : MonoBehaviour
     public void ShowGallop(bool running, bool wounded, HorseMood mood, float time)
     {
         if (gallopVisual == null) return;
+        var game = CartStations.Instance;
+        bool animate = running && !SettingsPanel.ReducedMotion;
+        if (game != null) ShowSpeedTrails(animate && mood == HorseMood.Runaway, game.WorldPerWebUnit, time);
         var sequence = wounded ? woundedGallop : gallop;
         float rate = mood switch
         {
@@ -39,10 +43,9 @@ public sealed class HorseWhipZone : MonoBehaviour
             HorseMood.Runaway => 2.05f,
             _ => 1f
         };
-        var game = CartStations.Instance;
         if (v12Walk != null && v12Walk.Length == SaddlePixels.Length && game != null)
         {
-            int frame = running && !SettingsPanel.ReducedMotion
+            int frame = animate
                 ? (Mathf.FloorToInt(game.StageDistance * 1.1f) + walkOffset) % SaddlePixels.Length : 3;
             gallopVisual.sprite = v12Walk[frame];
             float unit = game.WorldPerWebUnit;
@@ -54,6 +57,22 @@ public sealed class HorseWhipZone : MonoBehaviour
         if (running) phase += Mathf.Clamp(time - lastFrame, 0f, .1f) * rate;
         lastFrame = time;
         gallopVisual.sprite = sequence.FrameAt(phase + gallopOffset, true);
+    }
+
+    private void ShowSpeedTrails(bool visible, float unit, float time)
+    {
+        if (speedTrails == null) return;
+        Vector3 origin = gallopVisual.transform.position;
+        for (int i = 0; i < speedTrails.Length; i++)
+        {
+            var trail = speedTrails[i];
+            trail.enabled = visible;
+            if (!visible) continue;
+            float drift = Mathf.Repeat(time * 150f + walkOffset * 5f + i * 11f, 27f);
+            trail.transform.position = origin + new Vector3(56f + drift, 4f + (1 - i) * 14f, 0f) * unit;
+            trail.SetPosition(1, trail.transform.InverseTransformVector(Vector3.right * (24f * unit)));
+            trail.widthMultiplier = 2f * unit;
+        }
     }
 
     private void PoseHitch(int frame, float unit)

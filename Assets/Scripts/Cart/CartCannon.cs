@@ -25,6 +25,12 @@ public sealed partial class CartStations
     internal int CannonTick => IsServer ? careTicks : State.Value.StageTick;
     internal float CannonCaliber => Projectile.ScaleFor(Barrel.Value);
 
+    internal Vector3 CartArtworkOffset(double now)
+    {
+        Vector2 pivot = CannonPivot.position;
+        return CannonRecoilOffset(now) + (Vector3)(CannonAim.Origin(pivot, this, now, CannonTick) - pivot);
+    }
+
     internal Vector3 CannonRecoilOffset(double now)
     {
         var shot = LastCannonShot.Value;
@@ -83,6 +89,7 @@ public sealed partial class CartStations
         fuseLit = true;
         fuseRemaining = initial < 0f ? FuseDuration : initial;
         FuseDeadline.Value = NetworkManager.ServerTime.Time + fuseRemaining;
+        if (fuseRemaining > 0f) PlayCartCueRpc(GameSfx.FuseBurn);
     }
 
     private void AdvanceFuse()
@@ -115,7 +122,7 @@ public sealed partial class CartStations
         if (gunner != null && !gunner.Bot.Value && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(Owns(ShopPerk.ReleaseLever) ? ReleaseLeverTicks : PostShotTicks);
         else EndPostShot();
         float recoil = Owns(ShopPerk.RecoilMount) ? RecoilMountRate : 1f;
-        AddImpactEffects(recoilAnxietyIncrease * recoil, 0f, CannonShock * recoil, .25f * recoil, cannon: true);
+        AddImpactEffects(recoilAnxietyIncrease * recoil, 0f, CannonShock * recoil, .0625f * recoil, cannon: true);
         var rotation = Quaternion.Euler(0f, 0f, angleDegrees);
         GameObject shot = Instantiate(shellPrefab, opening, rotation);
         var shell = shot.GetComponent<Projectile>();

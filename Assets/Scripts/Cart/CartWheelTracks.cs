@@ -43,11 +43,10 @@ public sealed class CartWheelTracks : MonoBehaviour
         float unit = game.WorldPerWebUnit;
         float now = Time.time;
         bool rolling = game.Cart.Speed > .05f;
-        Bounds deck = game.DeckArtwork.bounds;
         for (int i = 0; i < WheelCount; i++)
         {
             var wheel = game.TireAt(i);
-            bool attached = wheel != game.DetachedTire || game.WheelRepairSteps > 0;
+            bool attached = game.IsWheelMounted(i);
             if (attached && disconnected[i])
             {
                 (active[i], interrupted[i]) = (interrupted[i], active[i]);
@@ -55,8 +54,7 @@ public sealed class CartWheelTracks : MonoBehaviour
             }
             disconnected[i] = !attached;
 
-            Bounds tire = wheel.bounds;
-            float ground = game.IsUpperWheel(wheel) ? Mathf.Max(tire.min.y, deck.max.y + 2f * unit) : tire.min.y;
+            float ground = wheel.bounds.min.y;
             Vector3 contact = transform.InverseTransformPoint(new Vector3(wheel.transform.position.x, ground, transform.position.z));
             active[i].Draw(contact, rolling && attached, now, unit);
             interrupted[i].Draw(contact, false, now, unit);

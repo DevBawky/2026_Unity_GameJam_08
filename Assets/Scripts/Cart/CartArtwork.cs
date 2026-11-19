@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 public sealed class CartArtwork : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer frontLight, rearLight, flag;
-    [SerializeField] private Sprite[] lightFrames, flagFrames;
+    [SerializeField] private Sprite[] lightFrames, lowerLightFrames, flagFrames;
     [SerializeField] private Transform barrel;
     [SerializeField] private SpriteRenderer fuse;
     [SerializeField] private SpriteRenderer[] muzzleSmoke;
@@ -38,9 +38,7 @@ public sealed class CartArtwork : MonoBehaviour
         var game = CartStations.Instance;
         if (!Application.isPlaying || !CartStations.Running || game == null || !game.IsSpawned) return;
         double now = game.NetworkManager.ServerTime.Time;
-        Vector2 pivot = game.CannonPivot.position;
-        renderOffset = game.CannonRecoilOffset(now)
-            + (Vector3)(CannonAim.Origin(pivot, game, now, game.CannonTick) - pivot);
+        renderOffset = game.CartArtworkOffset(now);
         if (renderOffset == Vector3.zero) return;
         Transform root = game.Cart.transform;
         recoilingRoots.Add(root);
@@ -66,7 +64,8 @@ public sealed class CartArtwork : MonoBehaviour
         double now = game.NetworkManager.ServerTime.Time;
         int tick = Mathf.Max(0, (int)System.Math.Floor(now * 30d));
         frontLight.sprite = lightFrames[(tick / 5) % lightFrames.Length];
-        rearLight.sprite = lightFrames[((tick + 8) / 5) % lightFrames.Length];
+        if (lowerLightFrames != null && lowerLightFrames.Length > 0)
+            rearLight.sprite = lowerLightFrames[((tick + 8) / 5) % lowerLightFrames.Length];
         flag.sprite = flagFrames[(tick / 5) % flagFrames.Length];
         for (int i = 0; i < shells.Length; i++) shells[i].enabled = i < game.DepositedShells;
         DrawCannon(game, now, tick);
@@ -146,10 +145,10 @@ public sealed class CartArtwork : MonoBehaviour
         {
             var wheel = game.TireAt(i);
             var dust = wheelDust[i];
-            bool broken = wheel == game.DetachedTire;
-            if (!broken || game.WheelRepairSteps > 0) wheel.sprite = frame;
+            bool mounted = game.IsWheelMounted(i);
+            if (mounted) wheel.sprite = frame;
             if (dust == null) continue;
-            dust.enabled = rolling && !broken && wheel != tire;
+            dust.enabled = rolling && mounted && wheel != tire;
             if (dust.enabled) dust.sprite = dustFrames[((phase + i) / 3) % dustFrames.Length];
         }
         wheelMount.enabled = tire != null;

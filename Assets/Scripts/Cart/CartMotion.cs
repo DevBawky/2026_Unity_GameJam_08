@@ -7,7 +7,8 @@ using Unity.Netcode;
 public sealed class CartMotion : NetworkBehaviour
 {
     [SerializeField] private float cruiseSpeed = 13f;
-    private const float RoadUnitsPerMeter = 8f;
+    // v14: one race meter moves the road by 4 * 8 web units.
+    private const float RoadScrollUnitsPerMeter = 32f;
 
     public NetworkVariable<CartMotionState> State = new();
     private float baseSpeed;
@@ -24,7 +25,7 @@ public sealed class CartMotion : NetworkBehaviour
     public float Lane { get; private set; }
     public float SpeedMultiplier { get; set; } = 1f;
     public float SpeedPerHorseLevel => CartRules.Active.horses.amount;
-    public Vector3 ScrollVelocity => Vector3.right * (Speed * RoadUnitsPerMeter * CartStations.Instance.WorldPerWebUnit);
+    public Vector3 ScrollVelocity => Vector3.right * (Speed * RoadScrollUnitsPerMeter * CartStations.Instance.WorldPerWebUnit);
     public float ScrollDistance { get; private set; }
 
     private void Awake()

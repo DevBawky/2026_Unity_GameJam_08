@@ -28,12 +28,6 @@ internal readonly struct WorkGuide
 
     internal bool HasProgress => !string.IsNullOrEmpty(Hint) && Progress >= 0f;
 
-    internal static WorkGuide ForNotice(NetworkPlayer player, CartStations game)
-    {
-        string result = player.Timing.VisibleResult;
-        return result == null ? For(player, game) : new WorkGuide(hint: result);
-    }
-
     internal static WorkGuide For(NetworkPlayer player, CartStations game)
     {
         var timing = player.Timing;
@@ -43,9 +37,9 @@ internal readonly struct WorkGuide
         {
             string name = royal == StationAction.Princess ? "공주" : "왕자";
             var care = game.AvailableCare(royal, player);
-            if (care == CareAction.Feed) return new WorkGuide(name + " 먹이기", name + "에게 간식을 주세요", Sand);
-            if (care == CareAction.Attend && !player.CanUseStairShelf()) return new WorkGuide("관심 주기", name + "에게 관심을 주세요", Pink);
-            if (care == CareAction.PickUp) return new WorkGuide("안아 올리기", name + "를 안아 올리세요", Pink);
+            if (care == CareAction.Feed) return new WorkGuide(name + " 먹이기", color: Sand);
+            if (care == CareAction.Attend && !player.CanUseStairShelf()) return new WorkGuide("관심 주기", color: Pink);
+            if (care == CareAction.PickUp) return new WorkGuide("안아 올리기", color: Pink);
         }
         if (player.CanUseStairShelf())
             return new WorkGuide(player.InCellar ? "선반에 올리기" : "선반에서 받기",
@@ -53,7 +47,7 @@ internal readonly struct WorkGuide
         if (player.Carrying.Value)
             return new WorkGuide(hint: player.InCellar ? "계단으로 1층에 올라가세요" : "5시 방향 파란 적재칸으로 옮기세요", color: Blue);
         if (player.Snack.Value)
-            return new WorkGuide(hint: player.InCellar ? "간식을 들고 1층으로 올라가세요" : "앉아 있는 아이에게 간식을 가져가세요", color: Sand);
+            return new WorkGuide(color: Sand);
 
         if (timing.IsCannonFocus)
         {
@@ -72,7 +66,7 @@ internal readonly struct WorkGuide
                 case StationAction.Driver: return Driving(game);
                 case StationAction.Kitchen:
                     return new WorkGuide("길게 눌러 만들기", "행동을 길게 눌러 간식을 만드세요", Sand,
-                        progress: player.CookProgress.Value / CartRules.Active.cookSeconds);
+                        progress: timing.CookingProgressForHud(player.CookProgress.Value / CartRules.Active.cookSeconds));
                 case StationAction.WheelRack: return new WorkGuide("예비 바퀴 들기", "예비 바퀴를 드세요", Sand);
                 case StationAction.CannonCleaning:
                     return new WorkGuide("청소하기", "포신을 청소하세요", Orange,
@@ -105,7 +99,6 @@ internal readonly struct WorkGuide
     private static WorkGuide CarryingRoyal(NetworkPlayer player, CartStations game, RiderState child)
     {
         bool prince = game.Prince.Value.Pose == RiderPose.Carried && game.Prince.Value.CarrierSlot == player.Slot.Value;
-        string name = prince ? "왕자" : "공주";
         if (child.Upset)
         {
             float soothe = child.Soothing / game.SootheTarget;
@@ -115,8 +108,8 @@ internal readonly struct WorkGuide
         }
         var seat = prince ? StationAction.RoyalFamily : StationAction.Princess;
         if (player.Timing.NearbyRoyal == seat && !player.InCellar)
-            return new WorkGuide("앉히기", name + "를 좌석에 앉히세요", Pink);
-        return new WorkGuide(hint: player.InCellar ? "계단으로 1층에 올라가세요" : name + "를 좌석으로 데려가세요", color: Pink);
+            return new WorkGuide("앉히기", color: Pink);
+        return new WorkGuide(color: Pink);
     }
 
     private static WorkGuide Driving(CartStations game)
