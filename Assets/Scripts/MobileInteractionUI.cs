@@ -9,6 +9,7 @@ public sealed class MobileInteractionUI : MonoBehaviour
     [SerializeField] private MobileJoystick aimJoystick;
     [SerializeField] private UnityEngine.UI.Button actionControl;
     [SerializeField] private TMPro.TMP_Text actionLabel;
+    [SerializeField] private GameObject cannonCleaningArt;
 
     public void ExitStation() => NetworkPlayer.LocalPlayer?.Timing.ExitStation();
 
@@ -37,20 +38,14 @@ public sealed class MobileInteractionUI : MonoBehaviour
 
         bool canInteract = timing.CanInteract;
         var guide = WorkGuide.For(local, CartStations.Instance);
-        if (actionControl != null)
-        {
-            actionControl.interactable = canInteract;
-            var colors = actionControl.colors;
-            if (guide.Color.a > 0f && colors.normalColor != guide.Color)
-            {
-                colors.normalColor = colors.selectedColor = guide.Color;
-                actionControl.colors = colors;
-            }
-        }
+        if (actionControl != null) actionControl.interactable = canInteract;
+        bool cleaning = timing.HasStationAccess && timing.CurrentAction == StationAction.CannonCleaning;
+        if (cannonCleaningArt != null && cannonCleaningArt.activeSelf != cleaning)
+            cannonCleaningArt.SetActive(cleaning);
         if (actionLabel != null)
         {
             actionLabel.text = guide.Action ?? LocalizationTable.T("행동");
-            actionLabel.color = canInteract ? new Color32(64, 45, 37, 255) : new Color32(245, 240, 224, 255);
+            actionLabel.color = canInteract && guide.Color.a > 0f ? guide.Color : new Color32(245, 240, 224, 255);
         }
     }
 }

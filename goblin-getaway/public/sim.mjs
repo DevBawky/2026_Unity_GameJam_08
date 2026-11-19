@@ -2,10 +2,13 @@ import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES,WAVE_ENE
 import {ROAD_OBSTACLE_TYPES,obstacleY,roadObstacleProfile,roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
 import {finishCare,maxDurability,newCare,pruneVotes,recordCare,recordFeeding,recordReseat,UPGRADE_CARDS} from './intermission.mjs?v=wheel-axle83';
 import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,draftHorseFrameOffset,draftHorseOrigin} from './horse-targets.mjs?v=cavalry-hooves169';
+import {OPERATION_INTRO_TICKS} from './operation-intro.mjs';
 export {obstacleY} from './road-obstacles.mjs?v=loose-wheels34';
 
 export const HZ = 30;
 export const STEP = 1 / HZ;
+export const operationElapsedTicks=s=>s.tick+(s.operationIntroTick??0);
+export const isOperationIntroActive=s=>s.operationIntroTick!=null&&s.operationIntroTick<OPERATION_INTRO_TICKS;
 export const CAMERA_TRANSITION_SECONDS=.5;
 export const LANES = [82, 182, 282];
 const [CART_TOP, CART_CENTER, CART_BOTTOM] = LANES;
@@ -68,6 +71,7 @@ const CART_HULL={left:340,right:715,halfHeight:100};
 const CATAPULT_TARGET_X=718, CATAPULT_FORWARD_X=180;
 const ROAD_UNITS_PER_METER=4;
 const ROAD_SCROLL_UNITS_PER_METER=ROAD_UNITS_PER_METER*8;
+export const draftGaitDistance=s=>s.operationIntroTick==null?s.distance:s.road/ROAD_SCROLL_UNITS_PER_METER;
 const ROAD_FIRST_WARNING_METERS=42, ROAD_WARNING_TICKS=4*HZ, ROAD_OBSTACLE_ENTRY_X=ROAD_CAMERA_MIN_X-100;
 const ROAD_OBSTACLE_HIT_START=287, ROAD_OBSTACLE_HIT_END=344, ROAD_STRIKE_MARGIN=HZ;
 const WALK_SPEED=165, CARRY_SPEED=50, WHEEL_CARRY_SPEED=110, WAGON_STEER_SPEED=140;
@@ -91,6 +95,8 @@ const CAVALRY_BODY={
 };
 export const WAVE_ENTRY_X=1280;
 const WAVE_SPACING=56;
+const PURSUIT_REINFORCEMENT_INTERVAL=12*HZ, PURSUIT_REINFORCEMENT_LIMIT=12;
+const PURSUIT_REINFORCEMENTS=[{enemy:'cavalry',count:3},{enemy:'scout',count:2},{enemy:'guard',count:1}];
 const TEST_ENEMY_LIMIT=16*WAVE_ENEMY_MULTIPLIER, TEST_ENEMY_ENGAGEMENT=14*HZ;
 const WHIP_COOLDOWN=3, HORSE_RAGE_PER_WHIP=1/8, HORSE_RAGE_DECAY=.09;
 const HORSE_RAGE_REST_TICKS=HZ, HORSE_BOOST_TICKS=5*HZ, HORSE_SLOW_TICKS=12*HZ;
@@ -190,10 +196,11 @@ function recordWheelTracks(s){
 function recordHoofprints(s,previousDistance,previousY,roadTravel){
  const prints=s.hoofprints??=[];
  const {width,height,frames,framesPerMeter,offsetX,offsetY}=DRAFT_HORSE_WALK;
+ const distance=draftGaitDistance(s);
  const first=Math.floor(previousDistance*framesPerMeter)+1;
- const last=Math.floor(s.distance*framesPerMeter);
+ const last=Math.floor(distance*framesPerMeter);
  for(let gait=first;gait<=last;gait++){
-   const progress=(gait/framesPerMeter-previousDistance)/(s.distance-previousDistance);
+   const progress=(gait/framesPerMeter-previousDistance)/(distance-previousDistance);
    const road=Math.round(s.road-roadTravel*(1-progress));
    const wagonY=previousY+(s.y-previousY)*progress;
    for(const side of Object.keys(DRAFT_HORSES)){
@@ -431,7 +438,7 @@ export function cannonStation(s,index=0){
 }
 export const canLoad=(s,index=0)=>cannonStation(s,index)==='loader'&&s.ammo.rack>0;
 export function addRackShell(s){
- if(s.mode!=='run')return false;
+ if(s.mode!=='run'||isOperationIntroActive(s))return false;
  s.ammo.rack++;
  return true;
 }
@@ -491,8 +498,9 @@ function advanceCannonWork(s,p,index){
  enterStation(s,p,role,index);
 }
 export function leaveStation(s,id,expectedRole,expectedCannonIndex){
+ if(s.mode!=='run'||isOperationIntroActive(s))return false;
  const p=s.players[id],role=occupiedStation(p,s);
- if(s.mode!=='run'||!role)return false;
+ if(!role)return false;
  if(expectedRole&&role!==expectedRole&&!(isCannonRole(expectedRole)&&isCannonRole(role)))return false;
  const index=cannonIndexFor(s,p)??0;
  if(expectedCannonIndex!==undefined&&(!isCannonRole(role)||index!==expectedCannonIndex))return false;
@@ -616,7 +624,7 @@ export function horseRageStatus(s){
  return {phase:'normal',progress:rage?.value??0,seconds:0};
 }
 export function setInput(s,id,input){
- const p=s.players?.[id];if(!p||!input||s.mode!=='run')return;
+ const p=s.players?.[id];if(!p||!input||s.mode!=='run'||isOperationIntroActive(s))return;
  if(!['mx','my','ax','ay'].every(k=>Number.isFinite(input[k])))return;
  const role=occupiedStation(p,s),move=Math.hypot(input.mx,input.my),aim=Math.hypot(input.ax,input.ay);
  p.until=s.tick+39;
@@ -646,7 +654,8 @@ export function setInput(s,id,input){
  if(move>.12){p.ax=input.mx/move;p.ay=input.my/move;}
 }
 export function operate(s,id,atTick=s.tick,taps=1){
- const p=s.players[id],role=stationAt(p,s);if(!role||s.mode!=='run')return false;
+ if(s.mode!=='run'||isOperationIntroActive(s))return false;
+ const p=s.players[id],role=stationAt(p,s);if(!role)return false;
  const index=isCannonRole(role)?cannonIndexFor(s,p):0;
  const cannon=cannonState(s,index);
  if(role==='carry'||role==='royal-carry'||role==='royal-soothe'||role==='food-carry'||role==='cook'||role==='wheel-carry'||role==='wheel-missing')return false;
@@ -1286,15 +1295,16 @@ export function initial(stage=1,upgrades=DEFAULT_TRAITS,seed=718,chapter=1){
   const goal=stageSpec(location.chapter,location.stage).goal;
   const traits={...DEFAULT_TRAITS,...upgrades};
   const hp=maxDurability({traits}),wheel=wheelState();
-  return {mode:'ready',...location,wave:0,traits,seed,tick:0,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,wagonMoveY:0,wagonMoveSince:0,wagonIdleY:CART_CENTER,wagonIdleSince:0,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
+  return {mode:'ready',...location,wave:0,traits,seed,tick:0,operationIntroTick:null,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,wagonMoveY:0,wagonMoveSince:0,wagonIdleY:CART_CENTER,wagonIdleSince:0,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
     obstacles:[],roadWarning:null,wheelTracks:[],looseWheelTracks:[],hoofprints:[],cavalryHoofprints:[],sfxSequence:0,sfxEvents:[],
     enemies:[],shots:[],particles:[],cannonImpacts:[],cannonCombo:{count:0,tick:0},
     nextRock:ROAD_FIRST_WARNING_METERS,catapult:null,catapults:[],catapultPattern:0,nextCatapult:CATAPULT_FIRST,driveCd:0,gunCd:0,driveMsg:'',gunMsg:'',driveUntil:0,gunUntil:0,event:'',eventUntil:0,serial:0,road:0,players:crew(),humans:1,horses:{right:0,left:0},horseRage:freshHorseRage(),ammo:supplies(),royals:passengers(),gunAngle:0,wheel,looseWheels:[],fixCd:0,fixMsg:'',fixUntil:0,
     upperCannon:newCannon(),affection:0,care:newCare(),intermission:null,stageEntry:{hp,wheel:{...wheel}}};
 }
-export function begin(s,{testMode=false}={}){
+export function begin(s,{testMode=false,operationIntro=false}={}){
  if(s.mode!=='ready')return;
  if(testMode)s.testMode=true;
+ if(operationIntro&&!s.testMode)s.operationIntroTick=0;
  s.mode='run';
 }
 function beginStage(s,chapter,stage,traits,affection=0,entry=null){
@@ -1682,6 +1692,38 @@ function waveLoopTicks(waves){
   const gap=waves.length>1?Math.max(1,last-waves.at(-2).at):12;
   return (last-waves[0].at+gap)*HZ;
 }
+function spawnPursuitGroup(s,groups,wave,limit=Infinity){
+  const assigned=PURSUIT_SLOTS.map(()=>0),furthest=PURSUIT_SLOTS.map(()=>-Infinity);
+  let available=limit;
+  for(const enemy of s.enemies){
+    if(!activeEnemy(enemy))continue;
+    const slot=pursuitSlot(enemy);
+    assigned[slot]++;
+    furthest[slot]=Math.max(furthest[slot],enemy.x);
+    available--;
+  }
+  if(available<=0)return;
+  queueSfx(s,'pursuit-wave',undefined,{pan:.4});
+  let offset=0;
+  for(const {enemy,count} of groups){
+    const {kind}=ENEMY_PROFILES[enemy];
+    const arrivals=Math.min(count,available);
+    for(let i=0;i<arrivals;i++){
+      let attackSlot=rand(s)<.5?0:1;
+      for(let slot=0;slot<PURSUIT_SLOTS.length;slot++){
+        if(assigned[slot]<assigned[attackSlot])attackSlot=slot;
+      }
+      const y=s.y+PURSUIT_SLOTS[attackSlot].y+rand(s)*24-12;
+      const x=Math.max(WAVE_ENTRY_X+offset,furthest[attackSlot]+PURSUIT_GAP);
+      s.enemies.push({id:s.nextId++,x,y,kind,profile:enemy,attackSlot,sfxWave:wave});
+      assigned[attackSlot]++;
+      furthest[attackSlot]=x;
+      offset+=WAVE_SPACING;
+    }
+    available-=arrivals;
+    if(available<=0)break;
+  }
+}
 function advanceWaves(s){
   const {waves,catapultFastFromWave}=stageSpec(s.chapter,s.stage);
   if(!waves.length)return;
@@ -1692,7 +1734,6 @@ function advanceWaves(s){
     if(s.tick<startsAt)break;
     s.wave++;
     if(s.wave===catapultFastFromWave)shortenCatapultWait(s);
-    queueSfx(s,'pursuit-wave',undefined,{pan:.4});
     if(s.testMode){
       const incoming=groups.reduce((total,{count})=>total+count,0);
       let excess=s.enemies.length+incoming-TEST_ENEMY_LIMIT;
@@ -1702,30 +1743,14 @@ function advanceWaves(s){
         return false;
       });
     }
-    const assigned=PURSUIT_SLOTS.map(()=>0),furthest=PURSUIT_SLOTS.map(()=>-Infinity);
-    for(const enemy of s.enemies){
-      if(!activeEnemy(enemy))continue;
-      const slot=pursuitSlot(enemy);
-      assigned[slot]++;
-      furthest[slot]=Math.max(furthest[slot],enemy.x);
-    }
-    let offset=0;
-    for(const {enemy,count} of groups){
-      const {kind}=ENEMY_PROFILES[enemy];
-      for(let i=0;i<count;i++){
-        let attackSlot=rand(s)<.5?0:1;
-        for(let slot=0;slot<PURSUIT_SLOTS.length;slot++){
-          if(assigned[slot]<assigned[attackSlot])attackSlot=slot;
-        }
-        const y=s.y+PURSUIT_SLOTS[attackSlot].y+rand(s)*24-12;
-        const x=Math.max(WAVE_ENTRY_X+offset,furthest[attackSlot]+PURSUIT_GAP);
-        s.enemies.push({id:s.nextId++,x,y,kind,profile:enemy,attackSlot,sfxWave:s.wave});
-        assigned[attackSlot]++;
-        furthest[attackSlot]=x;
-        offset+=WAVE_SPACING;
-      }
-    }
+    spawnPursuitGroup(s,groups,s.wave);
   }
+  if(s.testMode||s.wave<waves.length||s.hp<=0||s.distance>=s.goal-1e-8)return;
+  // Reinforcements reuse the saved stage clock so a resumed match follows the same schedule.
+  const elapsed=s.tick-waves.at(-1).at*HZ;
+  if(elapsed<PURSUIT_REINFORCEMENT_INTERVAL||elapsed%PURSUIT_REINFORCEMENT_INTERVAL!==0)return;
+  const pursuitWave=waves.length+elapsed/PURSUIT_REINFORCEMENT_INTERVAL;
+  spawnPursuitGroup(s,PURSUIT_REINFORCEMENTS,pursuitWave,PURSUIT_REINFORCEMENT_LIMIT);
 }
 function advancePursuers(s,base,roadTravel){
   if(!s.enemies.length)return;
@@ -1876,6 +1901,11 @@ function idleWagonY(s){
 }
 export function step(s){
   if(s.mode!=='run')return;
+  if(isOperationIntroActive(s)){
+    s.operationIntroTick++;
+    s.road+=s.speed*STEP*ROAD_SCROLL_UNITS_PER_METER;
+    return;
+  }
   s.tick++;
   for(const index of CANNON_IDS){
     const cannon=cannonState(s,index),afterShot=cannon.cannonExit;
@@ -1936,7 +1966,7 @@ export function step(s){
   const driverId=PLAYER_IDS.find(id=>occupiedStation(s.players[id],s)==='driver');
   const driver=s.players[driverId];
   const steer=driver?.until>=s.tick?(driver.my??0)*WAGON_STEER_SPEED:0;
-  const previousDistance=s.distance,previousY=s.y;
+  const previousDistance=draftGaitDistance(s),previousY=s.y;
   s.distance+=travel;s.road+=roadTravel;
   if(steer){
     s.y=clamp(s.y+steer*STEP,CART_TOP,CART_BOTTOM);

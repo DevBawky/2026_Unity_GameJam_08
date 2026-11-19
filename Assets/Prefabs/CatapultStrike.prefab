@@ -82,7 +82,7 @@ MonoBehaviour:
   rock: {fileID: 2108366644150544371}
   shockwave: {fileID: 3906928094907229885}
   approachShadow: {fileID: -4603885896875047308, guid: 49be3326bcc3a274aae8d5ff15992ea2, type: 3}
-  dangerShadow: {fileID: 21300000, guid: aec51735082cbad0ad428802cf00fa14, type: 3}
+  dangerShadow: {fileID: 21300000, guid: 5ff930fdf6fc4ba1816e6d4b842a3222, type: 3}
   impactSequence: {fileID: 11400000, guid: 5e0c7b31ee9f5a54b934d71fdb995ca7, type: 2}
   firstDelay: 6
   baseInterval: 13
@@ -221,7 +221,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2.4169185, y: 2.4169185, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6100263745687983838}
@@ -275,7 +275,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 20
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 7d3af80c9a52f7b6b4f1475c99235fad, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 584776419e53421089d5bddc991410c7, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -312,7 +312,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2.4169185, y: 2.4169185, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6100263745687983838}
@@ -366,7 +366,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 19
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2091572604, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 4ec84e3bede542608b845b64bdfdb492, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

@@ -84,8 +84,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
         hud.hint.fontSizeMin = 10f / scale;
         hud.hint.fontSizeMax = font / scale;
         hud.progressName.fontSize = hud.percent.fontSize = subFont / scale;
-        hud.hint.color = ready ? new Color32(25, 41, 31, 255) : new Color32(255, 247, 239, 255);
-        hud.background.color = ready ? new Color32(189, 242, 153, 255) : new Color32(41, 40, 49, 238);
+        hud.hint.color = ready ? new Color32(208, 255, 189, 255) : new Color32(255, 247, 239, 255);
+        hud.background.color = ready ? new Color32(212, 255, 193, 255) : new Color32(255, 255, 255, 240);
 
         var pane = view.pixelRect;
         var safe = Screen.safeArea;
@@ -115,7 +115,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
         {
             float value = Mathf.Clamp01(guide.Progress);
             hud.fill.fillAmount = value;
-            hud.fill.color = hud.percent.color = hud.progressName.color = guide.Color;
+            hud.progressName.color = hud.percent.color = guide.Color;
             hud.percent.SetText("{0:0}%", Mathf.Floor(value * 100f));
             hud.progressName.text = guide.ProgressName ?? "";
             float rowWidth = size.x - 20f;

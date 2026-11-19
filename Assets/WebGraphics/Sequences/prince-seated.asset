@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: prince-seated
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: 21300000, guid: 5242e5246fdc47b6b9ec675a802e9f75, type: 3}
+  - {fileID: 21300000, guid: 21aae709f79a4da78730dddf0237d10b, type: 3}
+  - {fileID: 21300000, guid: 992c926327284c6e984fdcc8927c8ae8, type: 3}
+  - {fileID: 21300000, guid: 15c11fd5cf954fa493acefc4ad2b70c7, type: 3}
+  frameStarts:
+  - 0
+  - 0.25
+  - 0.5
+  - 0.75
+  duration: 1

@@ -5,8 +5,8 @@ using UnityEngine.UI;
 // 컨테이너는 targetGraphic(목표 호)과 pinTransform(핀)을 함께 갱신한다.
 public sealed class CircularTimingGraphic : MonoBehaviour
 {
-    private const float TrackRadiusRatio = 0.38f;
-    private const float PinRadiusRatio = 0.915f;
+    // The painted ring spans 88% of the parent and its centerline is 17.5 of 40 source pixels from the center.
+    private const float TrackRadiusRatio = .88f * (17.5f / 40f);
 
     [SerializeField] private CircularTimingGraphic targetGraphic;
     [SerializeField] private RectTransform pinTransform;
@@ -28,7 +28,7 @@ public sealed class CircularTimingGraphic : MonoBehaviour
             rotatingNeedle.localRotation = Quaternion.Euler(0f, 0f, pin - 90f);
         else if (pinTransform != null)
         {
-            float radius = Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) * TrackRadiusRatio * PinRadiusRatio;
+            float radius = Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) * TrackRadiusRatio;
             float radians = pin * Mathf.Deg2Rad;
             pinTransform.anchoredPosition = rectTransform.rect.center + new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * radius;
         }

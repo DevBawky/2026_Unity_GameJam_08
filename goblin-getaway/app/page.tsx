@@ -36,9 +36,14 @@ function TimingPrompt({slot}:{slot:string}){
  const id='timing-'+slot;
  return <section className="timing-prompt" id={id} role="group" aria-labelledby={id+'-label'} hidden>
    <svg className="timing-ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-    <circle className="timing-track" cx="50" cy="50" r="43" fill="none"/>
-    <circle className="timing-band" cx="50" cy="50" r="43" fill="none" pathLength="100" strokeDasharray="0 100"/>
-    <g className="timing-needle"><path d="M50 1 56 8 50 18 44 8Z" strokeLinejoin="round"/></g>
+    <defs>
+     <mask id={id+'-target-mask'} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100" style={{maskType:'alpha'}}>
+      <circle className="timing-band" cx="50" cy="50" r="43" fill="none" pathLength="100" strokeDasharray="0 100"/>
+     </mask>
+    </defs>
+    <image href="/pixel-art/ui/ui_interactive.png" x="2.5" y="2.5" width="95" height="95"/>
+    <image className="timing-target-art" href="/pixel-art/ui/ui_interactive_bar.png" x="2.5" y="2.5" width="95" height="95" mask={'url(#'+id+'-target-mask)'}/>
+    <g className="timing-needle"><image href="/pixel-art/ui/ui_interactive_node.png" x="43.5" y="0" width="13" height="17"/></g>
    </svg>
    <strong className="timing-label hud-bubble" id={id+'-label'}/>
    <small className="timing-feedback" hidden/>
@@ -148,6 +153,14 @@ export default function Home(){return <>
    {Array.from({length:6},(_,pane)=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
   </div>
   <div className="controls" role="group" aria-label="가상 조이스틱과 행동 버튼"><PlayerControls id="p1"/><PlayerControls id="p2"/></div>
+  <div className="operation-intro" id="operation-intro" aria-hidden="true" hidden>
+   <Image className="operation-intro-portrait" src="/pixel-art/demon-king.png" width={1536} height={1024} alt="" loading="eager" unoptimized/>
+   <div className="operation-intro-box">
+    <strong className="operation-intro-speaker">마왕</strong>
+    <p id="operation-intro-line"/>
+   </div>
+  </div>
+  <p className="operation-intro-announcement" id="operation-intro-announcement" role="status" aria-live="polite" aria-atomic="true"/>
  </section>
 </main>
 <dialog id="dialog" aria-label="게임 메뉴"><div className="dialog-head">

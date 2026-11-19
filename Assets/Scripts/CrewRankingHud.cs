@@ -4,8 +4,12 @@ using TMPro;
 using Unity.Collections;
 using UnityEngine;
 
+[DefaultExecutionOrder(55)]
 public sealed class CrewRankingHud : MonoBehaviour
 {
+    private const float LeaderScale = 1.5f;
+    private static readonly string[] Ordinals = { "1st", "2nd", "3rd", "4th" };
+
     [Serializable]
     private sealed class Row
     {
@@ -14,6 +18,7 @@ public sealed class CrewRankingHud : MonoBehaviour
         public TMP_Text rankLabel;
         public TMP_Text nicknameLabel;
         public TMP_Text scoreLabel;
+        public GameObject crown;
 
         [NonSerialized] public bool Visible;
         [NonSerialized] public bool Local;
@@ -28,19 +33,27 @@ public sealed class CrewRankingHud : MonoBehaviour
     }
 
     [SerializeField] private Row[] rows;
-    [SerializeField, Min(1f)] private float rowSpacing = 58f;
+    [SerializeField] private RectTransform campaign;
+    [SerializeField] private Sprite rankCard, leaderCard;
+    [SerializeField, Min(0f)] private float cardGap = 7f;
     [SerializeField, Min(0.01f)] private float moveDuration = 0.28f;
-    [SerializeField, Min(0f)] private float passingOffset = 24f;
-    [SerializeField] private Color localRowColor = new(0.25f, 0.32f, 0.23f, 0.97f);
+    [SerializeField, Min(0f)] private float passingOffset = 13f;
+    [SerializeField] private Color localRowColor = new(.87f, 1f, .84f, 1f);
 
     private readonly List<Row> ranked = new(4);
     private bool[] occupied;
     private NetworkPlayer[] players;
+    private RectTransform layout;
+    private Canvas canvas;
+    private Vector2 cardSize;
 
     private void Awake()
     {
         var gameScene = FindFirstObjectByType<MultiplayerGameScene>();
         if (gameScene != null) players = gameScene.Players;
+        layout = (RectTransform)transform;
+        canvas = GetComponentInParent<Canvas>();
+        cardSize = rows.Length > 0 ? rows[0].panel.sizeDelta : Vector2.zero;
         occupied = new bool[rows.Length];
         for (int slot = 0; slot < rows.Length; slot++)
         {
@@ -51,7 +64,7 @@ public sealed class CrewRankingHud : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void LateUpdate()
     {
         if (players == null) return;
 
@@ -59,7 +72,7 @@ public sealed class CrewRankingHud : MonoBehaviour
         Array.Clear(occupied, 0, occupied.Length);
         foreach (var player in players)
         {
-            if (player == null || !player.IsSpawned || !player.Assigned.Value || player.Bot.Value) continue;
+            if (player == null || !player.IsSpawned || !player.Assigned.Value) continue;
             int slot = player.Slot.Value;
             if (slot < 0 || slot >= rows.Length || occupied[slot]) continue;
 
@@ -86,9 +99,29 @@ public sealed class CrewRankingHud : MonoBehaviour
         }
 
         ranked.Sort(CompareRows);
+        FitLayout();
         float now = Time.unscaledTime;
         for (int rank = 0; rank < ranked.Count; rank++)
             PlaceRow(ranked[rank], rank, now);
+    }
+
+    private void FitLayout()
+    {
+        if (ranked.Count == 0 || canvas == null || Screen.width <= 0) return;
+        Rect safe = Screen.safeArea;
+        float scale = canvas.scaleFactor;
+        float left = safe.xMin + layout.anchoredPosition.x * scale;
+        float right = safe.xMax;
+        if (campaign != null && Screen.width > 420)
+        {
+            var campaignLeft = campaign.TransformPoint(new Vector3(campaign.rect.xMin, 0f));
+            right = Mathf.Min(right, RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, campaignLeft).x);
+        }
+        float width = (cardSize.x * (LeaderScale + ranked.Count - 1) + cardGap * (ranked.Count - 1)) * scale;
+        float fit = Mathf.Clamp01((right - left - 8f) / Mathf.Max(width, 1f));
+        if (Screen.width <= 420)
+            fit = Mathf.Min(fit, 85f / Mathf.Max(cardSize.y * LeaderScale * scale, 1f));
+        layout.localScale = Vector3.one * fit;
     }
 
     private static int CompareRows(Row first, Row second)
@@ -99,14 +132,15 @@ public sealed class CrewRankingHud : MonoBehaviour
 
     private void PlaceRow(Row row, int rank, float now)
     {
-        var target = new Vector2(0f, -rank * rowSpacing);
+        float x = rank == 0 ? 0f : (LeaderScale + rank - 1) * cardSize.x + rank * cardGap;
+        var target = new Vector2(x, 0f);
         if (!row.Visible)
         {
             row.MoveOrigin = target;
             row.MoveStarted = now - moveDuration;
             row.MovingUp = false;
             row.panel.anchoredPosition = target;
-            row.rankLabel.text = (rank + 1).ToString();
+            ShowRank(row, rank);
             row.panel.gameObject.SetActive(true);
             row.Rank = rank;
             row.Visible = true;
@@ -118,14 +152,22 @@ public sealed class CrewRankingHud : MonoBehaviour
             row.MoveOrigin = row.panel.anchoredPosition;
             row.MoveStarted = now;
             row.MovingUp = rank < row.Rank;
-            row.rankLabel.text = (rank + 1).ToString();
+            ShowRank(row, rank);
             row.Rank = rank;
         }
 
         float progress = Mathf.Clamp01((now - row.MoveStarted) / moveDuration);
         var position = Vector2.LerpUnclamped(row.MoveOrigin, target, Mathf.SmoothStep(0f, 1f, progress));
-        // Give the overtaking row room to pass while the displaced rows move straight down.
-        if (row.MovingUp && progress < 1f) position.x += Mathf.Sin(progress * Mathf.PI) * passingOffset;
+        if (row.MovingUp && progress < 1f) position.y -= Mathf.Sin(progress * Mathf.PI) * passingOffset;
         if (row.panel.anchoredPosition != position) row.panel.anchoredPosition = position;
+    }
+
+    private void ShowRank(Row row, int rank)
+    {
+        bool leading = rank == 0;
+        row.rankLabel.text = rank < Ordinals.Length ? Ordinals[rank] : (rank + 1).ToString();
+        row.panel.localScale = Vector3.one * (leading ? LeaderScale : 1f);
+        row.background.sprite = leading ? leaderCard : rankCard;
+        row.crown.SetActive(leading);
     }
 }

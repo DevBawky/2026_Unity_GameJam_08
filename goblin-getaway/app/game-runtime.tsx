@@ -5,7 +5,7 @@ export default function GameRuntime(){
    if(document.querySelector('script[data-game-runtime]'))return;
    const script=document.createElement('script');
    script.type='module';
-   script.src='/game.mjs?v=bot-ammo176';
+   script.src='/game.mjs?v=v15-jinsoo-art';
    script.dataset.gameRuntime='true';
    document.body.appendChild(script);
  },[]);

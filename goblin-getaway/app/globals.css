@@ -193,6 +193,64 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}button:disabled{cu
 @media(max-width:300px){
  .play-tools:has(.test-start:not([hidden])) #start[data-mode=ready] svg{display:none}
 }
+.operation-intro {
+  position:absolute;
+  z-index:5;
+  inset-inline-start:var(--safe-l);
+  inset-block-end:var(--safe-b);
+  width:min(960px,calc(100% - var(--safe-l) - var(--safe-r)));
+  display:grid;
+  grid-template-columns:clamp(100px,19vw,218px) minmax(0,1fr);
+  align-items:end;
+  gap:clamp(6px,1.4vw,14px);
+  pointer-events:none;
+}
+.operation-intro-portrait {
+  display:block;
+  width:100%;
+  height:auto;
+  border:3px solid #ad855f;
+  box-shadow:0 0 0 2px #21172b, 3px 4px 0 #1c112cd9;
+  image-rendering:pixelated;
+}
+.operation-intro-box {
+  padding:clamp(10px,1.5vw,18px) clamp(12px,2vw,22px);
+  border:3px solid #ad855f;
+  background:#221a35;
+  box-shadow:inset 0 0 0 2px #513e5b, 0 0 0 2px #21172b, 3px 4px 0 #1c112cd9;
+  color:#fff4df;
+}
+.operation-intro-speaker {
+  display:block;
+  margin-block-end:.3em;
+  color:#ffd286;
+  font-size:clamp(15px,2.3vmin,22px);
+}
+.operation-intro-box p {
+  min-block-size:2.9em;
+  margin:0;
+  font-size:clamp(16px,2.8vmin,23px);
+  line-height:1.45;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
+}
+.operation-intro-announcement {
+  position:absolute;
+  width:1px;
+  height:1px;
+  margin:0;
+  overflow:hidden;
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+@media (max-width:660px) {
+  .operation-intro-box p { min-block-size:4.35em; }
+}
+@media (max-width:460px) and (orientation:portrait) {
+  .operation-intro { grid-template-columns:minmax(0,1fr); }
+  .operation-intro-portrait { width:clamp(100px,29vw,145px); }
+}
+.monitor:has(.operation-intro:not([hidden])) .controls { visibility:hidden; }
 .controls{position:absolute;z-index:3;left:var(--safe-l);right:var(--safe-r);bottom:var(--safe-b);display:flex;pointer-events:none;user-select:none;-webkit-user-select:none}
 .pad-pair{min-width:0;flex:1;display:flex;align-items:end;justify-content:space-between;position:relative;padding:0 var(--control-inset)}
 .pad-wrap{position:relative}.pad-wrap>span{position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);white-space:nowrap;font-size:clamp(11px,1.55vmin,17px);color:#fff9e9;text-shadow:0 1px 3px #293c2a,1px 0 2px #33432e;font-weight:750}
@@ -461,3 +519,98 @@ dialog.intermission{width:min(630px,calc(100% - 28px))}
 .card-vote:not(:disabled):hover{background:#e4d2eb}.card-vote[aria-pressed="true"]{background:#70518b;color:#fff;border-color:#523668}
 .departure-note{margin-top:12px}
 @media(max-width:460px){.upgrade-grid{grid-template-columns:1fr}.care-summary li{font-size:11px}}
+
+/* Pixel UI artwork for the game controls and HUD. */
+.play-tools #settings-button,
+.play-tools #start:is([data-mode=run],[data-mode=paused]),
+.play-tools #start[data-mode=ready],
+.stick,
+.station-action,
+.station-exit,
+.emote-toggle,
+.emote-menu,
+.emote-option,
+.emote-close,
+.dialog-head #close-dialog{
+  border-color:transparent;background-color:transparent;background-repeat:no-repeat;
+  background-position:center;background-size:100% 100%;box-shadow:none;image-rendering:pixelated;
+}
+.play-tools #settings-button,
+.play-tools #start:is([data-mode=run],[data-mode=paused]){
+  border:7px solid transparent;border-radius:0;
+  border-image:url('/pixel-art/ui/ui_setting.png') 6 stretch;
+  background:#507249;background-clip:padding-box;color:#fff8e4;
+}
+.play-tools #settings-button svg,
+.play-tools #start:is([data-mode=run],[data-mode=paused]) svg{
+  display:block;width:var(--settings-icon-size);height:var(--settings-icon-size);flex:none;
+}
+.play-tools #start[data-mode=ready]{background-image:url('/pixel-art/ui/ui_gamestart.png');color:#fff5e4;padding-top:.18em}
+.play-tools .test-start,.campaign-hud,.hud-bubble,.royal-watch li{
+  border-color:transparent;border-image:url('/pixel-art/ui/ui_popup.png') 10 fill stretch;
+  border-image-width:7px;background:transparent;color:#fff7ef;image-rendering:pixelated;
+}
+.dialog-head #close-dialog{background-image:url('/pixel-art/ui/ui_close.png')}
+.dialog-head #close-dialog svg{display:none}
+.crew-ranking-row,.crew-ranking-row[data-local=true]{
+  border-color:transparent;border-radius:0;background:transparent;
+  border-image:url('/pixel-art/ui/ui_score.png') 7 fill stretch;border-image-width:9px;
+  box-shadow:none;image-rendering:pixelated;
+}
+.crew-ranking-row[data-rank='1']{border-image-source:url('/pixel-art/ui/ui_scorebest.png')}
+.crew-ranking-row[data-rank='1']::after{
+  content:'';position:absolute;top:0;left:50%;width:clamp(18px,3vmin,28px);aspect-ratio:11/8;
+  transform:translate(-50%,-24%);background:url('/pixel-art/ui/ui_crown.png') center / contain no-repeat;
+  pointer-events:none;
+}
+.crew-ranking-row[data-local=true] .crew-ranking-name{color:#d5ffbf}
+.stick{background-image:url('/pixel-art/ui/ui_button_normal.png')}
+.stick[data-mode=move] i{
+  border:0;background:transparent url('/pixel-art/ui/ui_button_move.png') center / contain no-repeat;
+  image-rendering:pixelated;
+}
+.stick[data-mode=move] .move-glyph{display:none}
+.station-action,.station-action:disabled,.station-action[data-ready=true]:not(:disabled){
+  align-content:end;padding:0 .15em calc(var(--action-size) * .145);border-color:transparent;
+  background:transparent url('/pixel-art/ui/ui_button_behavior.png') center / 100% 100% no-repeat;
+  color:#fff6e9;box-shadow:none;text-shadow:0 1px 3px #19141c;
+}
+.station-action[data-cleaning=true],.station-action[data-ready=true][data-cleaning=true]:not(:disabled){
+  background-image:url('/pixel-art/ui/ui_button_cannonclear.png');padding-bottom:calc(var(--action-size) * .09);
+}
+.station-exit,.emote-toggle{justify-content:flex-end;padding-bottom:calc(var(--support-size) * .135);text-shadow:0 1px 2px #1e1725}
+.station-exit{background-image:url('/pixel-art/ui/ui_button_exit.png')}
+.emote-toggle{background-image:url('/pixel-art/ui/ui_button_emoticon.png')}
+.station-exit svg,.emote-toggle svg{display:none}
+.emote-menu{background-image:url('/pixel-art/ui/ui_emoticonbar.png');padding:12px 7px 6px}
+.emote-option,.emote-option:is(:hover,:focus-visible){background-image:url('/pixel-art/ui/ui_emoticon_button.png');color:#382330;padding-top:8px}
+.emote-close,.emote-close:is(:hover,:focus-visible){background-image:url('/pixel-art/ui/ui_popup.png');color:#fff6e9}
+.emote-close svg{color:#ffb3b0}
+.emote-option:is(:hover,:focus-visible),.emote-close:is(:hover,:focus-visible),.dialog-head #close-dialog:hover{background-color:transparent;filter:brightness(1.13)}
+.emote-icon[data-emote=ammo]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button7.png')}
+.emote-icon[data-emote=load]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button6.png')}
+.emote-icon[data-emote=repair]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button5.png')}
+.emote-icon[data-emote=drive]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button4.png')}
+.emote-icon[data-emote=care]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button3.png')}
+.emote-icon[data-emote=good]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button2.png')}
+.emote-icon[data-emote=surprised]{--emote-sprite:url('/pixel-art/ui/ui_emoticon_button1.png')}
+.emote-icon[data-emote],.emote-option .emote-icon[data-emote]{
+  display:inline-block;width:clamp(19px,4vmin,37px);aspect-ratio:1;font-size:0;
+  background:var(--emote-sprite) center / contain no-repeat;image-rendering:pixelated;
+}
+.work-progress-bar,.campaign-progress{
+  border:0;background:transparent url('/pixel-art/ui/ui_gauge.png') center / 100% 100% no-repeat;
+  padding:2px 3px;image-rendering:pixelated;
+}
+.campaign-progress::-webkit-progress-bar,.work-progress-bar::-webkit-progress-bar{background:transparent}
+.campaign-progress::-webkit-progress-value,.work-progress-bar::-webkit-progress-value{
+  background:var(--work,var(--progress-fill)) url('/pixel-art/ui/ui_gaugebar.png') center / 100% 100% no-repeat;
+  background-blend-mode:multiply;
+}
+.campaign-progress::-moz-progress-bar,.work-progress-bar::-moz-progress-bar{
+  background:var(--work,var(--progress-fill)) url('/pixel-art/ui/ui_gaugebar.png') center / 100% 100% no-repeat;
+  background-blend-mode:multiply;
+}
+.timing-ring{image-rendering:pixelated}
+.timing-band,.timing-prompt[data-ready=true] .timing-band{stroke:#fff;stroke-width:20;filter:none}
+.timing-prompt[data-ready=true] .timing-target-art{filter:drop-shadow(0 0 2px #a0eea4)}

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: princess-standing
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: 21300000, guid: 58e402bf735c4cd48d54dbf540372235, type: 3}
+  - {fileID: 21300000, guid: 68c1de8b2c204dbab8a80a433bf0c40b, type: 3}
+  - {fileID: 21300000, guid: 44ee718be83a43a9b1efb305cfab8872, type: 3}
+  - {fileID: 21300000, guid: bb2164c7a4da4a6eb3723af018cbb0d3, type: 3}
+  frameStarts:
+  - 0
+  - 0.13
+  - 0.26
+  - 0.39
+  duration: 0.52

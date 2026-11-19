@@ -1,7 +1,7 @@
-import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, LOOSE_WHEEL_HOP_TICKS, WHEEL_KNOCK_TICKS, HOOFPRINT_RANGE, BARREL, CANNON_IDS, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonIndexFor, cannonPad, cannonMount, cannonState, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, activeCatapultRocks, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=wagon-sway172';
+import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, LOOSE_WHEEL_HOP_TICKS, WHEEL_KNOCK_TICKS, HOOFPRINT_RANGE, BARREL, CANNON_IDS, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonIndexFor, cannonPad, cannonMount, cannonState, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, activeCatapultRocks, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning,operationElapsedTicks,draftGaitDistance} from './sim.mjs?v=v15-jinsoo-art';
 import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseFrameOffset,draftHorseOrigin,horseBoardPoint} from './horse-targets.mjs?v=cavalry-hooves169';
 import {obstacleY, roadObstacleProfile, roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
-import {art,emoteArt,sprite,frame} from './pixel-art.mjs?v=crew-release107';
+import {art,emoteArt,sprite,frame} from './pixel-art.mjs?v=jinsoo-world178';
 const ink='#393933';
 const pixelFont='"NeoDunggeunmo", system-ui, sans-serif';
 let c,view;
@@ -157,14 +157,16 @@ function roadShape(edges,upperOffset,lowerOffset,fill){
   }
   c.closePath();c.fillStyle=fill;c.fill();
 }
-function sceneryTile(name,scroll){
+function sceneryTile(name,scroll,scale=1,y=LANES[1]){
   const tile=art[name];
   if(!spriteReady(tile))return false;
-  const {naturalWidth:width,naturalHeight:height}=tile;
+  const width=tile.naturalWidth*scale,height=tile.naturalHeight*scale;
   const start=view.left-mod(view.left-scroll,width);
-  for(let x=start;x<view.right;x+=width)sprite(c,tile,x+width/2,LANES[1],width,height);
+  for(let x=start;x<view.right;x+=width)sprite(c,tile,x+width/2,y,width,height);
   return true;
 }
+const roadArtScale=(ROAD_BOTTOM-ROAD_TOP)/149;
+const roadArtY=LANES[1]+(135-133.5)*roadArtScale; // Source drivable strip runs from y=59 to y=208.
 function vergeArt(scroll,band){
   const prefix=band===upperVerge?'upper':'lower';
   const top=LANES[1]-450,bottom=LANES[1]+450;
@@ -181,6 +183,12 @@ function vergeArt(scroll,band){
 }
 function landscape(scroll,stage){
   const {left,right,top,bottom}=view;
+  if(spriteReady(art.bg)){
+    c.fillStyle='#346246';
+    c.fillRect(left-2,top-2,right-left+4,bottom-top+4);
+    sceneryTile('bg',scroll,roadArtScale,roadArtY);
+    return;
+  }
   // A focused camera wholly inside the road only sees the topmost road fill.
   if(top>ROAD_TOP+18&&bottom<ROAD_BOTTOM-20){
     c.fillStyle=spriteReady(art['road-surface'])?'#e8d3a2':'#ead09e';
@@ -304,6 +312,8 @@ function drawRoadObstacle(obstacle){
   if(!inView(obstacle.x,y,ROAD_OBSTACLE_DRAW_MARGIN))return;
   const {halfWidth}=roadObstacleProfile(obstacle.type);
   at(obstacle.x,y,halfWidth/30,()=>{
+    if(obstacle.type==='rock'&&anchoredSprite(art.bg_rock,0,0,1.25,[27.2,23.3]))return;
+    if(obstacle.type==='log'&&anchoredSprite(art.bg_wood,0,0,1.15,[16.3,29.9]))return;
     if(sprite(c,art['road-'+obstacle.type],0,0,90))return;
     const rx=obstacle.type==='rock'?34:22;
     oval(4,0,rx,30,'#78674644');
@@ -366,6 +376,10 @@ function snackPlate(x,y,scale=1){
 }
 const royalTileWidth=36,royalTileHeight=44,royalHeight=40;
 const royalPoses={seated:0,standing:1,crying:2,bored:3};
+const royalArtwork={
+ prince:{seated:['bottom_price_sit',[16.5,26],.88],standing:['bottom_price_stand',[16,23],.89]},
+ princess:{seated:['bottom_pricess_sit',[17,19],.96],standing:['bottom_pricess_stand',[15.5,19],.96]},
+};
 function royalStatusVisible(s,royal){
  return view.localPlayers.some(id=>royalStatusNearby(s.players[id],royal));
 }
@@ -382,7 +396,11 @@ function royalSprite(s,royal,x,y,scale,t,tilt=0){
    if(royal.state!=='carried')oval(1,8,13,6,'#60473647');
    c.save();
    c.rotate(tilt);
-   sprite(c,art['royal-children'],0,10-royalHeight/2+bob,royalHeight*royalTileWidth/royalTileHeight,royalHeight,crop);
+   const [name,pivot,pixelScale]=royalArtwork[royal.id][seated?'seated':'standing'];
+   const frameTick=reducedMotion?.matches||(!seated&&!wandering)?0:operationElapsedTicks(s)+row*4;
+   if(!anchoredSprite(frame(art[name],frameTick,seated?8:4),0,-9+bob,pixelScale,pivot)){
+     sprite(c,art['royal-children'],0,10-royalHeight/2+bob,royalHeight*royalTileWidth/royalTileHeight,royalHeight,crop);
+   }
    const heart=royal.attentionHeart;
    const heartFlying=heart&&heart.floor===view.floor&&s.tick>=heart.tick&&s.tick<heart.until;
    const needs=royalRequests(royal);
@@ -397,8 +415,10 @@ function royalSprite(s,royal,x,y,scale,t,tilt=0){
      const lift=reducedMotion?.matches?0:Math.abs(Math.sin((royal.shellPlayUntil-s.tick)*.23))*9;
      const ballY=4-lift;
      line([[5,2],[10,5]],'#efc6a2',2);
-     oval(12,ballY,7,7,'#454e5b',ink,1.8);
-     oval(10,ballY-3,2,1.5,'#a5b1b2');
+     if(!sprite(c,art.bottom_cannonball,12,ballY,14)){
+       oval(12,ballY,7,7,'#454e5b',ink,1.8);
+       oval(10,ballY-3,2,1.5,'#a5b1b2');
+     }
    }
    c.restore();
  });
@@ -497,7 +517,7 @@ const stationArt={
  gunner:['#dba476','#865c3d','bottom_cannon'],
  supply:['#92b6c5','#4d7080','bottom_bombplus'],
  cook:['#c4a575','#765333'],
- 'wheel-pickup':['#c0a16d','#705635']
+ 'wheel-pickup':['#c0a16d','#705635','cellar_refill']
 };
 const occupiedPadStyle={fill:'#999c9b',edge:'#565a59'};
 function occupiedByAnother(station){
@@ -522,6 +542,7 @@ function drawSpareWheelStack(x,y,side,count){
  oval(x,y+5,22,8,'#21160965');
  for(let level=0;level<count;level++){
    const wheelX=x+side*(level%2)*2,wheelY=y-level*7;
+   if(sprite(c,art.cellar_wheelrefill,wheelX,wheelY,40,24))continue;
    oval(wheelX,wheelY+3,20,8,'#65432e','#382419',1.5);
    if(!sprite(c,art.bottom_wheel[0],wheelX,wheelY,40,18)){
      at(wheelX,wheelY,1,()=>{
@@ -539,10 +560,10 @@ function drawRackPile(count){
  for(let i=0;i<Math.min(count,5);i++){
    const shellX=x-9+(i%3)*9+(i>=3?4.5:0);
    const shellY=y+5-Math.floor(i/3)*8;
-   if(!sprite(c,art['rack-shell'],shellX,shellY,12)){
+   if(!sprite(c,art.bottom_cannonball,shellX,shellY,12)&&!sprite(c,art['rack-shell'],shellX,shellY,12)){
      oval(shellX,shellY,5.6,5.6,'#565b66',ink,1.3);
+     oval(shellX-1.5,shellY-1.8,2,1.35,'#9297a1');
    }
-   oval(shellX-1.5,shellY-1.8,2,1.35,'#9297a1');
  }
 }
 function floorStation(s,role,cannonIndex=null){
@@ -557,7 +578,11 @@ function floorStation(s,role,cannonIndex=null){
  const inactive=(role==='loader'&&!canLoad(s,cannonIndex))||(role==='wheel-pickup'&&!canTakeSpareWheel(s))||(role==='supply'&&!hasSupply);
  const border=occupied?occupiedPadStyle.edge:inactive?'#897961':edge;
  const padFill=occupied?occupiedPadStyle.fill:inactive?'#bda47e':fill;
- if(role==='supply'&&hasSupply)sprite(c,art['supply-pile'],SUPPLY_PILE.x,SUPPLY_PILE.y,SUPPLY_PILE.width);
+ if(role==='supply'&&hasSupply){
+   if(!sprite(c,art.cellar_cannonballs,SUPPLY_PILE.x,SUPPLY_PILE.y,SUPPLY_PILE.width)){
+     sprite(c,art['supply-pile'],SUPPLY_PILE.x,SUPPLY_PILE.y,SUPPLY_PILE.width);
+   }
+ }
  c.save();
  if(occupied||inactive)c.filter='grayscale(1)';
  const padDrawn=image&&sprite(c,art[image],x,y,floorPadWidth);
@@ -573,7 +598,7 @@ function floorStation(s,role,cannonIndex=null){
  }else if(role==='supply'&&!s.testMode){
    box(SUPPLY_PILE.x+7,SUPPLY_PILE.y+10,20,14,border,ink,3,1);
    c.fillStyle='#fff8e9';c.font='bold 10px '+pixelFont;c.fillText(s.ammo.stock,SUPPLY_PILE.x+17,SUPPLY_PILE.y+17);
- }else if(role==='cook'){
+ }else if(role==='cook'&&!sprite(c,art.cellar_food,x-32,y+5,28)){
    box(x-16,y-10,32,20,'#986f45','#604329',3,2);
    line([[x-13,y+6],[x+13,y+6]],'#b8915a',1.5);
    snackPlate(x-6,y,.82);
@@ -590,6 +615,7 @@ const crewArt={
 function drawCargoShell(x,y,selected=false){
  at(x,y,2,()=>{
    if(selected)oval(0,0,9,9,'#fff');
+   if(sprite(c,art.bottom_cannonball,0,0,14))return;
    oval(0,0,7,7,'#454e5b',ink,1.8);
    oval(-2,-3,2,1.5,'#a5b1b2');
  });
@@ -600,7 +626,7 @@ function crewSprite(s,id,t,passenger,recordPosition){
  const side=currentRole==='driver'?-1:p.facing??(p.ax<0?-1:1);
  const moving=currentRole!=='driver'&&Math.hypot(p.mx,p.my)>.15&&s.mode==='run';
  const reduced=reducedMotion?.matches;
- const animationTick=reduced?0:(s.mode==='ready'?Math.floor(t*14):s.tick)+phase;
+ const animationTick=reduced?0:(s.mode==='ready'?Math.floor(t*14):operationElapsedTicks(s))+phase;
  const bounce=moving&&!reduced?Math.sin(t*1.3)*1.8:0;
  if(!sprite(c,art.bottom_shadow,p.x+2,p.y+10,32))oval(p.x+2,p.y+7,17,7,'#4d3e454a');
  at(p.x,p.y+bounce,1,()=>{
@@ -692,7 +718,8 @@ function drawRoyalAttentionHearts(s,carriage){
 }
 function drawStairs(floor){
  const {x,y,r}=STAIRS,below=floor===CELLAR_FLOOR,dir=below?-1:1;
- if(!sprite(c,art.bottom_cellar,x,y,r*2+6)){
+ const stairs=below&&spriteReady(art.cellar_stairs)?art.cellar_stairs:art.bottom_cellar;
+ if(!sprite(c,stairs,x,y,r*2+6)){
    box(x-r-3,y-r-3,r*2+6,r*2+6,below?'#211b1b':'#745237',ink,5,2);
    box(x-r,y-r,r*2,r*2,below?'#2e2523':'#48382b',below?'#c6a36f':'#e9c891',4,1.8);
    for(let i=0;i<5;i++){
@@ -724,7 +751,7 @@ function mountedWheelY(side){return side*WHEEL_MOUNT_OFFSET+(side>0?0:2);}
 function wheelMounts(s,side){
  const reduced=reducedMotion?.matches;
  const rolling=!reduced&&s.mode==='run'&&s.speed>0;
- const phase=rolling?s.tick:0;
+ const phase=rolling?operationElapsedTicks(s):0;
  const {broken,progress,mountedAt,mountedIndex=progress===1?broken:-1}=s.wheel;
  const equip=side<0?art.bottom_wheel_topequip:art.bottom_wheel_bottomequip;
  const equipAge=(s.tick-(mountedAt??-Infinity))*wheelMountPlaybackRate;
@@ -839,6 +866,11 @@ function drawHorseSpeedTrail(x,y,t){
 }
 
 function spriteReady(image){return image?.complete&&image.naturalWidth>0;}
+function anchoredSprite(image,x,y,scale,[pivotX,pivotY]){
+ if(!spriteReady(image))return false;
+ return sprite(c,image,x+(image.naturalWidth/2-pivotX)*scale,y+(image.naturalHeight/2-pivotY)*scale,
+   image.naturalWidth*scale,image.naturalHeight*scale);
+}
 let hoofDustTexture;
 function drawHoofDust(x,y,scale,tick,direction){
  if(reducedMotion?.matches)return;
@@ -904,7 +936,7 @@ function drawDraftHorses(s,t){
  const sinceHit=lastWhip==null?Infinity:s.tick-lastWhip;
  // Distance keeps the gait continuous as rage changes the wagon speed.
  const {width:frameWidth,height:frameHeight,frames,framesPerMeter,offsetX,offsetY}=DRAFT_HORSE_WALK;
- const gait=s.distance*framesPerMeter;
+ const gait=draftGaitDistance(s)*framesPerMeter;
  const atlas=art['draft-horse-walk'],animated=spriteReady(atlas);
  const image=animated?atlas:art.horse1;
  const width=(animated?frameWidth:119)*DRAFT_HORSE_SCALE;
@@ -920,7 +952,7 @@ function drawDraftHorses(s,t){
    const drawnX=x+offsetX,drawnY=y+offsetY+bob;
    if(spriteReady(image)){
      const hooves=animated?draftHorseHooves[walkFrame]:draftHorseStillHooves;
-     const dustTick=s.mode==='run'?s.tick+frameOffset*3:null;
+     const dustTick=s.mode==='run'?operationElapsedTicks(s)+frameOffset*3:null;
      drawHoofGround(drawnX-width/2,drawnY-height/2,DRAFT_HORSE_SCALE,hooves,8,'#715f482d',dustTick);
    }else{
      oval(x+3,y+30,45,8,'#715f4850');
@@ -1056,7 +1088,7 @@ function drawWagonLamps(s){
 }
 function wagon(s,t,offset,cannons,caliber){
  at(offset.x,offset.y,1,()=>{
-   const phase=reducedMotion?.matches?0:s.mode==='ready'?t*12:s.tick;
+   const phase=reducedMotion?.matches?0:s.mode==='ready'?t*12:operationElapsedTicks(s);
    box(345,-89,376,204,'#715d484e',null,20);
    wheelMounts(s,-1);
    if(!sprite(c,art.bottom,527.5,.5,375,199))box(340,-99,375,199,'#cc9f66','#614b37',8,3);
@@ -1110,7 +1142,7 @@ function drawCellar(s,t,offset){
  c.fillStyle='#17191b';
  c.fillRect(view.left-1,view.top-1,view.span/view.zoom+2,view.height/view.zoom+2);
  at(offset.x,offset.y,1,()=>{
-   if(!sprite(c,art['wagon-cellar'],527.5,0,397,221)){
+   if(!sprite(c,art.cellar,527.5,0,397,221)&&!sprite(c,art['wagon-cellar'],527.5,0,397,221)){
    box(340,-99,375,199,'#312725','#211e21',12,5);
    box(348,-91,359,183,'#4d3f37','#6e5444',7,2.5);
    for(let i=0;i<8;i++){
@@ -1134,6 +1166,14 @@ function drawCellar(s,t,offset){
      for(const sign of [-1,1])oval(wheel.x+sign*12,mount,2.1,2.1,'#c1ad91','#473b36',1);
    }
    }
+   WHEELS.forEach(({x,y},index)=>{
+     const side=Math.sign(y);
+     const mount=art[wheelIsMounted(s,index)?'cellar_wheeleqip':'cellar_wheeleqip_broke'];
+     at(x,y+side*13,1,()=>{
+       c.scale(1,side<0?1:-1);
+       sprite(c,mount,0,0,84);
+     });
+   });
    if(!view.role||view.role==='repair'||occupiedByAnother('repair'))repairMark(s);
    floorStation(s,'supply');
    floorStation(s,'cook');
@@ -1299,6 +1339,7 @@ function drawStairLabel(x,y,title,fill){
 }
 const boulderOutline=[[-37,10],[-32,-15],[-16,-33],[12,-32],[31,-18],[39,7],[29,24],[-5,31],[-30,24]];
 const boulderScale=2;
+const catapultPixelScale=2.7;
 const boulderDropHeight=364,boulderDropTicks=HZ*.4;
 const boulderLandingAngle=-.24,boulderDropTurn=.32;
 const landingMarkerScale=2;
@@ -1596,15 +1637,25 @@ function drawCatapult(s,rock){
    const ry=landingMarkerScale*(13+(CATAPULT_RADIUS.y-13)*approach);
    c.globalAlpha=.28+.24*approach;
    const hitsWagon=locked&&catapultHitsWagon(s,x,rock);
-   const landingArt=art[hitsWagon?'catapult-landing-danger':'catapult-landing-safe'];
-   if(!sprite(c,landingArt,x,rock.y,rx*2.2,ry*2.2))oval(x,rock.y,rx,ry,'#47342b');
+   const authoredMarker=hitsWagon&&spriteReady(art.bg_rock_danger);
+   const landingArt=authoredMarker?art.bg_rock_danger:art[hitsWagon?'catapult-landing-danger':'catapult-landing-safe'];
+   const markerWidth=rx*2.2,markerHeight=ry*2.2;
+   const markerX=authoredMarker?x+markerWidth*.5/49:x;
+   const markerY=authoredMarker?rock.y+markerHeight*.5/29:rock.y;
+   if(!sprite(c,landingArt,markerX,markerY,markerWidth,markerHeight))oval(x,rock.y,rx,ry,'#47342b');
    if(locked){
      if(hitsWagon)warning={x,y:rock.y};
      if(untilLanding<=boulderDropTicks){
        const fall=1-untilLanding/boulderDropTicks;
        c.globalAlpha=Math.min(1,fall*4);
        const angle=boulderLandingAngle+boulderDropTurn*(1-fall);
-       drawBoulder(x,rock.y-boulderDropHeight*(1-fall*fall),angle);
+       const y=rock.y-boulderDropHeight*(1-fall*fall);
+       if(spriteReady(art.bg_rock1)){
+         at(x,y,1,()=>{
+           c.rotate(angle);
+           anchoredSprite(art.bg_rock1,0,0,catapultPixelScale,[157.5,42]);
+         });
+       }else drawBoulder(x,y,angle);
      }
    }
  }else if(rock.hit!==undefined){
@@ -1612,6 +1663,9 @@ function drawCatapult(s,rock){
    const frameIndex=Math.min(10,Math.floor(age*11));
    const impactFrame=[frameIndex%3*928,Math.floor(frameIndex/3)*606,928,606];
    c.globalAlpha=Math.min(1,(1-age)*3);
+   const elapsed=-untilLanding/HZ;
+   const paintedFrame=elapsed<.0667?2:elapsed<.2?3:elapsed<.3667?4:5;
+   if(anchoredSprite(art['bg_rock'+paintedFrame],x,rock.y,catapultPixelScale,[71.75,133.5])){c.restore();return;}
    if(sprite(c,art['catapult-impact'],x,rock.y-39,464,303,impactFrame)){c.restore();return;}
    c.globalAlpha=Math.min(1,(1-age)*3);
    oval(x,rock.y+22,69,21,'#52433386');
@@ -1807,7 +1861,7 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  const anchors={},catapultAlerts=[];
  const cssX=rect.width/cw,cssY=rect.height/ch;
  const viewCssX=rect.width/views[0].screenWidth,viewCssY=rect.height/views[0].height;
- const t=s.mode==='ready'?wall/470:s.tick*.37;
+ const t=s.mode==='ready'?wall/470:operationElapsedTicks(s)*.37;
  const cavalryFrame=reducedMotion?.matches?0:Math.floor(s.tick*cavalryRunFps/HZ);
  const catapultRocks=activeCatapultRocks(s);
  const lastImpact=catapultRocks.reduce((tick,rock)=>rock.hit===undefined?tick:Math.max(tick,rock.landAt),-Infinity);
@@ -1892,8 +1946,10 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  at(carriage.x,carriage.y,1,()=>drawDraftHorses(s,t));
 
  // Lower roadside plants overlap the wagon, with gameplay effects above them.
- vergeArt(s.road,lowerVerge);
- if(!sceneryTile('lower-verge',s.road))drawVerge(s.road,lowerVerge);
+ if(!spriteReady(art.bg)){
+   vergeArt(s.road,lowerVerge);
+   if(!sceneryTile('lower-verge',s.road))drawVerge(s.road,lowerVerge);
+ }
  for(const tree of roadside)if(tree.y>LANES[1])drawRoadsideTree(tree);
 
  for(const cannon of cannons)drawCannonBurst(cannon,carriage,caliber);

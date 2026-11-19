@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b397ab8abc30e9e45acb04bd65306683, type: 3}
+  m_Name: prince-standing
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
+  frames:
+  - {fileID: 21300000, guid: 8a422c2020e0400e8b95914dafcf9663, type: 3}
+  - {fileID: 21300000, guid: c0dbf1427fb2495d93a30a38cba1131a, type: 3}
+  - {fileID: 21300000, guid: 32ac6ae37d244b3c81601564eda598e1, type: 3}
+  - {fileID: 21300000, guid: 71a25aa57ee04f63940515ed66f0969d, type: 3}
+  frameStarts:
+  - 0
+  - 0.13
+  - 0.26
+  - 0.39
+  duration: 0.52

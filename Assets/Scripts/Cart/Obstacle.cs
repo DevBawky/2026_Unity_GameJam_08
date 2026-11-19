@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 도로 장애물 프리팹(바위·통나무·사슴)에 붙는다. 충돌 크기는 SpriteRenderer 경계, 피해·감속은 인스펙터 값.
+// 도로 장애물 프리팹(바위·통나무·사슴)의 피해, 감속, 충돌 범위를 설정한다.
 [RequireComponent(typeof(SpriteRenderer))]
 public sealed class Obstacle : MonoBehaviour
 {
@@ -11,6 +11,8 @@ public sealed class Obstacle : MonoBehaviour
     [SerializeField, Min(0f)] private float slowSeconds = 1f;
     [Tooltip("마차 차선과의 충돌 판정 반폭 (웹 단위)")]
     [SerializeField, Min(0f)] private float hitHalfWidth = 31f;
+    [Tooltip("굴러가는 바퀴와의 충돌 폭·높이 (월드 단위). 0이면 스프라이트 크기를 사용한다.")]
+    [SerializeField] private Vector2 wheelSurfaceSize;
 
     public float Damage => damage;
     public float SlowFactor => slowFactor;
@@ -25,5 +27,10 @@ public sealed class Obstacle : MonoBehaviour
             WheelSurfaces.Add(this);
     }
     private void OnDisable() => WheelSurfaces.Remove(this);
-    private void Awake() => Size = GetComponent<SpriteRenderer>().bounds.size;
+    private void Awake()
+    {
+        Size = wheelSurfaceSize == Vector2.zero
+            ? (Vector2)GetComponent<SpriteRenderer>().bounds.size
+            : wheelSurfaceSize;
+    }
 }

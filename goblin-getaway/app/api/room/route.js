@@ -1,5 +1,5 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, cannonIndexFor, cannonState, isCannonRole, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, cannonIndexFor, cannonState, isCannonRole, isOperationIntroActive, operationElapsedTicks, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
@@ -47,10 +47,10 @@ function snapshot(row,seat,now=Date.now()){
   let clock=row.clock;
   if(state.mode==='run'){
     // Store the last completed tick boundary so a stream of short input intervals carries forward.
-    const before=tickBoundary(state.tick);
-    const due=Math.floor((now-row.clock+before)*HZ/1000)-state.tick;
+    const elapsed=operationElapsedTicks(state),before=tickBoundary(elapsed);
+    const due=Math.floor((now-row.clock+before)*HZ/1000)-elapsed;
     advance(state,Math.max(0,due));
-    clock+=tickBoundary(state.tick)-before;
+    clock+=tickBoundary(operationElapsedTicks(state))-before;
   }
   if(state.emotes)state.emotes=recentEmotes(state,now);
   return {clock,data:{code:row.code,player:seat.id,host:seat.id===leader(row),captain:leader(row),crew:members.length,state,rev:row.rev,stamp:now}};
@@ -137,18 +137,18 @@ export async function POST(req){
     if(['report','vote-upgrade','depart','retry','restart-chapter'].includes(op)&&!sameCampaign)return fail('현재 스테이지 상태가 변경되었습니다.',409);
     if(op==='start'){
       if(!snap.host||state.mode!=='ready')return fail('출발 대기 중에는 방장이 작전을 시작할 수 있습니다.');
-      begin(state);
+      begin(state,{operationIntro:true});
     }else if(op==='emote'){
       const error=addEmote(state,seat.id,b.key,now);
       if(error)return fail(error);
     }else if(op==='exit-station'){
-      if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
+      if(state.mode!=='run'||isOperationIntroActive(state)||b.stage!==state.stage||!sameCampaign)return respond(snap);
       const expectedCannon=isCannonRole(b.role)?b.cannonIndex??0:undefined;
       if(!b.role||!leaveStation(state,seat.id,b.role,expectedCannon))return respond(snap);
     }else if(op==='add-rack-shell'){
       if(b.stage!==state.stage||!sameCampaign||!addRackShell(state))return respond(snap);
     }else if(op==='act'||op==='input'){
-      if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
+      if(state.mode!=='run'||isOperationIntroActive(state)||b.stage!==state.stage||!sameCampaign)return respond(snap);
       const tick=Number.isInteger(b.tick)?Math.max(state.tick-12,Math.min(state.tick,b.tick)):state.tick;
       const input=b.input?.aimRole==='gunner'&&b.input.aimCannon==null?{...b.input,aimCannon:0}:b.input;
       setInput(state,seat.id,input);

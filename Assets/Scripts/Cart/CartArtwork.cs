@@ -3,6 +3,13 @@ using UnityEngine;
 // 마차 그림 연출: 등불·깃발 프레임, 대포 포신 크기·각도·도화선, 바퀴 회전·먼지·장착 애니메이션.
 public sealed class CartArtwork : MonoBehaviour
 {
+    [System.Serializable]
+    private struct CellarWheelMount
+    {
+        public SpriteRenderer Tire;
+        public SpriteRenderer Mount;
+    }
+
     [SerializeField] private SpriteRenderer frontLight, rearLight, flag;
     [SerializeField] private Sprite[] lightFrames, flagFrames;
     [SerializeField] private Transform barrel;
@@ -12,6 +19,8 @@ public sealed class CartArtwork : MonoBehaviour
     [SerializeField] private SpriteRenderer wheelMount;
     [SerializeField] private Sprite[] upperMountFrames, lowerMountFrames, wheelFrames, dustFrames;
     [SerializeField] private SpriteRenderer[] wheelDust;
+    [SerializeField] private CellarWheelMount[] cellarWheelMounts;
+    [SerializeField] private Sprite installedCellarWheel, emptyCellarWheel;
     private Vector3 barrelScale;
     private SpriteRenderer obscuredTire;
     private void Awake() => barrelScale = barrel.localScale;
@@ -68,6 +77,14 @@ public sealed class CartArtwork : MonoBehaviour
 
     private void DrawWheels(CartStations game, double now, int tick)
     {
+        if (cellarWheelMounts != null)
+        {
+            foreach (var cellarWheel in cellarWheelMounts)
+            {
+                bool empty = cellarWheel.Tire == game.DetachedTire && game.WheelRepairSteps == 0;
+                cellarWheel.Mount.sprite = empty ? emptyCellarWheel : installedCellarWheel;
+            }
+        }
         var mount = game.WheelMount.Value;
         int age = mount.SlotKey == 0 ? -1 : (int)System.Math.Floor((now - mount.Time) * 30d + .00001d);
         var tire = age >= 0 && age < 10 ? game.TireAt(mount.SlotKey - 1) : null;

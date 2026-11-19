@@ -142,7 +142,9 @@ public sealed class GameplayHudLayout : MonoBehaviour
         var labelRect = label.rectTransform;
         labelRect.anchorMin = labelRect.anchorMax = Vector2.one * .5f;
         labelRect.sizeDelta = new Vector2(diameter, font * 1.25f) / scale;
-        labelRect.anchoredPosition = Vector2.down * ((icon + 4f) * .5f / scale);
+        bool hasSeparateGlyph = glyph.TryGetComponent(out Image image) && image.enabled;
+        float labelOffset = hasSeparateGlyph ? (icon + 4f) * .5f : diameter * .35f;
+        labelRect.anchoredPosition = Vector2.down * (labelOffset / scale);
         label.fontSize = font / scale;
         glyph.sizeDelta = Vector2.one * (icon / scale);
         glyph.anchoredPosition = Vector2.up * ((font + 4f) * .5f / scale);

@@ -29,6 +29,7 @@ public sealed partial class CartStations
     public Bounds PursuerEntryBounds => waveSpawner.SpawnBounds;
     [SerializeField] private Transform[] royalVisuals;
     [SerializeField] private SpriteSequence[] royalWalks;
+    [SerializeField] private SpriteSequence[] royalSeated;
     [SerializeField] private Sprite[] princePoses;
     [SerializeField] private Sprite[] princessPoses;
     [SerializeField] private RectTransform[] royalAreas;
@@ -300,6 +301,16 @@ public sealed partial class CartStations
             if (seated) visual.position += Vector3.up * (15f * WorldPerWebUnit);
             visual.localScale = Vector3.one * (WorldPerWebUnit * 100f * (seated ? 1.42f : 1f));
             newSprite.sprite = poses[seated ? 0 : child.Bored ? 3 : child.Crying ? 2 : 1];
+            if (royalSeated != null && index < royalSeated.Length && royalSeated[index] != null)
+            {
+                if (seated)
+                    newSprite.sprite = royalSeated[index].FrameAt(Time.time, true);
+                else if (child.Pose == RiderPose.Wandering && royalWalks != null && index < royalWalks.Length && royalWalks[index] != null)
+                    newSprite.sprite = royalWalks[index].FrameAt(Time.time, true);
+                visual.localRotation = child.Pose == RiderPose.Fallen
+                    ? Quaternion.Euler(0f, 0f, index == 0 ? -65f : 65f)
+                    : Quaternion.identity;
+            }
         }
         if (poses != null && poses.Length == 5 && visual.TryGetComponent(out SpriteRenderer sprite))
         {

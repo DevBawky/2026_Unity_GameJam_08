@@ -13,6 +13,9 @@ const stills=[
  'upper-woodland','upper-shoulder','upper-verge','road-surface','road-specks','lower-woodland',
  'lower-shoulder','lower-verge','roadside-tree','road-rock','road-deer','road-log','wagon-cellar',
  'catapult-rock','catapult-landing-danger','catapult-landing-safe','catapult-impact','cannon-scorch','cannon-muzzle-smoke',
+ 'bg','bg_rock','bg_rock1','bg_rock2','bg_rock3','bg_rock4','bg_rock5','bg_rock_danger','bg_wood',
+ 'bottom_cannonball','cellar','cellar_cannonballs','cellar_food','cellar_refill','cellar_stairs',
+ 'cellar_wheeleqip','cellar_wheeleqip_broke','cellar_wheelrefill',
  'RoadWarning','EmoteBubble','EmoteAmmo','EmoteLoad','EmoteRepair','EmoteDrive','EmoteCare','EmoteGood','EmoteSurprised',
 ];
 const sequences=[
@@ -20,6 +23,7 @@ const sequences=[
  'bottom_cannon_bomb_effect','bottom_cannon_fier','bottom_flag','bottom_light','bottom_orange',
  'bottom_pink','bottom_purple','bottom_wheel','bottom_wheel_bottomequip','bottom_wheel_dust',
  'bottom_wheel_out','bottom_wheel_out_effect','bottom_wheel_topequip',
+ 'bottom_price_sit','bottom_price_stand','bottom_pricess_sit','bottom_pricess_stand',
 ];
 
 // Web sprites include the original PNGs from Assets/resource and the Unity pixel art.
