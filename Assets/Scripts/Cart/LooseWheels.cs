@@ -44,13 +44,6 @@ public sealed partial class CartStations
         detachedTire.color = color;
     }
 
-    public bool IsInsideDetachedTire(Vector3 position)
-    {
-        if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
-        float radius = 28f * WorldPerWebUnit * PlayerTiming.WorkRadiusFraction;
-        return ((Vector2)(position - WheelWorkPoint)).sqrMagnitude <= radius * radius;
-    }
-
     private void DetachWheel()
     {
         if (wheelDetached || tires.Count == 0) return;

@@ -436,6 +436,7 @@ GameObject:
   - component: {fileID: 8388971461233438710}
   - component: {fileID: 4081208071854051202}
   - component: {fileID: 7600556567212233195}
+  - component: {fileID: 7977706853892735301}
   - component: {fileID: 656226089332183512}
   - component: {fileID: 9184332346432153175}
   m_Layer: 0
@@ -544,7 +545,6 @@ MonoBehaviour:
   stations: {fileID: 0}
   deckStairs: {fileID: 0}
   cellarStairs: {fileID: 0}
-  whipAimSpeed: 1.2
 --- !u!114 &7600556567212233195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,6 +564,33 @@ MonoBehaviour:
   circularGraphic: {fileID: 3288965203354040168}
   timingRingAtPlayer: 1
   stations: {fileID: 0}
+--- !u!114 &7977706853892735301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2520559225507761996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3210096456
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &656226089332183512
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -587,7 +614,8 @@ MonoBehaviour:
   royalWalks: []
   princePoses: []
   princessPoses: []
-  royalAreas: []
+  royalChairs: []
+  royalMarkers: []
   Prince:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -601,6 +629,8 @@ MonoBehaviour:
       BoredomPending: 0
       InCellar: 0
       Soothing: 0
+      AttentionHeartUntil: 0
+      AttentionHeartFrom: {x: 0, y: 0}
       LastFoot: {x: 0, y: 0}
       BoredFrom: {x: 0, y: 0}
       Mischief: 0
@@ -621,6 +651,8 @@ MonoBehaviour:
       BoredomPending: 0
       InCellar: 0
       Soothing: 0
+      AttentionHeartUntil: 0
+      AttentionHeartFrom: {x: 0, y: 0}
       LastFoot: {x: 0, y: 0}
       BoredFrom: {x: 0, y: 0}
       Mischief: 0
@@ -682,32 +714,7 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
-  RightWounds:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
-  LeftWounds:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
-  driverCursor: {fileID: 0}
   horseWhipZones: []
-  LeftHorse:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      Mood: 0
-      Remaining: 0
-  RightHorse:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      Mood: 0
-      Remaining: 0
   KingReply:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -1265,6 +1272,10 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  ShopHearts:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   ShelfShells:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -1283,6 +1294,7 @@ MonoBehaviour:
   impactDust: {fileID: 0}
   impactAudio: {fileID: 0}
   cannonSound: {fileID: 0}
+  cannonLandingSound: {fileID: 0}
   hitSound: {fileID: 0}
   music: {fileID: 0}
   stageMusic: []
@@ -1306,7 +1318,6 @@ MonoBehaviour:
   collisionAnxietyIncrease: 0.06
   recoilAnxietyIncrease: 0.04
   impactShakeStrength: 0.3
-  recoilShakeStrength: 0.2
   shakeDuration: 0.45
   wheelLossChance: 0.25
   wheelLossMinDistance: 110
@@ -1333,6 +1344,7 @@ MonoBehaviour:
       Horse: 0
       Precision: 0
       CleaningTaps: 0
+      StageTick: 0
       Flow: 0
       Loaded: 0
       Firing: 0
@@ -1451,7 +1463,6 @@ MonoBehaviour:
   spreadRing: {fileID: 0}
   gameCamera: {fileID: 0}
   aimJoystick: {fileID: 0}
-  pursuerLine: {fileID: 3290695515007951503}
 --- !u!1 &3024627395448665697
 GameObject:
   m_ObjectHideFlags: 0
@@ -1672,7 +1683,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 34.35
+  m_fontSize: 38.4
   m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 1

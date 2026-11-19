@@ -34,6 +34,10 @@ public sealed class CartRules : ScriptableObject
     [Min(0.01f)] public float fuseSeconds = 2.5f;
     [Min(0.01f)] public float shellHoldSeconds = 1.6f;
 
+    [Header("작업 발판 활성화")]
+    [Tooltip("작업 발판과 겹쳐야 하는 플레이어 몸 스프라이트 사각 영역의 최소 비율 (%)")]
+    [Range(1f, 100f)] public float requiredPlayerOverlapPercent = 50f;
+
     internal const int HorseBoostScore = 1, CannonCleanScore = 1, ShellReloadScore = 2,
         EnemyEliminationScore = 4, ShellDeliveryScore = 8, ChildReseatScore = 20,
         WheelInstallScore = 8, WheelRepairScore = 12;
