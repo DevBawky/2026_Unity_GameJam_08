@@ -3977,10 +3977,6 @@ PrefabInstance:
       propertyPath: actionControl
       value: 
       objectReference: {fileID: 738607523}
-    - target: {fileID: 1344152031921345415, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 1055751959}
     - target: {fileID: 1822334485098002200, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_fontSize
       value: 23
@@ -4281,10 +4277,6 @@ PrefabInstance:
       propertyPath: secondPlayer
       value: 
       objectReference: {fileID: 929119352}
-    - target: {fileID: 5724209835808703400, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5971353236856534590, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_SizeDelta.x
       value: 280
@@ -4661,18 +4653,6 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 0.8784314
       objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_fontAsset
-      value:
-      objectReference: {fileID: 11400000, guid: f8c01f44600513e4bb830a76720f7531, type: 2}
-    - target: {fileID: 0}
-      propertyPath: m_sharedMaterial
-      value:
-      objectReference: {fileID: 1889463179198486386, guid: f8c01f44600513e4bb830a76720f7531, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -6214,7 +6194,7 @@ MonoBehaviour:
   crosshair: {fileID: 202509247}
   spreadRing: {fileID: 1710864234}
   gameCamera: {fileID: 1060116973}
-  aimJoystick: {fileID: 434214097}
+  aimJoystick: {fileID: 738607524}
 --- !u!114 &565268099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8865,7 +8845,7 @@ MonoBehaviour:
   crosshair: {fileID: 506174077}
   spreadRing: {fileID: 1708440343}
   gameCamera: {fileID: 1060116973}
-  aimJoystick: {fileID: 434214097}
+  aimJoystick: {fileID: 738607524}
 --- !u!114 &929119349
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9957,7 +9937,7 @@ PrefabInstance:
     - target: {fileID: 9184332346432153175, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
       propertyPath: aimJoystick
       value: 
-      objectReference: {fileID: 434214097}
+      objectReference: {fileID: 738607524}
     m_RemovedComponents:
     - {fileID: 656226089332183512, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
     m_RemovedGameObjects: []
@@ -23642,7 +23622,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &2058047408 stripped
 MonoBehaviour:
@@ -23653,7 +23633,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &2058047409 stripped
 MonoBehaviour:
@@ -23664,7 +23644,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &2058047410 stripped
 MonoBehaviour:
@@ -23675,7 +23655,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &2058047411 stripped
 MonoBehaviour:
@@ -23686,7 +23666,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &2058047412 stripped
 MonoBehaviour:
@@ -23697,7 +23677,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &2065720455
 GameObject:
@@ -24360,7 +24340,7 @@ MonoBehaviour:
   crosshair: {fileID: 1604455815}
   spreadRing: {fileID: 1467190601}
   gameCamera: {fileID: 1060116973}
-  aimJoystick: {fileID: 434214097}
+  aimJoystick: {fileID: 738607524}
 --- !u!114 &2123466011
 MonoBehaviour:
   m_ObjectHideFlags: 0

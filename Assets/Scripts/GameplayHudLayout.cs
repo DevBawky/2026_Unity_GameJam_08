@@ -24,7 +24,7 @@ public sealed class GameplayHudLayout : MonoBehaviour
     private readonly Vector3[] controlCorners = new Vector3[4];
     private Rect previousArea, previousPane;
     private float previousScale;
-    private bool previousMenu;
+    private bool previousMenu, previousMobile;
 
     private void Awake()
     {
@@ -40,13 +40,16 @@ public sealed class GameplayHudLayout : MonoBehaviour
         var pane = primary.pixelRect;
         float scale = canvas.scaleFactor;
         bool menuOpen = emoteMenu.gameObject.activeSelf;
-        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale) || menuOpen != previousMenu)
+        bool mobile = GameplayControlMode.IsMobile;
+        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale)
+            || menuOpen != previousMenu || mobile != previousMobile)
         {
             previousArea = safe;
             previousPane = pane;
             previousScale = scale;
             previousMenu = menuOpen;
-            Layout(safe, pane, scale, menuOpen);
+            previousMobile = mobile;
+            Layout(safe, pane, scale, menuOpen, mobile);
         }
         Vector3 landing = default;
         bool danger = catapult != null && catapult.TryGetWarning(out landing);
@@ -54,7 +57,7 @@ public sealed class GameplayHudLayout : MonoBehaviour
         ShowWarnings(1, secondary, secondaryRig, safe, danger, landing);
     }
 
-    private void Layout(Rect safe, Rect pane, float scale, bool menuOpen)
+    private void Layout(Rect safe, Rect pane, float scale, bool menuOpen, bool mobile)
     {
         float width = Screen.width;
         float height = Screen.height;
@@ -91,9 +94,16 @@ public sealed class GameplayHudLayout : MonoBehaviour
         float diameter = Mathf.Min(limit, landscape ? Mathf.Clamp(height * .26f, 88f, 208f) : stick);
         float support = diameter * 2f / 3f;
         float step = diameter + controlGap;
+        float paneRight = Mathf.Min(right, pane.xMax - (pane.width < width ? 8f : 0f)) - inset;
+        float actionX = (mobile ? right - inset : paneRight) - diameter * .5f;
+        float actionY = bottom + diameter * .5f;
+        Place(action, new Vector2(actionX, actionY), Vector2.one * diameter, scale);
+
+        float menuRight = mobile ? actionX - diameter * .5f - controlGap : right;
+        float menuWidth = Mathf.Min(1120f, menuRight - left);
         float menuHeight = Mathf.Clamp(height * .12f, 102f, 126f);
-        Place(emoteMenu, new Vector2((left + right) * .5f, bottom + menuHeight * .5f),
-            new Vector2(Mathf.Min(1120f, right - left), menuHeight), scale);
+        Place(emoteMenu, new Vector2((left + menuRight) * .5f, bottom + menuHeight * .5f),
+            new Vector2(menuWidth, menuHeight), scale);
         if (emoteMenu.TryGetComponent(out GridLayoutGroup grid))
         {
             float padding = Mathf.Clamp(vmin * .01f, 4f, 9f);
@@ -101,22 +111,21 @@ public sealed class GameplayHudLayout : MonoBehaviour
             int insetPixels = Mathf.RoundToInt(padding / scale);
             grid.padding = new RectOffset(insetPixels, insetPixels, insetPixels, insetPixels);
             grid.spacing = Vector2.one * (gap / scale);
-            grid.cellSize = new Vector2((Mathf.Min(1120f, right - left) - 2f * padding - 6f * gap) / 7f,
+            grid.cellSize = new Vector2((menuWidth - 2f * padding - 6f * gap) / 7f,
                 menuHeight - 2f * padding) / scale;
         }
         if (menuOpen) bottom += menuHeight + 8f;
-        float paneRight = Mathf.Min(right, pane.xMax - (pane.width < width ? 8f : 0f)) - inset;
-        float x = paneRight - diameter * .5f;
         float y = bottom + diameter * .5f;
-        Place(action, new Vector2(x, y), Vector2.one * diameter, scale);
-        Place(exit, new Vector2(x - step * .5f, y + step * .866f), Vector2.one * support, scale);
-        Place(emote, new Vector2(x - step, y), Vector2.one * support, scale);
+        Place(exit, new Vector2(actionX - step * .5f, y + step * .866f), Vector2.one * support, scale);
+        Place(emote, new Vector2(actionX - step, y), Vector2.one * support, scale);
 
         SizeControlLabel(exitLabel, exitGlyph, support, vmin, scale);
         SizeControlLabel(emoteLabel, emoteGlyph, support, vmin, scale);
         actionLabel.fontSize = (landscape ? Mathf.Clamp(vmin * .023f, 13f, 25f) : Mathf.Clamp(vmin * .02f, 11f, 15f)) / scale;
         float stickX = left + inset + stick * .5f;
         float stickY = bottom + stick * .5f;
+        movement.SetRadius(stick * .36f / scale);
+        aim.SetRadius(stick * .36f / scale);
         var movementArea = (RectTransform)movement.transform;
         movementArea.anchorMax = new Vector2(pane.width / (2f * width), movementArea.anchorMax.y);
         Place(movementPreview, new Vector2(stickX, stickY), Vector2.one * stick, scale);
@@ -124,8 +133,6 @@ public sealed class GameplayHudLayout : MonoBehaviour
         movementHandle.sizeDelta = Vector2.one * (stick * .52f / scale);
         Place((RectTransform)aim.transform, new Vector2(stickX, stickY), Vector2.one * stick, scale);
         aimHandle.sizeDelta = movementHandle.sizeDelta;
-        movement.SetRadius(stick * .36f / scale);
-        aim.SetRadius(stick * .36f / scale);
     }
 
     private static void SizeControlLabel(TMP_Text label, RectTransform glyph, float diameter, float vmin, float scale)

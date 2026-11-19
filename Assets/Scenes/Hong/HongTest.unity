@@ -1977,7 +1977,7 @@ PrefabInstance:
     - target: {fileID: 9184332346432153175, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
       propertyPath: aimJoystick
       value: 
-      objectReference: {fileID: 909224815}
+      objectReference: {fileID: 2029194818}
     m_RemovedComponents:
     - {fileID: 656226089332183512, guid: 6676258b166e95a4197c0f95e03c6936, type: 3}
     m_RemovedGameObjects: []
@@ -5003,7 +5003,7 @@ MonoBehaviour:
   crosshair: {fileID: 436262281}
   spreadRing: {fileID: 819008742}
   gameCamera: {fileID: 1371732979}
-  aimJoystick: {fileID: 909224815}
+  aimJoystick: {fileID: 2029194818}
 --- !u!114 &599134219
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16940,7 +16940,7 @@ MonoBehaviour:
   crosshair: {fileID: 1567576075}
   spreadRing: {fileID: 2056092513}
   gameCamera: {fileID: 1371732979}
-  aimJoystick: {fileID: 909224815}
+  aimJoystick: {fileID: 2029194818}
 --- !u!4 &1283759473
 Transform:
   m_ObjectHideFlags: 0
@@ -18198,7 +18198,7 @@ MonoBehaviour:
   crosshair: {fileID: 386085393}
   spreadRing: {fileID: 145588721}
   gameCamera: {fileID: 1371732979}
-  aimJoystick: {fileID: 909224815}
+  aimJoystick: {fileID: 2029194818}
 --- !u!114 &1430940668
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25660,10 +25660,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Button | Exit
       objectReference: {fileID: 0}
-    - target: {fileID: 1344152031921345415, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 913201231}
     - target: {fileID: 1822334485098002200, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_fontSize
       value: 23
@@ -25815,10 +25811,6 @@ PrefabInstance:
     - target: {fileID: 5569867607772681269, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_Name
       value: Image | Catapult Alert P2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5724209835808703400, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5971353236856534590, guid: 1d9bbce7fcdaff246b82030beb3bdd08, type: 3}
       propertyPath: m_SizeDelta.x

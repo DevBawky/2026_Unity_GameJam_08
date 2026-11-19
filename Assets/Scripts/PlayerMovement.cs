@@ -54,15 +54,7 @@ public sealed class PlayerMovement : MonoBehaviour
             || stations.HoldsStation(StationAction.Cannon, actor)) return;
         CrossStairs();
 
-        Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard != null && (joystick == null || !joystick.IsMobileMode))
-        {
-            input.x += (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-            input.y += (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
-        }
-        if (actor.SecondLocal) input = keyboard == null ? Vector2.zero : new Vector2((keyboard.rightArrowKey.isPressed?1:0)-(keyboard.leftArrowKey.isPressed?1:0),(keyboard.upArrowKey.isPressed?1:0)-(keyboard.downArrowKey.isPressed?1:0));
-        else if (Gamepad.current != null) input += Gamepad.current.leftStick.ReadValue();
+        Vector2 input = ReadInput();
         // At the two aiming seats the movement stick controls aim. Other work areas are walk-through.
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
         {
@@ -83,6 +75,25 @@ public sealed class PlayerMovement : MonoBehaviour
             desired = SlidePastChild(desired, stations.Princess.Value);
         }
         transform.position = ClampToCartBody(desired);
+    }
+
+    private Vector2 ReadInput()
+    {
+        if (actor.UsesMobileControls) return joystick != null ? joystick.Direction : Vector2.zero;
+
+        var keyboard = Keyboard.current;
+        if (actor.SecondLocal)
+            return keyboard == null ? Vector2.zero : new Vector2(
+                (keyboard.rightArrowKey.isPressed ? 1f : 0f) - (keyboard.leftArrowKey.isPressed ? 1f : 0f),
+                (keyboard.upArrowKey.isPressed ? 1f : 0f) - (keyboard.downArrowKey.isPressed ? 1f : 0f));
+
+        Vector2 input = Gamepad.current?.leftStick.ReadValue() ?? Vector2.zero;
+        if (keyboard != null)
+        {
+            input.x += (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
+            input.y += (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
+        }
+        return input;
     }
 
     private Vector3 SlidePastChild(Vector3 desired, RiderState child)

@@ -857,6 +857,30 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351518957779418484, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8671276027028737904, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
