@@ -52,8 +52,9 @@ public sealed class GameplayHudLayout : MonoBehaviour
             Layout(safe, pane, scale, menuOpen, mobile);
         }
         var game = CartStations.Instance;
-        bool routeVisible = game != null && !game.Endless.Value && (CartStations.Running || game.ChoosingUpgrade || game.ChapterComplete);
+        bool routeVisible = game != null && (CartStations.Running || game.ChoosingUpgrade || game.ChapterComplete);
         track.gameObject.SetActive(routeVisible);
+        if (campaignLabel != null) campaignLabel.gameObject.SetActive(routeVisible);
         Vector3 landing = default;
         bool danger = catapult != null && catapult.TryGetWarning(out landing);
         ShowWarnings(0, primary, primaryRig, safe, danger, landing);
@@ -69,18 +70,24 @@ public sealed class GameplayHudLayout : MonoBehaviour
         float bottom = webSafe.yMin;
         float left = webSafe.xMin;
         float right = webSafe.xMax;
-        float markerSize = Mathf.Clamp(vmin * .0325f, 20f, 35f);
+        float markerSize = CampaignMarkerSize;
         Rect route = CampaignArea(WebSafeArea);
-        float routePadding = Mathf.Clamp(width * .015f, 6f, 14f);
-        float routeWidth = Mathf.Max(1f, route.width - 1.5f * markerSize - 2f * routePadding - 2f);
+        float routePadding = CampaignPadding;
         Place(campaign, route.center, route.size, scale);
-        Place(track, route.center + Vector2.right * (.25f * markerSize),
-            new Vector2(routeWidth, Mathf.Clamp(vmin * .013f, 6f, 10f)), scale);
+        float trackY = route.yMax - 5f - markerSize * .5f;
+        Place(track, new Vector2(route.center.x + .25f * markerSize, trackY),
+            CampaignTrackSize(route), scale);
         marker.sizeDelta = Vector2.one * (markerSize / scale);
         destination.sizeDelta = Vector2.one * (.52f * markerSize / scale);
         destination.anchorMin = destination.anchorMax = new Vector2(0f, .5f);
         destination.anchoredPosition = Vector2.left * (.74f * markerSize / scale);
-        campaignLabel.gameObject.SetActive(false);
+        if (campaignLabel != null)
+        {
+            float labelHeight = CampaignDistanceFont * 1.25f;
+            campaignLabel.fontSize = CampaignDistanceFont / scale;
+            Place(campaignLabel.rectTransform, new Vector2(route.center.x, route.yMin + 5f + labelHeight * .5f),
+                new Vector2(route.width - 2f * routePadding, labelHeight), scale);
+        }
 
         bool landscape = width >= height;
         float controlGap = landscape ? Mathf.Clamp(height * .01f, 7f, 11f) : 7f;
@@ -163,64 +170,67 @@ public sealed class GameplayHudLayout : MonoBehaviour
 
     private const float PlayToolsWidth = 148f;
     private const int RankingSlots = 4;
-    internal static float RankingGap => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .007f, 3f, 6f);
+    internal const float RankingWidthScale = .85f;
+    private static float RankingBaseGap => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .007f, 3f, 6f);
+    internal static float RankingGap => RankingBaseGap * RankingWidthScale;
     internal static float RankingCardScale(int rank) => rank == 0 ? 3f : 2f;
     private static float RankingScaleSum => RankingCardScale(0) + (RankingSlots - 1) * RankingCardScale(1);
 
     internal static Vector2 RankingCardSize(Rect safe) => new(
-        Mathf.Max(0f, (Mathf.Min(safe.width - PlayToolsWidth, 320f) - (RankingSlots - 1) * RankingGap) / RankingSlots),
+        Mathf.Max(0f, (Mathf.Min(safe.width - PlayToolsWidth, 320f) - (RankingSlots - 1) * RankingBaseGap) / RankingSlots),
         Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .088f, 54f, 70f));
 
     private static bool RankingBelowTools => Screen.width <= 540 && Screen.width < Screen.height;
-    internal static float RankingTop(Rect safe) => safe.yMax - (RankingBelowTools ? 54f : 0f);
+    internal static float RankingTop(Rect safe, float campaignBottom)
+    {
+        float top = safe.yMax - (RankingBelowTools ? 54f : 0f);
+        return StackTopHud(safe) ? Mathf.Min(top, campaignBottom - 8f) : top;
+    }
 
     internal static float RankingFit(Rect safe, float cardWidth) => cardWidth > 0f
-        ? Mathf.Clamp01((safe.width - (RankingBelowTools ? 0f : PlayToolsWidth) - (RankingSlots - 1) * RankingGap)
+        ? Mathf.Clamp01((safe.width - (RankingBelowTools ? 0f : PlayToolsWidth) - (RankingSlots - 1) * RankingBaseGap)
             / (cardWidth * RankingScaleSum))
         : 0f;
 
-    internal static float RankingCardHeight(Rect safe, int rank)
-    {
-        Vector2 card = RankingCardSize(safe);
-        return card.y * RankingFit(safe, card.x) * RankingCardScale(rank);
-    }
-
-    internal static Rect RankingArea(Rect safe)
+    private static float RankingWidth(Rect safe)
     {
         Vector2 card = RankingCardSize(safe);
         float fit = RankingFit(safe, card.x);
-        float width = fit > 0f ? card.x * fit * RankingScaleSum + (RankingSlots - 1) * RankingGap : 0f;
-        float height = card.y * fit * RankingCardScale(0);
-        return new Rect(safe.xMin, RankingTop(safe) - height, width, height);
+        return fit > 0f ? (card.x * fit * RankingScaleSum + (RankingSlots - 1) * RankingBaseGap) * RankingWidthScale : 0f;
     }
+
+    private static float LeftOfCampaign(Rect safe) => safe.xMin + RankingWidth(safe) + 8f;
+    private static float RightOfCampaign(Rect safe) => Mathf.Max(safe.center.x, safe.xMax - PlayToolsWidth);
+    private static bool StackTopHud(Rect safe) => RightOfCampaign(safe) - LeftOfCampaign(safe) < 300f;
+
+    private static float CampaignDistanceFont => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .021f, 12f, 17f);
+    private static float CampaignPadding => Mathf.Clamp(Screen.width * .015f, 6f, 14f);
+    internal static float CampaignMarkerSize => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .0325f, 20f, 35f);
+
+    internal static Vector2 CampaignTrackSize(Rect route) => new(
+        Mathf.Max(1f, route.width - 1.5f * CampaignMarkerSize - 2f * CampaignPadding - 2f),
+        Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .013f, 6f, 10f));
 
     internal static Rect CampaignArea(Rect safe)
     {
-        float width = Screen.width;
-        float height = Mathf.Clamp(Mathf.Min(width, Screen.height) * .0325f, 20f, 35f) + 10f;
-        float gutter = Mathf.Max(.23f * width, Mathf.Max(safe.xMin, width - safe.xMax) + PlayToolsWidth);
-        float routeWidth = Mathf.Min(560f, width <= 1020f ? safe.width : Mathf.Max(1f, width - 2f * gutter));
-        float left = safe.center.x - routeWidth * .5f;
-        float top = safe.yMax;
-        Rect ranking = RankingArea(safe);
-        if (width <= 1020f)
-            top = Mathf.Min(top - 96f, ranking.yMin - 8f);
-        else if (left < ranking.xMax + 8f)
-        {
-            float rightOfRanking = ranking.xMax + 8f;
-            if (rightOfRanking + routeWidth <= safe.xMax - PlayToolsWidth) left = rightOfRanking;
-            else top = ranking.yMin - 8f;
-        }
-        return new Rect(left, top - height, routeWidth, height);
+        float height = CampaignMarkerSize + 10f + CampaignDistanceFont * 1.25f;
+        float minX = StackTopHud(safe) ? safe.xMin : LeftOfCampaign(safe);
+        float maxX = RightOfCampaign(safe);
+        float routeWidth = Mathf.Min(560f, maxX - minX);
+        float left = Mathf.Clamp(safe.center.x - routeWidth * .5f, minX, maxX - routeWidth);
+        return new Rect(left, safe.yMax - height, routeWidth, height);
     }
 
     internal static float NoticeTop(Rect safe, float campaignBottom)
     {
         float height = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .11f, 66f, 88f);
-        float top = Mathf.Min(safe.yMax - 94f, campaignBottom, Screen.height * .78f + height);
-        Rect ranking = RankingArea(safe);
+        float top = Mathf.Min(safe.yMax - 94f, campaignBottom - 6f, Screen.height * .78f + height);
         float widestNotice = Mathf.Min(1350f, safe.width);
-        return safe.center.x - widestNotice * .5f < ranking.xMax ? Mathf.Min(top, ranking.yMin - 6f) : top;
+        float rankingWidth = RankingWidth(safe);
+        if (rankingWidth <= 0f || safe.center.x - widestNotice * .5f >= safe.xMin + rankingWidth) return top;
+        Vector2 card = RankingCardSize(safe);
+        float rankingHeight = card.y * RankingFit(safe, card.x) * RankingCardScale(0);
+        return Mathf.Min(top, RankingTop(safe, campaignBottom) - rankingHeight - 6f);
     }
 
     private void Place(RectTransform rect, Vector2 screenPoint, Vector2 pixels, float scale)

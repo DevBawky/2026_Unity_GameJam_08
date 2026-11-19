@@ -19,6 +19,8 @@ public sealed class PlayerTiming : MonoBehaviour
     [SerializeField] private bool timingRingAtPlayer;
     private float resultUntil;
     private bool cookingImpactResult;
+    private const float CookingLossAnimationSeconds = .22f;
+    private float cookingLossStarted, cookingBeforeLoss, cookingAfterLoss;
     public string ResultText { get; private set; }
     public string VisibleResult => Time.unscaledTime < resultUntil
         && (!cookingImpactResult || HasStationAccess && IsAt(StationAction.Kitchen)) ? ResultText : null;
@@ -26,8 +28,24 @@ public sealed class PlayerTiming : MonoBehaviour
 
     internal void ShowShellReturned() => ShowResult(LocalizationTable.T("장전 실패 · 포탄이 적재함에 남았다"));
 
-    internal void ShowCookingImpact(int percentLost) =>
+    internal void ShowCookingImpact(float before, float after)
+    {
+        cookingLossStarted = Time.unscaledTime;
+        cookingBeforeLoss = before;
+        cookingAfterLoss = after;
+        int percentLost = Mathf.RoundToInt((before - after) * 100f);
         ShowResult(LocalizationTable.F("마차 흔들림 · 제작 진행도 {0}%p 감소", percentLost), cookingImpact: true);
+    }
+
+    internal float CookingProgressForHud(float progress)
+    {
+        if (!cookingImpactResult || VisibleResult == null) return progress;
+        float age = Time.unscaledTime - cookingLossStarted;
+        if (SettingsPanel.ReducedMotion) return age < CookingLossAnimationSeconds ? cookingAfterLoss : progress;
+        if (age < CookingLossAnimationSeconds)
+            return Mathf.Lerp(cookingBeforeLoss, cookingAfterLoss, age / CookingLossAnimationSeconds);
+        return Mathf.Lerp(cookingAfterLoss, progress, (age - CookingLossAnimationSeconds) / CookingLossAnimationSeconds);
+    }
 
     private void ShowResult(string text, bool cookingImpact = false)
     {
@@ -327,6 +345,12 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         float reach = station.Action == StationAction.ShellDeposit && stations.Owns(ShopPerk.WideRack)
             ? CartStations.WideRackScale : 1f;
+        if (station.Action == StationAction.ShellDeposit && station.transform is RectTransform rack)
+        {
+            Vector2 point = (Vector2)rack.InverseTransformPoint(transform.position) - rack.rect.center;
+            Vector2 radius = rack.rect.size * (.5f * reach);
+            return new Vector2(point.x / radius.x, point.y / radius.y).sqrMagnitude <= 1f;
+        }
         return station.OverlapsPlayer(body, reach);
     }
 

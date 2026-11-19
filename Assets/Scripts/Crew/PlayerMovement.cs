@@ -6,7 +6,6 @@ using UnityEngine.InputSystem;
 [DefaultExecutionOrder(-10)]
 public sealed class PlayerMovement : MonoBehaviour
 {
-    private const float DeckBottomInset = .05f;
     [SerializeField, Min(0f)] private float moveSpeed = 4f;
     [Tooltip("포탄을 들고 있을 때 이동 속도 배율")]
     [SerializeField, Range(0f, 1f)] private float carrySpeedMultiplier = 0.3f;
@@ -130,15 +129,11 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private Vector3 ClampToCartBody(Vector3 desired)
     {
-        if (!actor.InCellar && stations.DeckArtwork != null && actor.BodyArtwork != null && actor.BodyArtwork.sprite != null)
+        if (!actor.InCellar && stations.DeckArtwork != null)
         {
-            Bounds deck = stations.DeckArtwork.bounds;
-            Bounds crew = actor.BodyArtwork.bounds;
-            Vector3 origin = transform.position;
-            desired.x = Mathf.Clamp(desired.x, deck.min.x + origin.x - crew.min.x,
-                deck.max.x + origin.x - crew.max.x);
-            desired.y = Mathf.Clamp(desired.y, deck.min.y + deck.size.y * DeckBottomInset + origin.y - crew.min.y,
-                deck.max.y + origin.y - crew.center.y);
+            Bounds deck = stations.DeckMovementBounds;
+            desired.x = Mathf.Clamp(desired.x, deck.min.x, deck.max.x);
+            desired.y = Mathf.Clamp(desired.y, deck.min.y, deck.max.y);
             return desired;
         }
 

@@ -136,7 +136,7 @@ public sealed partial class CartStations
         if (index == (int)ShopPerk.EmergencyRepair)
         {
             durability = Capacity;
-            if (wheelDetached) RepairWheel();
+            RepairAllWheels();
         }
         else if (item.consumable) pendingItems.Add(index);
         else

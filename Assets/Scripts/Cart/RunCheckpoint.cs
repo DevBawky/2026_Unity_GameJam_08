@@ -133,7 +133,6 @@ public sealed partial class CartStations
         }
         if (legacyCannonSlot >= 0)
             StationOwners[(int)StationAction.Cannon] = gameScene.Players[legacyCannonSlot].NetworkObjectId;
-        if(detachedTire!=null) detachedTireAlpha=tireAlphas[tires.IndexOf(detachedTire)];
         Affection.Value=data.AP;Report.Value=data.Report;ShopRound.Value=data.Round;
         Barrel.Value=data.Barrel;Stabilizer.Value=data.Stabilizer;Porter.Value=data.Porter;Hull.Value=data.Hull;
         HorseRage.Value=data.HorseRage;

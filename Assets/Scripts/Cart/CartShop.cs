@@ -69,7 +69,7 @@ public sealed partial class CartStations
             Affection.Value -= card.price;
             switch(choice)
             {
-                case 0: durability=Mathf.Min(Capacity,durability+card.amount); if(wheelDetached) RepairWheel(); break;
+                case 0: durability=Mathf.Min(Capacity,durability+card.amount); RepairAllWheels(); break;
                 case 1: precisionLevel++; break;
                 case 2: Stabilizer.Value++; break;
                 case 3: Barrel.Value++; break;

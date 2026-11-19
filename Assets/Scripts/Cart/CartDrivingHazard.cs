@@ -65,7 +65,7 @@ public sealed partial class CartStations
                 if (seated || actor.Timing.IsInActionArea(StationAction.Driver)) return null;
                 continue;
             }
-            if (actor.Holding.Value || (fuseLit && gunner == actor)) continue;
+            if (actor.Holding.Value || IsCarryingChild(actor) || (fuseLit && gunner == actor)) continue;
             var seat = actor.Timing.AreaFor(StationAction.Driver);
             if (seat == null) continue;
             float travel = seated ? 0 : actor.GetComponent<PlayerMovement>().BotTimeToDeckPoint(seat.position);

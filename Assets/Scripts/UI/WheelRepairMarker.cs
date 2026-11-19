@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public sealed class WheelRepairMarker : MonoBehaviour
 {
     [SerializeField] private RectTransform marker, labelPlate;
-    [SerializeField] private Image pad, ring, tool, labelBackground;
+    [SerializeField] private Image pad, tool, labelBackground;
     [SerializeField] private TMP_Text label;
     [SerializeField] private Sprite inactiveTool, busyPad, busyLabel;
 
@@ -69,10 +69,6 @@ public sealed class WheelRepairMarker : MonoBehaviour
         labelBackground.sprite = busy ? busyLabel : availableLabel;
         string message = LocalizationTable.T(game.WheelRepairSteps > 0 ? "핀 고정" : spareInCellar ? "수리 !" : "바퀴 필요");
         if (label.text != message) label.text = message;
-
-        float phase = (float)game.NetworkManager.ServerTime.Time * 5.7f;
-        ring.color = busy ? new Color32(222, 223, 223, 255) : Mathf.Sin(phase) > 0f
-            ? new Color32(246, 255, 218, 255) : new Color32(210, 234, 211, 255);
 
         var point = game.WheelWorkPoint;
         marker.position = MarkerPosition(game);

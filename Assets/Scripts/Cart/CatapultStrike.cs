@@ -208,15 +208,20 @@ public sealed class CatapultStrike : NetworkBehaviour
             Y = cartY + side * offset,
         };
         nextLaunch = stageTime + Mathf.Max(minInterval, baseInterval - (stage - 1) * intervalPerStage);
+        stations.PlayCartCueRpc(GameSfx.StoneFlight);
     }
 
     private void Land(ref CatapultState s)
     {
         s.Landed = true;
         s.LandX = GroundX(s);
-        if (!HitsCart(s.LandX, s.Y)) return;
+        if (!HitsCart(s.LandX, s.Y))
+        {
+            stations.PlayCartCueRpc(GameSfx.ImpactDirt);
+            return;
+        }
         stations.Cart.ApplySpeedHit(hitSpeedMultiplier);
-        stations.ReceiveCatapultHit(hitDamage);
+        stations.ReceiveCatapultHit(hitDamage, new Vector2(s.LandX, s.Y));
     }
 
     private bool HitsCart(float x, float y)

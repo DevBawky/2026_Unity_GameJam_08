@@ -3575,8 +3575,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 904103861
-  m_SortingOrder: 5
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 30
   m_TargetDisplay: 0
 --- !u!1 &434423005
 GameObject:
@@ -4112,8 +4112,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 30
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!1001 &485083623
 PrefabInstance:
@@ -6909,8 +6909,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 30
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!1 &760166014
 GameObject:
@@ -19731,8 +19731,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 904103861
-  m_SortingOrder: 5
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 30
   m_TargetDisplay: 0
 --- !u!1 &1447651821
 GameObject:
@@ -22047,8 +22047,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 904103861
-  m_SortingOrder: 5
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 30
   m_TargetDisplay: 0
 --- !u!1 &1663222630
 GameObject:
@@ -22548,8 +22548,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 30
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!224 &1737139713 stripped
 RectTransform:
@@ -22846,15 +22846,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8067201712122391160, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_SortingLayer
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8067201712122391160, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_SortingOrder
-      value: 29990
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8067201712122391160, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_SortingLayerID
-      value: 904103861
+      value: 1999933635
       objectReference: {fileID: 0}
     - target: {fileID: 8209739891434976403, guid: cc45a19c648e9ab4a870af2f40aa2188, type: 3}
       propertyPath: m_Name
@@ -23014,9 +23014,6 @@ MonoBehaviour:
   - {fileID: 3684642039240376266, guid: e0980d05eff5db84eb8d5a590b64e3e7, type: 3}
   royalChairs:
   - {fileID: 515920555}
-  royalMarkers:
-  - {fileID: 6292227623138473381}
-  - {fileID: 6292227623138473380}
   Prince:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -23750,6 +23747,7 @@ MonoBehaviour:
       Precision: 0
       CleaningTaps: 0
       StageTick: 0
+      DamagedTires: 0
       Flow: 0
       Loaded: 0
       Firing: 0
@@ -27038,10 +27036,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -0.6163142
       objectReference: {fileID: 0}
-    - target: {fileID: 2101694961706864245, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -1.570997
-      objectReference: {fileID: 0}
     - target: {fileID: 2136615338752397263, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_SizeDelta.x
       value: 1.2567976
@@ -27294,10 +27288,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -0.6163142
       objectReference: {fileID: 0}
-    - target: {fileID: 6719062519301001675, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 62.429005
-      objectReference: {fileID: 0}
     - target: {fileID: 7007307254607132727, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
       propertyPath: m_SizeDelta.x
       value: 1.1601208
@@ -27355,28 +27345,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
---- !u!114 &6292227623138473380 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7623125136621988706, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
-  m_PrefabInstance: {fileID: 6292227623138473379}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
---- !u!114 &6292227623138473381 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2981943358010987094, guid: 45ddee6bfaa0bf3449795b09dedc508b, type: 3}
-  m_PrefabInstance: {fileID: 6292227623138473379}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

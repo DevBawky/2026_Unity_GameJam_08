@@ -21,6 +21,14 @@ public sealed class PlayerWorkHud : MonoBehaviour
         public RectTransform panel;
         public Image face, border;
         public TMP_Text heading, meters, condition;
+        [NonSerialized] public float nextWhimper;
+    }
+
+    [Serializable]
+    private sealed class SeatMarker
+    {
+        public RectTransform panel;
+        public UnityEngine.UI.Image pad, rim, icon;
     }
 
     [Serializable]
@@ -29,16 +37,20 @@ public sealed class PlayerWorkHud : MonoBehaviour
         public RectTransform pane;
         public Image crosshair, rope, remaining, flame, dash;
         public Image[] hearts;
+        public SeatMarker[] seatMarkers;
     }
 
     [SerializeField] private Camera primary, secondary;
     [SerializeField] private NetworkPlayer secondPlayer;
     [SerializeField] private RectTransform campaign;
+    [SerializeField] private RectTransform healthTrack, healthShield;
+    [SerializeField] private TMP_Text cartStatusLabel;
     [SerializeField] private TMP_Text testModeBadge;
     [SerializeField] private SeatHud[] seats;
     [SerializeField] private RoyalRow[] royalRows;
     [SerializeField] private TMP_Text[] cries;
     [SerializeField] private WorldHud[] worlds;
+    [SerializeField] private Sprite seatHeart, seatSnack, seatCrown;
     [SerializeField] private Sprite[] crosshairFrames, flameFrames;
     [SerializeField] private Sprite edgeArrow;
     [SerializeField] private TeamEmotes teamEmotes;
@@ -50,6 +62,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
     private Canvas canvas;
     private float Scale => canvas.scaleFactor;
     private float Vmin => Mathf.Min(Screen.width, Screen.height);
+    internal float CampaignBottom { get; private set; } = float.PositiveInfinity;
 
     private void Awake() => canvas = GetComponent<Canvas>();
 
@@ -63,39 +76,60 @@ public sealed class PlayerWorkHud : MonoBehaviour
         bool split = second != null && secondary != null && secondary.enabled;
         var safe = GameplayHudLayout.WebSafeArea;
         var route = GameplayHudLayout.CampaignArea(safe);
-        bool test = running && game.Endless.Value;
-        float badgeHeight = 0f;
+        var campaignArea = route;
+        bool showHealth = healthTrack != null && healthShield != null && cartStatusLabel != null;
+        Vector2 trackSize = GameplayHudLayout.CampaignTrackSize(route);
+        float healthY = route.yMin - trackSize.y * .5f;
+        float statusFont = Mathf.Clamp(Vmin * .016f, 11f, 15f);
+        float statusHeight = statusFont * 1.25f;
+        float statusY = route.yMin - trackSize.y - 4f - statusHeight * .5f;
+        if (showHealth) campaignArea.yMin = statusY - statusHeight * .5f - 5f;
+        bool test = running && game.Endless.Value && testModeBadge != null;
+        float badgeHeight = 0f, badgeY = 0f;
         if (test)
         {
             float labelFont = Mathf.Clamp(Vmin * .016f, 11f, 16f);
             testModeBadge.SetText(LocalizationTable.T("테스트 모드"));
             testModeBadge.fontSize = labelFont / Scale;
             badgeHeight = labelFont * 1.25f + 2f;
-            route.yMin = route.yMax - badgeHeight - 10f;
+            badgeY = campaignArea.yMin - badgeHeight * .5f;
+            campaignArea.yMin -= badgeHeight + 5f;
         }
         if (testModeBadge != null) testModeBadge.transform.parent.gameObject.SetActive(test);
         campaign.gameObject.SetActive(running || game != null && (game.ChoosingUpgrade || game.ChapterComplete));
-        float royalHeight = first != null ? PresentRoyals(game, first, second, route, safe) : 0f;
+        float royalHeight = first != null ? PresentRoyals(game, first, second, campaignArea) : 0f;
         if (first == null) foreach (var row in royalRows) row.panel.gameObject.SetActive(false);
-        if (royalHeight <= 0f)
+        campaignArea.yMin -= royalHeight;
+        if (royalHeight <= 0f) Place(campaign, campaignArea.center, campaignArea.size);
+        CampaignBottom = campaign.gameObject.activeSelf ? campaignArea.yMin : float.PositiveInfinity;
+        if (showHealth)
         {
-            Vector2 size = route.size;
-            if (test) size.x = testModeBadge.preferredWidth * Scale + 24f;
-            Place(campaign, route.center, size);
+            float markerSize = GameplayHudLayout.CampaignMarkerSize;
+            float trackX = route.center.x + .25f * markerSize;
+            Place(healthTrack, new Vector2(trackX, healthY), trackSize);
+            float shieldX = trackX - trackSize.x * .5f - .74f * markerSize;
+            Place(healthShield, new Vector2(shieldX, healthY), Vector2.one * (.52f * markerSize));
+            cartStatusLabel.fontSize = statusFont / Scale;
+            Place(cartStatusLabel.rectTransform, new Vector2(route.center.x, statusY),
+                new Vector2(route.width - 12f, statusHeight));
         }
         if (test)
-            Place((RectTransform)testModeBadge.transform.parent, new Vector2(route.center.x, route.yMax - 5f - badgeHeight * .5f),
+            Place((RectTransform)testModeBadge.transform.parent, new Vector2(route.center.x, badgeY),
                 new Vector2(testModeBadge.preferredWidth * Scale + 10f, badgeHeight));
 
         PresentCries(running ? game.CryingCount : 0,
             running && !SettingsPanel.ReducedMotion ? (int)(game.NetworkManager.ServerTime.Time * 30d) : 0);
-        float baseTop = GameplayHudLayout.NoticeTop(safe, route.yMin - royalHeight - 6f);
+        float baseTop = GameplayHudLayout.NoticeTop(safe, CampaignBottom);
         float noticeHeight = Mathf.Clamp(Vmin * .11f, 66f, 88f);
         float workWidth = Mathf.Min(760f, safe.width);
         float gap = 10f;
-        var one = first != null ? WorkGuide.ForNotice(first, game) : default;
-        var two = second != null ? WorkGuide.ForNotice(second, game) : default;
-        bool showOne = HasNotice(one), showTwo = HasNotice(two);
+        var one = first != null ? WorkGuide.For(first, game) : default;
+        var two = second != null ? WorkGuide.For(second, game) : default;
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.SetCooking(IsCooking(first, game) || IsCooking(second, game));
+        string firstResult = first?.Timing.VisibleResult;
+        string secondResult = second?.Timing.VisibleResult;
+        bool showOne = HasNotice(one, firstResult), showTwo = HasNotice(two, secondResult);
         bool twoNotices = showOne && showTwo;
         bool columns = twoNotices && Screen.width > Screen.height && Screen.width >= 540f && Screen.width <= 750f;
         if (twoNotices && Screen.width <= 750f) gap = columns ? 4f : 6f;
@@ -104,19 +138,29 @@ public sealed class PlayerWorkHud : MonoBehaviour
         float width = columns ? (workWidth - gap) * .5f : workWidth;
         float font = twoNotices && Screen.width <= 750f ? Mathf.Clamp(Vmin * .038f, 13f, 24f) : Mathf.Clamp(Vmin * .043f, 14f, 32f);
         float shift = columns ? (width + gap) * .5f : 0f;
-        PresentNotice(seats[0], one, second != null ? "P1" : null, safe.center.x - shift, top, width, noticeHeight, font);
-        PresentNotice(seats[1], two, second != null ? "P2" : null, safe.center.x + shift,
+        PresentNotice(seats[0], one, firstResult, second != null ? "P1" : null, safe.center.x - shift, top, width, noticeHeight, font);
+        PresentNotice(seats[1], two, secondResult, second != null ? "P2" : null, safe.center.x + shift,
             top - (showOne && !columns ? noticeHeight + gap : 0f), width, noticeHeight, font);
 
         PresentWorld(worlds[0], primary, first, split ? null : second, game);
         PresentWorld(worlds[1], secondary, split ? second : null, null, game);
     }
 
-    private static bool HasNotice(WorkGuide guide) => !string.IsNullOrEmpty(guide.Hint) || guide.Timed;
+    private static bool HasNotice(WorkGuide guide, string result) =>
+        result != null || !string.IsNullOrEmpty(guide.Hint) || guide.Timed;
 
-    private void PresentNotice(SeatHud hud, WorkGuide guide, string seat, float x, float top, float width, float height, float font)
+    private static bool IsCooking(NetworkPlayer actor, CartStations game) =>
+        actor != null && actor.CookingHeld.Value && actor.HandsFree
+        && game.HoldsStation(StationAction.Kitchen, actor);
+
+    private void OnDisable()
     {
-        bool show = HasNotice(guide);
+        if (SoundManager.Instance != null) SoundManager.Instance.SetCooking(false);
+    }
+
+    private void PresentNotice(SeatHud hud, WorkGuide guide, string result, string seat, float x, float top, float width, float height, float font)
+    {
+        bool show = HasNotice(guide, result);
         hud.bubble.gameObject.SetActive(show);
         if (!show) return;
         Place(hud.bubble, new Vector2(x, top - height * .5f), new Vector2(width, height));
@@ -127,7 +171,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
         float progressHeight = progress ? barHeight + 4f : 0f;
         float padding = Mathf.Clamp(Vmin * .0225f, 8f, 22f);
         float labelFont = progress ? Mathf.Min(font, Mathf.Max(18f, width * .052f)) : font;
-        string hint = guide.Hint ?? LocalizationTable.T("초록 구간에서 ") + guide.Action;
+        string hint = result ?? guide.Hint ?? LocalizationTable.T("초록 구간에서 ") + guide.Action;
         string user = seat == null ? "" : $"<size=55%><color=#ffe1a8>{seat}</color></size>  ";
         string countdown = guide.Seconds < 0 ? "" : $"<color=#ffe1a8> · {guide.Seconds:0.0}{LocalizationTable.T("초")}</color>";
         hud.hint.SetText(user + hint + countdown);
@@ -153,7 +197,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
             new Vector2(Mathf.Max(1f, width - 2f * padding - nameWidth), barHeight));
     }
 
-    private float PresentRoyals(CartStations game, NetworkPlayer first, NetworkPlayer second, Rect route, Rect safe)
+    private float PresentRoyals(CartStations game, NetworkPlayer first, NetworkPlayer second, Rect area)
     {
         var prince = game.Prince.Value;
         var princess = game.Princess.Value;
@@ -161,40 +205,25 @@ public sealed class PlayerWorkHud : MonoBehaviour
         bool showPrincess = ShowRoyal(royalRows[1], game, princess, first, second, "공주", "#f5c8e0");
         int count = (showPrince ? 1 : 0) + (showPrincess ? 1 : 0);
         if (count == 0) return 0f;
-        float font = Mathf.Clamp(Vmin * .0165f, 11f, 14f);
+        float font = Mathf.Clamp(Vmin * .018f, 11f, 15f);
         float portrait = Mathf.Clamp(Vmin * .042f, 24f, 40f);
         float padding = Mathf.Clamp(Screen.width * .01f, 4f, 8f);
-        float outerPadding = Mathf.Clamp(Screen.width * .015f, 6f, 14f) + 1f;
-        float width = Mathf.Min(242f, (route.width - 2f * outerPadding - (count - 1) * 5f) / count);
-        int baseLines = width < 184f ? 4 : 3;
-        float baseHeight = Mathf.Max(portrait, baseLines * 1.2f * font + 4f) + 8f;
-        float height = .7f * GameplayHudLayout.RankingCardHeight(safe, 1);
-        if (height <= 0f) height = baseHeight;
-        float sizeRatio = height / baseHeight;
-        width = Mathf.Min(width * sizeRatio, safe.width);
-        bool stacked = count == 2 && 2f * width + 5f > safe.width;
-        float totalWidth = stacked ? width : count * width + (count - 1) * 5f;
-        float totalHeight = stacked ? 2f * height + 5f : height;
-        float left = Mathf.Clamp(route.center.x - totalWidth * .5f, safe.xMin, Mathf.Max(safe.xMin, safe.xMax - totalWidth));
-        float top = route.yMin - 3f;
-        Rect ranking = GameplayHudLayout.RankingArea(safe);
-        if (top > ranking.yMin - 6f && left < ranking.xMax + 6f)
-        {
-            if (ranking.xMax + 6f + totalWidth <= safe.xMax) left = ranking.xMax + 6f;
-            else top = ranking.yMin - 6f;
-        }
-        var area = new Rect(left, top - totalHeight, totalWidth, totalHeight);
-        float royalHeight = route.yMin - area.yMin + 1f;
-        float campaignLeft = Mathf.Min(route.xMin, area.xMin - 6f);
-        float campaignRight = Mathf.Max(route.xMax, area.xMax + 6f);
-        float campaignHeight = route.height + royalHeight;
-        Place(campaign, new Vector2((campaignLeft + campaignRight) * .5f, route.yMax - campaignHeight * .5f),
-            new Vector2(campaignRight - campaignLeft, campaignHeight));
+        const float gap = 5f;
+        const float inset = 8f;
+        float innerWidth = Mathf.Max(1f, area.width - 2f * inset);
+        bool stacked = count == 2 && innerWidth < 370f;
+        float width = Mathf.Min(300f, stacked ? innerWidth : (innerWidth - (count - 1) * gap) / count);
+        float height = Mathf.Max(portrait, 3.6f * font) + 10f;
+        float totalHeight = stacked ? 2f * height + gap : height;
+        var center = new Vector2(area.center.x, area.yMin - totalHeight * .5f);
+        float addedHeight = totalHeight + inset;
+        area.yMin -= addedHeight;
+        Place(campaign, area.center, area.size);
         Vector2 offset = count == 1 ? Vector2.zero : stacked
-            ? Vector2.up * ((height + 5f) * .5f) : Vector2.left * ((width + 5f) * .5f);
-        if (showPrince) LayoutRoyal(royalRows[0], area.center + offset, width, height, portrait, font, padding, sizeRatio);
-        if (showPrincess) LayoutRoyal(royalRows[1], area.center - offset, width, height, portrait, font, padding, sizeRatio);
-        return royalHeight;
+            ? Vector2.up * ((height + gap) * .5f) : Vector2.left * ((width + gap) * .5f);
+        if (showPrince) LayoutRoyal(royalRows[0], center + offset, width, height, portrait, font, padding);
+        if (showPrincess) LayoutRoyal(royalRows[1], center - offset, width, height, portrait, font, padding);
+        return addedHeight;
     }
 
     private static bool ShowRoyal(RoyalRow row, CartStations game, RiderState child, NetworkPlayer first,
@@ -202,6 +231,12 @@ public sealed class PlayerWorkHud : MonoBehaviour
     {
         bool nearFirst = game.RoyalNearby(first, child);
         bool nearSecond = game.RoyalNearby(second, child);
+        if (!child.Crying || !nearFirst && !nearSecond) row.nextWhimper = 0f;
+        else if (Time.unscaledTime >= row.nextWhimper)
+        {
+            SoundManager.PlayCue(GameSfx.RoyalWhimper);
+            row.nextWhimper = Time.unscaledTime + 4.2f;
+        }
         // 쌍둥이 상태판: 지하층에 있으면 아이가 멀리 있어도 상태를 띄운다.
         bool board = game.Owns(ShopPerk.TwinStatusBoard) && !child.InCellar
             && (first.InCellar || second != null && second.InCellar);
@@ -226,13 +261,9 @@ public sealed class PlayerWorkHud : MonoBehaviour
         return true;
     }
 
-    private void LayoutRoyal(RoyalRow row, Vector2 center, float width, float height, float portrait, float font, float padding,
-        float sizeRatio)
+    private void LayoutRoyal(RoyalRow row, Vector2 center, float width, float height, float portrait, float font, float padding)
     {
-        portrait *= sizeRatio;
-        font *= sizeRatio;
-        padding *= sizeRatio;
-        float gap = 5f * sizeRatio;
+        const float gap = 5f;
         Place(row.panel, center, new Vector2(width, height));
         Place(row.face.rectTransform, center + Vector2.left * (width * .5f - padding - portrait * .5f), Vector2.one * portrait);
         float textWidth = width - 2f * padding - portrait - gap;
@@ -274,8 +305,66 @@ public sealed class PlayerWorkHud : MonoBehaviour
         int tick = SettingsPanel.ReducedMotion ? 0 : Mathf.Max(0, (int)(now * 30d));
         var gunner = viewer.Timing.IsCannonFocus ? viewer : shared != null && shared.Timing.IsCannonFocus ? shared : null;
         DrawAim(hud, view, pane, gunner, game, now, tick, unit);
+        if (hud.seatMarkers is { Length: 2 })
+        {
+            bool feeding = CarriesSnackOnDeck(viewer, game) || CarriesSnackOnDeck(shared, game);
+            Vector3 cartOffset = game.CartArtworkOffset(now);
+            DrawSeatMarker(hud.seatMarkers[0], view, viewer, shared, game, game.Prince.Value, 0, feeding, unit, cartOffset);
+            DrawSeatMarker(hud.seatMarkers[1], view, viewer, shared, game, game.Princess.Value, 1, feeding, unit, cartOffset);
+        }
         DrawHeart(hud.hearts[0], view, game, game.Prince.Value, game.PrinceHeart.Value, now, unit, viewer);
         DrawHeart(hud.hearts[1], view, game, game.Princess.Value, game.PrincessHeart.Value, now, unit, viewer);
+    }
+
+    private static bool CarriesSnackOnDeck(NetworkPlayer actor, CartStations game) =>
+        actor != null && !actor.InCellar && actor.Snack.Value && !game.IsCarryingChild(actor);
+
+    private static bool CanUseSeatMarker(NetworkPlayer actor, CartStations game, StationAction station, CareAction care) =>
+        actor != null && !actor.InCellar && game.AvailableCare(station, actor) == care
+        && (care != CareAction.Attend || actor.Timing.NearbyRoyal == station && !actor.CanUseStairShelf());
+
+    private void DrawSeatMarker(SeatMarker marker, Camera view, NetworkPlayer viewer, NetworkPlayer shared,
+        CartStations game, RiderState child, int index, bool feeding, float unit, Vector3 cartOffset)
+    {
+        bool reseat = child.Pose == RiderPose.Carried && !child.Upset
+            && (child.CarrierSlot == viewer.Slot.Value || shared != null && child.CarrierSlot == shared.Slot.Value);
+        bool visible = !viewer.InCellar && (child.Pose == RiderPose.Seated || reseat);
+        marker.panel.gameObject.SetActive(visible);
+        if (!visible) return;
+
+        StationAction station = index == 0 ? StationAction.RoyalFamily : StationAction.Princess;
+        CareAction action = feeding ? CareAction.Feed : CareAction.Attend;
+        bool selected = !reseat && (CanUseSeatMarker(viewer, game, station, action)
+            || CanUseSeatMarker(shared, game, station, action));
+        Vector3 position = game.RoyalInteractionPosition(child, index) + cartOffset;
+        Sprite icon;
+        Vector2 iconSize;
+        if (reseat)
+        {
+            icon = seatCrown;
+            iconSize = new Vector2(48f, 28.5f);
+            marker.pad.color = new Color32(255, 242, 169, 54);
+        }
+        else if (feeding)
+        {
+            icon = seatSnack;
+            iconSize = new Vector2(22f, 16f);
+            marker.pad.color = selected ? new Color32(255, 223, 135, 92) : new Color32(255, 227, 163, 39);
+            marker.rim.color = selected ? new Color32(255, 225, 162, 255) : new Color32(212, 173, 114, 255);
+        }
+        else
+        {
+            icon = seatHeart;
+            iconSize = new Vector2(22.5f, 17.5f);
+            position += new Vector3(index == 0 ? -10f : 10f, 6f) * game.WorldPerWebUnit;
+            marker.pad.color = selected ? new Color32(246, 164, 199, 196) : new Color32(209, 105, 150, 77);
+            marker.rim.color = selected ? new Color32(255, 224, 233, 255) : new Color32(160, 83, 114, 255);
+        }
+        marker.rim.enabled = !reseat;
+        marker.icon.sprite = icon;
+        marker.icon.rectTransform.sizeDelta = iconSize * (unit / Scale);
+        marker.icon.rectTransform.anchoredPosition = !reseat && !feeding ? Vector2.down * (unit / Scale) : Vector2.zero;
+        Place(marker.panel, view.WorldToScreenPoint(position), marker.pad.sprite.rect.size * unit);
     }
 
     private void DrawAim(WorldHud hud, Camera view, Rect pane, NetworkPlayer gunner, CartStations game, double now, int tick, float unit)
@@ -285,7 +374,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
         bool onScreen = visible && pane.Contains(target);
         bool firing = onScreen && game.IsFiring;
         hud.crosshair.enabled = visible;
-        hud.rope.enabled = hud.remaining.enabled = hud.flame.enabled = firing;
+        hud.rope.enabled = hud.flame.enabled = firing;
+        hud.remaining.enabled = onScreen;
         hud.dash.enabled = visible;
         if (!visible) return;
         Vector2 muzzle = view.WorldToScreenPoint(game.RenderedMuzzle(gunner.Cannon.Direction, now));
@@ -303,13 +393,15 @@ public sealed class PlayerWorkHud : MonoBehaviour
         Vector2 cross = onScreen ? target : new Vector2(Mathf.Clamp(target.x, mark.xMin, mark.xMax), Mathf.Clamp(target.y, mark.yMin, mark.yMax));
         aim.rectTransform.localRotation = Quaternion.Euler(0f, 0f, onScreen ? 0f : Vector2.SignedAngle(Vector2.right, target - cross));
         Place(aim.rectTransform, cross, aim.sprite.rect.size * (onScreen ? 22f / 12f * unit : unit));
-        if (!firing) return;
-        float artScale = 3f * 42f / 32f * unit;
-        float left = Mathf.Clamp01((float)(game.FuseDeadline.Value - now) / game.FuseDuration);
-        Vector2 ropeSize = hud.rope.sprite.rect.size * artScale;
-        Place(hud.rope.rectTransform, target, ropeSize);
-        Place(hud.remaining.rectTransform, target, ropeSize);
+        if (!onScreen) return;
+        float artScale = 2.5f * unit;
+        float left = firing ? Mathf.Clamp01((float)(game.FuseDeadline.Value - now) / game.FuseDuration) : 1f;
+        Vector2 ropeSize = hud.remaining.sprite.rect.size * artScale;
+        Vector2 ropeCenter = target + Vector2.up * (2f * artScale);
+        Place(hud.remaining.rectTransform, ropeCenter, ropeSize);
         hud.remaining.fillAmount = left;
+        if (!firing) return;
+        Place(hud.rope.rectTransform, ropeCenter, ropeSize);
         float burn = Mathf.PI * .5f + left * 2f * Mathf.PI;
         var flame = hud.flame;
         flame.sprite = flameFrames[(tick / 3) % flameFrames.Length];

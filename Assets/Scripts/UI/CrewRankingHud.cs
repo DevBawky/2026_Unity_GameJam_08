@@ -20,8 +20,13 @@ public sealed class CrewRankingHud : MonoBehaviour
     [SerializeField] private Sprite[] portraits;
     private readonly List<NetworkPlayer> ranked = new(4);
     private Canvas canvas;
+    private PlayerWorkHud workHud;
 
-    private void Awake() => canvas = GetComponent<Canvas>();
+    private void Awake()
+    {
+        canvas = GetComponent<Canvas>();
+        workHud = GetComponent<PlayerWorkHud>();
+    }
 
     private void LateUpdate()
     {
@@ -41,7 +46,7 @@ public sealed class CrewRankingHud : MonoBehaviour
         float basePadding = Mathf.Clamp(vmin * .007f, 2f, 6f);
         float fit = GameplayHudLayout.RankingFit(safe, baseSize.x);
         float left = safe.xMin;
-        float panelTop = GameplayHudLayout.RankingTop(safe);
+        float panelTop = GameplayHudLayout.RankingTop(safe, workHud != null ? workHud.CampaignBottom : float.PositiveInfinity);
         for (int rank = 0; rank < cards.Length; rank++)
         {
             var card = cards[rank];
@@ -58,11 +63,12 @@ public sealed class CrewRankingHud : MonoBehaviour
             card.nickname.SetText(crew.Nickname.Value.ToString());
 
             float scale = GameplayHudLayout.RankingCardScale(rank) * fit;
-            float width = baseSize.x * scale;
-            float height = GameplayHudLayout.RankingCardHeight(safe, rank);
+            float width = baseSize.x * scale * GameplayHudLayout.RankingWidthScale;
+            float height = baseSize.y * scale;
             float font = baseFont * scale;
-            float pad = basePadding * scale;
-            card.rank.fontSize = card.score.fontSize = card.nickname.fontSize = font / canvas.scaleFactor;
+            float pad = basePadding * scale * GameplayHudLayout.RankingWidthScale;
+            card.rank.fontSize = card.score.fontSize = font / canvas.scaleFactor;
+            card.nickname.fontSize = card.rank.fontSize * GameplayHudLayout.RankingWidthScale;
 
             float x = left + width * .5f;
             float y = panelTop - height * .5f;

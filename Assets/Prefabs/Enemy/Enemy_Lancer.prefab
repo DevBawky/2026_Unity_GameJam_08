@@ -161,9 +161,9 @@ MeshRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 900
+  m_SortingLayerID: -439690069
+  m_SortingLayer: 3
+  m_SortingOrder: 4
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &1757543096575021586
@@ -951,9 +951,9 @@ SortingGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6288397850128443264}
   m_Enabled: 1
-  m_SortingLayerID: 904103861
-  m_SortingLayer: 1
-  m_SortingOrder: 30030
+  m_SortingLayerID: 1999933635
+  m_SortingLayer: 2
+  m_SortingOrder: 60
   m_SortAtRoot: 1
   m_Sort3DAs2D: 0
 --- !u!1 &7206449036681769403

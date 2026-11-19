@@ -105,7 +105,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public static bool Running => Instance != null && Instance.IsSpawned && Instance.flow == StageFlow.Running;
     private SpriteRenderer cartBody;
     private SpriteRenderer detachedTire;
-    private float detachedTireAlpha;
+    private int damagedTires;
     private float durability;
     private float princeAnxiety;
     private float princessAnxiety;
@@ -132,6 +132,24 @@ public sealed partial class CartStations : NetworkBehaviour
         player.SecondLocal && secondCamera != null && secondCamera.CameraActive ? secondCamera.ShakeOffset : cameraRig.ShakeOffset;
     public SpriteRenderer CartBody => cartBody;
     internal SpriteRenderer DeckArtwork { get; private set; }
+    internal Bounds DeckMovementBounds
+    {
+        get
+        {
+            if (DeckArtwork == null) return cartBody.bounds;
+            var bounds = new Bounds();
+            bounds.SetMinMax(WebPosition(388f, 43f), WebPosition(667f, -81f));
+            return bounds;
+        }
+    }
+    private Transform telescopePoint;
+    internal bool AtTelescope(NetworkPlayer actor)
+    {
+        if (!Running || telescopePoint == null || actor.InCellar) return false;
+        Vector2 offset = actor.transform.position - telescopePoint.position;
+        float unit = WorldPerWebUnit;
+        return new Vector2(offset.x / (24f * unit), offset.y / (14.25f * unit)).sqrMagnitude <= 1f;
+    }
     public bool Failed => flow == StageFlow.Failed;
     public string FailureReason { get; private set; } = "CART DESTROYED";
     public bool ChoosingUpgrade => flow == StageFlow.ChoosingUpgrade;
@@ -166,6 +184,7 @@ public sealed partial class CartStations : NetworkBehaviour
         {
             if (renderer.name == "CartBody") cartBody = renderer;
             else if (renderer.name == "Wagon Deck Sprite") DeckArtwork = renderer;
+            else if (renderer.name == "Telescope Lookout") telescopePoint = renderer.transform;
             else if (renderer.name.StartsWith("Tire ") && renderer.sprite != null)
             {
                 tires.Add(renderer);
@@ -231,7 +250,9 @@ public sealed partial class CartStations : NetworkBehaviour
         AdvanceFuse();
         CannonProjectileStep?.Invoke(Step);
         waveSpawner.Advance(Step);
-        Waves.Value = waveSpawner.SpawnedWaves;
+        int wave = waveSpawner.SpawnedWaves;
+        if (wave > Waves.Value) PlayCartCueRpc(GameSfx.PursuitHorn);
+        Waves.Value = wave;
         if (!Running) return;
         AdvanceCare();
         if (Endless.Value && shellsInPile == 0) shellsInPile = StartShellsInPile;
@@ -250,6 +271,7 @@ public sealed partial class CartStations : NetworkBehaviour
         if (flow != StageFlow.Running) return;
         FailureReason = reason;
         flow = StageFlow.Failed;
+        PlayCartCueRpc(GameSfx.DefeatSting);
         Publish();
     }
 
@@ -257,6 +279,7 @@ public sealed partial class CartStations : NetworkBehaviour
     {
         FinishCare();
         flow = stageNumber == 3 ? StageFlow.Complete : StageFlow.ChoosingUpgrade;
+        PlayCartCueRpc(GameSfx.StageResult);
         if (flow == StageFlow.ChoosingUpgrade) RollShopOffer();
         Publish();
     }

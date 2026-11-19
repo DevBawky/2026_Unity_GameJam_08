@@ -26,7 +26,7 @@ public sealed partial class CartStations
     internal HorseMood CurrentHorseMood => HorseRage.Value.Mood;
     internal float HorsePace => CurrentHorseMood switch
     {
-        HorseMood.Runaway => 1.60f,
+        HorseMood.Runaway => 2.20f,
         HorseMood.Tired => .55f,
         _ => 1f + .35f * (Owns(ShopPerk.ImprovedWhip) ? ImprovedWhipStrength : 1f) * HorseRage.Value.Value
     };
@@ -77,5 +77,6 @@ public sealed partial class CartStations
         }
         HorseRage.Value = rage;
         if (actor != null) actor.AwardScore(CartRules.HorseBoostScore);
+        PlayCartCueRpc(GameSfx.WhipSnap);
     }
 }

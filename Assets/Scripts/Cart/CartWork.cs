@@ -10,6 +10,7 @@ public sealed partial class CartStations
         actor.Carrying.Value = false;
         depositedShells++;
         actor.AwardScore(CartRules.ShellDeliveryScore);
+        actor.PlayWorkCue(GameSfx.ShellMetal);
         CompleteStation(action, actor);
         Refresh();
     }
@@ -23,18 +24,21 @@ public sealed partial class CartStations
             case StationAction.Princess: CareFor(Princess, actor, 1); break;
             case StationAction.WheelRack:
                 actor.SpareWheel.Value = true;
+                actor.PlayWorkCue(GameSfx.WheelFit);
                 CompleteStation(action, actor);
                 break;
             case StationAction.ShellPile:
                 if (actor.Carrying.Value || shellsInPile <= 0) break;
                 shellsInPile--;
                 actor.Carrying.Value = true;
+                actor.PlayWorkCue(GameSfx.ShellMetal);
                 CompleteStation(action, actor);
                 break;
             case StationAction.CannonCleaning:
                 if (!NeedsCleaning) break;
                 actor.AwardScore(CartRules.CannonCleanScore);
                 cleaningTaps = Mathf.Min(CleaningTapsRequired, cleaningTaps + CleaningTapGain(actor));
+                actor.PlayWorkCue(cleaningTaps == CleaningTapsRequired ? GameSfx.UiConfirm : GameSfx.BrushScrub);
                 if (cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
                 break;
             case StationAction.Reload:
@@ -43,6 +47,7 @@ public sealed partial class CartStations
                 loaded = true;
                 actor.AwardScore(CartRules.ShellReloadScore);
                 actor.ShowWorkResult(true);
+                actor.PlayWorkCue(GameSfx.CannonLoad);
                 break;
             case StationAction.WheelRepair:
                 if (!wheelDetached || (wheelRepairSteps == 0 && !actor.SpareWheel.Value && !SpareKitReady.Value)) break;
@@ -53,11 +58,12 @@ public sealed partial class CartStations
                     else SpareKitReady.Value = false;
                 }
                 wheelRepairSteps++;
+                actor.PlayWorkCue(GameSfx.WheelFit);
                 if (wheelRepairSteps == 1)
                 {
                     actor.AwardScore(CartRules.WheelInstallScore);
                     WheelMount.Value = new WheelMountVisual { SlotKey = tires.IndexOf(detachedTire) + 1, Time = NetworkManager.ServerTime.Time };
-                    SetTireAlpha(detachedTireAlpha);
+                    RefreshTireArtwork(tires.IndexOf(detachedTire));
                 }
                 if (wheelRepairSteps >= WheelRepairStepsNeeded)
                 {
@@ -185,7 +191,9 @@ public sealed partial class CartStations
 
     public void Fail(StationAction action, NetworkPlayer actor, bool nearMiss = false)
     {
-        if (!IsServer || action != StationAction.Reload || !CanReload) return;
+        if (!IsServer) return;
+        actor.PlayWorkCue(GameSfx.UiReject);
+        if (action != StationAction.Reload || !CanReload) return;
         if (KeepsShellOnReloadFail(nearMiss))
         {
             actor.ShowShellReturned();
@@ -206,6 +214,7 @@ public sealed partial class CartStations
             if (!actor.Assigned.Value || !actor.Carrying.Value || actor.Holding.Value || actor.ShellSafeUntil > time) continue;
             actor.HoldDeadline.Value = time + CartRules.Active.shellHoldSeconds;
             actor.Holding.Value = true;
+            actor.PlayWorkCue(GameSfx.DangerPulse);
         }
     }
 
@@ -222,6 +231,7 @@ public sealed partial class CartStations
         actor.Holding.Value = false;
         if (success) actor.ShellSafeUntil = NetworkManager.ServerTime.Time + 1d;
         else { actor.Carrying.Value = false; lostShells++; }
+        actor.PlayWorkCue(success ? GameSfx.ShellMetal : GameSfx.UiReject);
         Refresh();
     }
 }

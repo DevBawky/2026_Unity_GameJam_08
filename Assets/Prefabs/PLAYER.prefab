@@ -615,7 +615,6 @@ MonoBehaviour:
   princePoses: []
   princessPoses: []
   royalChairs: []
-  royalMarkers: []
   Prince:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -1345,6 +1344,7 @@ MonoBehaviour:
       Precision: 0
       CleaningTaps: 0
       StageTick: 0
+      DamagedTires: 0
       Flow: 0
       Loaded: 0
       Firing: 0
@@ -1787,8 +1787,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 904103861
-  m_SortingOrder: 5
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 30
   m_TargetDisplay: 0
 --- !u!114 &7905685961204331594
 MonoBehaviour:
@@ -2308,8 +2308,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 30
+  m_SortingLayerID: -439690069
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!1 &8356341511384291396
 GameObject:

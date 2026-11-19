@@ -51,10 +51,15 @@ public sealed class LobbyUI : MonoBehaviour
                 if (p.Slot == i) playerLabels[i].text = $"P{i + 1}\n{p.Nickname}" + (p.ClientId == 0 ? LocalizationTable.T(" (방장)") : "");
         }
     }
-    public void ShowJoin() { joining = true; }
-    public void ShowTitle() { if (!session.Busy) joining = false; }
-    public void OpenSettings() { settingsPanel.SetActive(true); settingsPanel.transform.SetAsLastSibling(); }
-    public void CloseSettings() { settingsPanel.SetActive(false); }
+    public void ShowJoin() { joining = true; SoundManager.PlayCue(GameSfx.UiTick); }
+    public void ShowTitle()
+    {
+        if (session.Busy) return;
+        joining = false;
+        SoundManager.PlayCue(GameSfx.UiTick);
+    }
+    public void OpenSettings() { settingsPanel.SetActive(true); settingsPanel.transform.SetAsLastSibling(); SoundManager.PlayCue(GameSfx.UiTick); }
+    public void CloseSettings() { settingsPanel.SetActive(false); SoundManager.PlayCue(GameSfx.UiTick); }
     public void Quit() { Application.Quit(); }
     public void AskQuit() => confirmPopup.Show("정말 게임을 종료할까요?", Quit);
     // 팝업이 떠 있는 동안 게임이 시작되거나 연결이 끊길 수 있어, 예를 누른 시점에 다시 확인한다.
@@ -78,7 +83,7 @@ public sealed class LobbyUI : MonoBehaviour
         practicePanel.SetActive(true);
         practicePanel.transform.SetAsLastSibling();
     }
-    public void CancelPractice() => practicePanel.SetActive(false);
+    public void CancelPractice() { practicePanel.SetActive(false); SoundManager.PlayCue(GameSfx.UiTick); }
     public void BeginPractice() => session.StartPractice(pendingSeats);
     public void BeginTest() => session.StartPractice(pendingSeats, true);
 }
