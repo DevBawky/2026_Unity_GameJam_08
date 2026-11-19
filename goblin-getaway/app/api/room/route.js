@@ -1,5 +1,5 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, cannonIndexFor, cannonState, isCannonRole, isOperationIntroActive, operationElapsedTicks, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, advanceOperationIntro, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, cannonIndexFor, cannonState, isCannonRole, isOperationIntroActive, operationElapsedTicks, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
@@ -138,6 +138,9 @@ export async function POST(req){
     if(op==='start'){
       if(!snap.host||state.mode!=='ready')return fail('출발 대기 중에는 방장이 작전을 시작할 수 있습니다.');
       begin(state,{operationIntro:true});
+    }else if(op==='intro-advance'){
+      if(!snap.host)return fail('방장만 다음 대사로 진행할 수 있습니다.',403);
+      if(!advanceOperationIntro(state,b.lineIndex))return respond(snap);
     }else if(op==='emote'){
       const error=addEmote(state,seat.id,b.key,now);
       if(error)return fail(error);
@@ -191,7 +194,7 @@ export async function POST(req){
     }else return fail('이 역할에서는 사용할 수 없는 조작입니다.');
     // A chat signal must not reset the simulation clock between movement packets.
     const persisted=op==='emote'?{...JSON.parse(row.state),emotes:state.emotes}:state;
-    const resetClock=op==='start'||op==='pause'||state!==snap.state;
+    const resetClock=op==='start'||op==='intro-advance'||op==='pause'||state!==snap.state;
     const clock=op==='emote'?row.clock:resetClock?now:advancedClock;
     const result=await db.prepare('UPDATE rooms SET state=?,clock=?,rev=rev+1,expires=? WHERE code=? AND host=? AND rev=?').bind(JSON.stringify(persisted),clock,expiry(),code,row.host,row.rev).run();
     if(result.meta.changes)return respond({...snap,state,rev:row.rev+1,stamp:now});

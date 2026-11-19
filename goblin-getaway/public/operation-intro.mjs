@@ -5,21 +5,32 @@ const LINES = [
   '그리고 애들을 울리기라도 하면 니네 부서는 진짜 끝장날 줄 알아!!',
 ];
 
-// The simulation advances 30 ticks per second.
-const TICKS_PER_CHARACTER = 30 / 27;
-const READING_TICKS = 54;
-const lineDuration = text => Math.ceil(text.length * TICKS_PER_CHARACTER) + READING_TICKS;
-export const OPERATION_INTRO_TICKS = LINES.reduce((ticks, text) => ticks + lineDuration(text), 0);
+const CHARACTERS_PER_SECOND = 27;
+const TICKS_PER_SECOND = 30;
+const LEGACY_READING_TICKS = 54;
+const legacyLineDuration = text => Math.ceil(text.length * TICKS_PER_SECOND / CHARACTERS_PER_SECOND) + LEGACY_READING_TICKS;
+export const OPERATION_INTRO_TICKS = LINES.reduce((ticks, text) => ticks + legacyLineDuration(text), 0);
 
-export function operationIntroFrame(introTick) {
-  if (!Number.isInteger(introTick) || introTick < 0 || introTick >= OPERATION_INTRO_TICKS) return null;
+export function operationIntroTypingTicks(lineIndex) {
+  const text = LINES[lineIndex];
+  return text ? Math.ceil((text.length - 1) * TICKS_PER_SECOND / CHARACTERS_PER_SECOND) : 0;
+}
+
+function lineFrame(lineTick, lineIndex) {
+  const text = LINES[lineIndex];
+  if (!text) return null;
+  const visibleCharacters = Math.min(text.length, 1 + Math.floor(lineTick * CHARACTERS_PER_SECOND / TICKS_PER_SECOND));
+  return {lineIndex, text, visibleCharacters, canAdvance:visibleCharacters === text.length, finalLine:lineIndex === LINES.length - 1, lineTick};
+}
+
+export function operationIntroFrame(introTick, lineIndex) {
+  if (!Number.isInteger(introTick) || introTick < 0) return null;
+  if (lineIndex !== undefined) return Number.isInteger(lineIndex) ? lineFrame(introTick, lineIndex) : null;
+  // Old room saves have a single absolute clock and no current dialogue line.
   let lineTick = introTick;
   for (const [lineIndex, text] of LINES.entries()) {
-    const duration = lineDuration(text);
-    if (lineTick < duration) {
-      const visibleCharacters = Math.min(text.length, 1 + Math.floor(lineTick / TICKS_PER_CHARACTER));
-      return {lineIndex, text, visibleCharacters};
-    }
+    const duration = legacyLineDuration(text);
+    if (lineTick < duration) return lineFrame(lineTick, lineIndex);
     lineTick -= duration;
   }
   return null;

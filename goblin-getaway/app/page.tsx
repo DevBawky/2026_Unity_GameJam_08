@@ -43,7 +43,11 @@ function TimingPrompt({slot}:{slot:string}){
     </defs>
     <image href="/pixel-art/ui/ui_interactive.png" x="2.5" y="2.5" width="95" height="95"/>
     <image className="timing-target-art" href="/pixel-art/ui/ui_interactive_bar.png" x="2.5" y="2.5" width="95" height="95" mask={'url(#'+id+'-target-mask)'}/>
-    <g className="timing-needle"><image href="/pixel-art/ui/ui_interactive_node.png" x="43.5" y="0" width="13" height="17"/></g>
+    <g className="timing-needle">
+     <image href="/pixel-art/ui/ui_interactive_node.png" x="40.25" y="-4.25" width="19.5" height="25.5"/>
+     {[1,2,3].map(frame=><image key={frame} className="timing-sparkle" data-frame={frame}
+      href={'/pixel-art/ui/ui_interactive_node_effect'+frame+'.png'} x="32.5" y="-9" width="35" height="35" visibility="hidden"/>)}
+    </g>
    </svg>
    <strong className="timing-label hud-bubble" id={id+'-label'}/>
    <small className="timing-feedback" hidden/>
@@ -87,6 +91,7 @@ function SettingsMenu(){
      <button data-view="status"><ChartNoAxesColumn/><span>작전 현황 · 탑승원 배치</span><ChevronRight/></button>
      <button data-view="guide"><BookOpen/><span>조작 가이드</span><ChevronRight/></button>
      <button data-view="traits"><Sparkles/><span>정비 카드 도감</span><ChevronRight/></button>
+     <button type="button" id="test-start" hidden><Play aria-hidden="true"/><span>테스트 모드</span></button>
      <button type="button" id="test-stop" hidden><LogOut aria-hidden="true"/><span>테스트 종료</span></button>
    </div>
  </section>;
@@ -97,7 +102,7 @@ function StatusPanel(){
    <div className="stage-summary"><span id="chapter-no">챕터 1</span><strong id="chapter-name">왕국 국경 탈출</strong><span id="mode-label">1인 연습 모드</span></div>
    <div className="telemetry"><div className="metric-heading"><span id="stage-no">스테이지 1</span><strong id="stage-name">가시숲 고갯길</strong></div>
    <div className="metric-heading"><span id="wave-no">웨이브 0 / 5</span></div>
-   <div className="distance"><div className="metric-heading"><Flag/><span id="distance-label">남은 거리</span><strong id="dist">1,000 m</strong></div><div className="dist-line" id="status-distance-line"><span id="bar"/></div><small id="stage-clock" className="stage-clock">주행 0 / 1,000 m · 0:00 경과</small></div>
+   <div className="distance"><div className="metric-heading"><Flag/><span id="distance-label">남은 거리</span><strong id="dist">1,500 m</strong></div><div className="dist-line" id="status-distance-line"><span id="bar"/></div><small id="stage-clock" className="stage-clock">주행 0 / 1,500 m · 0:00 경과</small></div>
    <div className="metric-heading"><Shield/><span>마차 내구도</span><strong id="hp">100 / 100</strong></div>
    <div className="metric-heading"><Sparkles/><span>애정 포인트</span><strong id="affection-readout">0 AP</strong></div>
    <div className="metric-heading"><Gauge/><span>이동 속도</span><strong id="speed">0 m/s</strong></div></div>
@@ -108,11 +113,12 @@ function StatusPanel(){
 }
 export default function Home(){return <>
 <main className="desk" id="desk" aria-label="그건 님이!!! 게임">
- <section className="monitor" id="monitor" aria-label="마차 탈출 작전 게임 화면">
+ <section className="monitor" id="monitor" aria-label="마차 탈출 작전 게임 화면" data-title-screen="true">
   <div className="world"><canvas id="world" aria-label="왼쪽을 향해 달리는 마차와 뒤에서 쫓아오는 왕국군"/></div>
+  <Image className="game-title-art" src="/pixel-art/main_title.png" width={1672} height={941}
+   alt="숲길에서 왕자와 공주를 태우고 추격대를 피해 달리는 마차" loading="eager" fetchPriority="high" unoptimized/>
   <div className="play-tools">
-   <button type="button" id="test-start" className="primary test-start">테스트 모드</button>
-   <button id="start" className="primary" data-mode="ready"><Play size={17} fill="currentColor"/><span>작전 시작</span></button>
+   <button type="button" id="start" className="primary" data-mode="ready"><span>일단 저질러!!</span></button>
    <button id="settings-button" className="gear" aria-label="환경설정" title="환경설정" aria-haspopup="dialog"><Settings size={20}/></button>
   </div>
   <section className="crew-ranking" id="crew-ranking" aria-label="승무원 점수 순위" hidden>
@@ -153,13 +159,17 @@ export default function Home(){return <>
    {Array.from({length:6},(_,pane)=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
   </div>
   <div className="controls" role="group" aria-label="가상 조이스틱과 행동 버튼"><PlayerControls id="p1"/><PlayerControls id="p2"/></div>
-  <div className="operation-intro" id="operation-intro" aria-hidden="true" hidden>
+  <section className="operation-intro" id="operation-intro" aria-label="마왕의 지시" hidden>
    <Image className="operation-intro-portrait" src="/pixel-art/demon-king.png" width={1536} height={1024} alt="" loading="eager" unoptimized/>
    <div className="operation-intro-box">
     <strong className="operation-intro-speaker">마왕</strong>
-    <p id="operation-intro-line"/>
+    <p id="operation-intro-line" aria-hidden="true"/>
+    <div className="operation-intro-actions">
+     <small id="operation-intro-wait" hidden>방장이 다음 대사로 넘기기를 기다리는 중</small>
+     <button type="button" id="operation-intro-next" hidden>다음 대사</button>
+    </div>
    </div>
-  </div>
+  </section>
   <p className="operation-intro-announcement" id="operation-intro-announcement" role="status" aria-live="polite" aria-atomic="true"/>
  </section>
 </main>

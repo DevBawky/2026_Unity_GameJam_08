@@ -1,14 +1,17 @@
-import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES,WAVE_ENEMY_MULTIPLIER} from './campaign.mjs?v=wave-density163';
-import {ROAD_OBSTACLE_TYPES,obstacleY,roadObstacleProfile,roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
+import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES,WAVE_ENEMY_MULTIPLIER} from './campaign.mjs?v=v15-half-distance';
+import {ROAD_OBSTACLE_TYPES,obstacleY,roadObstacleProfile} from './road-obstacles.mjs?v=loose-wheels34';
 import {finishCare,maxDurability,newCare,pruneVotes,recordCare,recordFeeding,recordReseat,UPGRADE_CARDS} from './intermission.mjs?v=wheel-axle83';
 import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,draftHorseFrameOffset,draftHorseOrigin} from './horse-targets.mjs?v=cavalry-hooves169';
-import {OPERATION_INTRO_TICKS} from './operation-intro.mjs';
+import {operationIntroFrame, operationIntroTypingTicks, OPERATION_INTRO_TICKS} from './operation-intro.mjs?v=intro-click-v15';
 export {obstacleY} from './road-obstacles.mjs?v=loose-wheels34';
 
 export const HZ = 30;
 export const STEP = 1 / HZ;
-export const operationElapsedTicks=s=>s.tick+(s.operationIntroTick??0);
-export const isOperationIntroActive=s=>s.operationIntroTick!=null&&s.operationIntroTick<OPERATION_INTRO_TICKS;
+const introElapsedTicks=s=>s.operationIntroElapsed??s.operationIntroTick??0;
+export const operationElapsedTicks=s=>s.tick+introElapsedTicks(s);
+export const isOperationIntroActive=s=>s.operationIntroLine===undefined
+  ?s.operationIntroTick!=null&&s.operationIntroTick<OPERATION_INTRO_TICKS
+  :s.operationIntroLine!==null;
 export const CAMERA_TRANSITION_SECONDS=.5;
 export const LANES = [82, 182, 282];
 const [CART_TOP, CART_CENTER, CART_BOTTOM] = LANES;
@@ -71,7 +74,7 @@ const CART_HULL={left:340,right:715,halfHeight:100};
 const CATAPULT_TARGET_X=718, CATAPULT_FORWARD_X=180;
 const ROAD_UNITS_PER_METER=4;
 const ROAD_SCROLL_UNITS_PER_METER=ROAD_UNITS_PER_METER*8;
-export const draftGaitDistance=s=>s.operationIntroTick==null?s.distance:s.road/ROAD_SCROLL_UNITS_PER_METER;
+export const draftGaitDistance=s=>introElapsedTicks(s)>0?s.road/ROAD_SCROLL_UNITS_PER_METER:s.distance;
 const ROAD_FIRST_WARNING_METERS=42, ROAD_WARNING_TICKS=4*HZ, ROAD_OBSTACLE_ENTRY_X=ROAD_CAMERA_MIN_X-100;
 const ROAD_OBSTACLE_HIT_START=287, ROAD_OBSTACLE_HIT_END=344, ROAD_STRIKE_MARGIN=HZ;
 const WALK_SPEED=165, CARRY_SPEED=50, WHEEL_CARRY_SPEED=110, WAGON_STEER_SPEED=140;
@@ -275,6 +278,7 @@ export function setHumanSlots(s,slots){
    if(previous.includes(id)===slots.includes(id))continue;
    const p=s.players[id];p.mx=0;p.my=0;p.until=0;p.job=null;resetCooking(p);
    delete p.refillAfterShot;
+   delete p.timingStop;
    p.score=0;p.scoreOwnerVersion=(p.scoreOwnerVersion??0)+1;
  }
  s.humanSlots=[...slots];s.humans=slots.length;
@@ -285,6 +289,7 @@ export function setHumanSlots(s,slots){
  pruneVotes(s,slots);
 }
 export function ensureDeck(s){
+ restoreLegacyOperationIntro(s);
  const legacyCampaign=s.chapter===undefined||s.wave===undefined;
  if(legacyCampaign)Object.assign(s,campaignLocation(s.chapter,s.stage));
  const stage=stageSpec(s.chapter,s.stage);
@@ -298,7 +303,8 @@ export function ensureDeck(s){
    delete s.nextEnemy;
  }
  const finished=s.mode==='clear'||s.mode==='lost';
- if(!finished&&s.goal<stage.goal){
+ if(s.mode==='ready')s.goal=stage.goal;
+ else if(!finished&&s.goal<stage.goal){
    if(s.wave>=stage.catapultFastFromWave)shortenCatapultWait(s);
    s.goal=stage.goal;
  }
@@ -700,14 +706,18 @@ export function operate(s,id,atTick=s.tick,taps=1){
  }
  if(role==='catch'){
    if(atTick<p.slipUntil-CATCH_TICKS)return false;
-   if(hit(s,role,catchPhase(p,atTick))){
+   const needle=catchPhase(p,atTick);
+   recordTimingStop(s,p,role,needle);
+   if(hit(s,role,needle)){
      p.slipUntil=0;p.safeUntil=s.tick+HZ;message(p,s,'포탄을 붙잡았습니다');
      queueSfx(s,'shell-catch',id);
    }else dropBall(s,p,true,id);
    return true;
  }
  if((role==='loader'&&!canLoad(s,index))||(role==='supply'&&!s.ammo.stock)||cannon[feedbackKey(role)+'Cd']>s.tick)return false;
- action(s,role,phase({...s,tick:atTick},role),id,index);
+ const needle=phase({...s,tick:atTick},role);
+ recordTimingStop(s,p,role,needle);
+ action(s,role,needle,id,index);
  if(p.station&&!occupiedStation(p,s))releaseStation(p,true);
  return true;
 }
@@ -1295,7 +1305,7 @@ export function initial(stage=1,upgrades=DEFAULT_TRAITS,seed=718,chapter=1){
   const goal=stageSpec(location.chapter,location.stage).goal;
   const traits={...DEFAULT_TRAITS,...upgrades};
   const hp=maxDurability({traits}),wheel=wheelState();
-  return {mode:'ready',...location,wave:0,traits,seed,tick:0,operationIntroTick:null,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,wagonMoveY:0,wagonMoveSince:0,wagonIdleY:CART_CENTER,wagonIdleSince:0,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
+  return {mode:'ready',...location,wave:0,traits,seed,tick:0,operationIntroTick:null,operationIntroLine:null,operationIntroElapsed:0,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,wagonMoveY:0,wagonMoveSince:0,wagonIdleY:CART_CENTER,wagonIdleSince:0,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
     obstacles:[],roadWarning:null,wheelTracks:[],looseWheelTracks:[],hoofprints:[],cavalryHoofprints:[],sfxSequence:0,sfxEvents:[],
     enemies:[],shots:[],particles:[],cannonImpacts:[],cannonCombo:{count:0,tick:0},
     nextRock:ROAD_FIRST_WARNING_METERS,catapult:null,catapults:[],catapultPattern:0,nextCatapult:CATAPULT_FIRST,driveCd:0,gunCd:0,driveMsg:'',gunMsg:'',driveUntil:0,gunUntil:0,event:'',eventUntil:0,serial:0,road:0,players:crew(),humans:1,horses:{right:0,left:0},horseRage:freshHorseRage(),ammo:supplies(),royals:passengers(),gunAngle:0,wheel,looseWheels:[],fixCd:0,fixMsg:'',fixUntil:0,
@@ -1304,8 +1314,30 @@ export function initial(stage=1,upgrades=DEFAULT_TRAITS,seed=718,chapter=1){
 export function begin(s,{testMode=false,operationIntro=false}={}){
  if(s.mode!=='ready')return;
  if(testMode)s.testMode=true;
- if(operationIntro&&!s.testMode)s.operationIntroTick=0;
+ if(operationIntro&&!s.testMode){
+   s.operationIntroLine=0;
+   s.operationIntroTick=0;
+   s.operationIntroElapsed=0;
+ }
  s.mode='run';
+}
+function restoreLegacyOperationIntro(s){
+ if(s.operationIntroLine!==undefined)return;
+ const openingTick=s.operationIntroTick;
+ const frame=s.mode==='run'||s.mode==='paused'?operationIntroFrame(openingTick):null;
+ s.operationIntroElapsed=Number.isInteger(openingTick)?Math.max(0,openingTick):0;
+ s.operationIntroLine=frame?.lineIndex??null;
+ s.operationIntroTick=frame?Math.min(frame.lineTick,operationIntroTypingTicks(frame.lineIndex)):null;
+}
+export function advanceOperationIntro(s,expectedLineIndex){
+ if(s.mode!=='run'||!Number.isInteger(expectedLineIndex))return false;
+ restoreLegacyOperationIntro(s);
+ if(s.operationIntroLine!==expectedLineIndex)return false;
+ const frame=operationIntroFrame(s.operationIntroTick,s.operationIntroLine);
+ if(!frame?.canAdvance)return false;
+ s.operationIntroLine=frame.finalLine?null:frame.lineIndex+1;
+ s.operationIntroTick=frame.finalLine?null:0;
+ return true;
 }
 function beginStage(s,chapter,stage,traits,affection=0,entry=null){
  const next=initial(stage,traits,s.seed,chapter);
@@ -1352,6 +1384,9 @@ export function target(s,role){return role==='repair'?[.46,.82][s.wheel.progress
 export function phase(s,role){const t=s.tick/HZ;const freq=role==='repair'?.55:.49;
   return ((t*(freq+Math.min(.17,(s.stage-1)*.026))+.09)%1+1)%1;}
 export function hit(s,role,p=phase(s,role)){const gap=Math.abs(((p-target(s,role)+1.5)%1)-.5);return gap<=width(s,role)/2;}
+function recordTimingStop(s,player,role,needle){
+ player.timingStop={tick:s.tick,role,angle:(needle-target(s,role))*360,band:width(s,role)*100};
+}
 function impact(s,power,msg,royalFallChance=0){
  const cushion=Math.pow(.78,s.traits.spring);
  s.shake=Math.min(1.45,power*cushion);s.shakeSign=rand(s)*TAU;s.event=msg;s.eventUntil=s.tick+42;s.serial++;
@@ -1423,7 +1458,7 @@ function ellipseEntry(x,y,dx,dy,rx,ry){
   return entry<=1?entry:null;
 }
 function wheelSurfaces(s){
-  const solids=roadsideTrees(s.road,ROAD_TOP,ROAD_BOTTOM).map(({x,y,r})=>({x,y,rx:r,ry:r}));
+  const solids=[];
   for(const obstacle of s.obstacles){
     if(obstacle.type!=='log'&&obstacle.type!=='rock')continue;
     const {halfWidth}=roadObstacleProfile(obstacle.type);
@@ -1901,8 +1936,10 @@ function idleWagonY(s){
 }
 export function step(s){
   if(s.mode!=='run')return;
+  restoreLegacyOperationIntro(s);
   if(isOperationIntroActive(s)){
-    s.operationIntroTick++;
+    s.operationIntroTick=Math.min(s.operationIntroTick+1,operationIntroTypingTicks(s.operationIntroLine));
+    s.operationIntroElapsed++;
     s.road+=s.speed*STEP*ROAD_SCROLL_UNITS_PER_METER;
     return;
   }

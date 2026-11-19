@@ -5,8 +5,8 @@ import {join} from 'node:path';
 import test from 'node:test';
 import {main} from './cli.mjs';
 import {addRackShell, begin, CANNON_CLEAN_TAPS, cannonAfterShot, cannonIndexFor, cannonPad,
-  cannonState, ensureDeck, hit, initial, leaveStation, operate, setHumanSlots, setInput,
-  stationAt, STATIONS, step} from '../../goblin-getaway/public/sim.mjs';
+  cannonState, ensureDeck, hit, initial, leaveStation, operate, phase, setHumanSlots, setInput,
+  stationAt, STATIONS, step, target, width} from '../../goblin-getaway/public/sim.mjs';
 
 const wait = {kind: 'wait', x: 0, y: 0, ticks: 30, target: null};
 const longWait = {...wait, ticks: 90};
@@ -48,15 +48,23 @@ test('one cannon pad switches steps without releasing its operator', () => {
   step(state);
   assert.equal(stationAt(p1, state), 'cleaner');
   assert.equal(operate(state, 'p1', state.tick, CANNON_CLEAN_TAPS), true);
+  assert.equal(p1.timingStop, undefined);
   assert.equal(stationAt(p1, state), 'loader');
   assert.equal(hit(state, 'loader'), false);
   assert.equal(operate(state, 'p1'), true);
+  const miss = p1.timingStop;
+  assert.equal(miss.tick, state.tick);
+  assert.equal(operate(state, 'p1'), false);
+  assert.equal(p1.timingStop, miss);
   assert.equal(stationAt(p1, state), 'loader');
   assert.equal(state.ammo.lost, 1);
   for (let i = 0; i < 60 && !hit(state, 'loader'); i++) step(state);
   assert.equal(hit(state, 'loader'), true);
+  const stop = {tick: state.tick, role: 'loader', angle: (phase(state, 'loader') - target(state, 'loader')) * 360,
+    band: width(state, 'loader') * 100};
   assert.equal(operate(state, 'p1'), true);
   assert.equal(stationAt(p1, state), 'gunner');
+  assert.deepEqual(p1.timingStop, stop);
   assert.equal(operate(state, 'p1'), true);
   while (state.fuse.end > state.tick) step(state);
   assert.equal(stationAt(p1, state), 'cleaner');

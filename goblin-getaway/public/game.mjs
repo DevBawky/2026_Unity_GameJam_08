@@ -1,20 +1,22 @@
 import {isRoomNumber,isLegacyRoomCode} from './room-number.mjs';
-import {chapterSpec,stageSpec,nextStagePosition} from './campaign.mjs?v=wave-density163';
+import {chapterSpec,stageSpec,nextStagePosition} from './campaign.mjs?v=v15-half-distance';
 import {REPORT_OPTIONS,UPGRADE_CARDS,submitReport,voteForCard,voteThreshold,maxDurability,cardCost,canBuyCard} from './intermission.mjs?v=wheel-axle83';
-import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalActionTarget,royalStatusNearby,cryingChildCount,cookingProgress,stopStationInputs,ROLES,WHEELS,hasBrokenAxle,CANNON_CLEAN_TAPS,CANNON_IDS,cannonIndexFor,cannonState,cannonStation,isCannonRole,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,activeCatapultRocks,addRackShell,isOperationIntroActive} from './sim.mjs?v=v15-jinsoo-art';
+import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalActionTarget,royalStatusNearby,cryingChildCount,cookingProgress,stopStationInputs,ROLES,WHEELS,hasBrokenAxle,CANNON_CLEAN_TAPS,CANNON_IDS,cannonIndexFor,cannonState,cannonStation,isCannonRole,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,activeCatapultRocks,addRackShell,isOperationIntroActive,advanceOperationIntro} from './sim.mjs?v=v15-half-distance';
 import {cameraViews,cannonLabel,createCameraTransition,workInfo} from './workstation.mjs?v=dual-cannons170';
-import {render} from './scene.mjs?v=v15-jinsoo-art';
+import {render} from './scene.mjs?v=v15-half-distance';
 import {createControls} from './controls.mjs?v=dual-cannons170';
 import {EMOTES,EMOTE_BUBBLE_MS,EMOTE_COOLDOWN_MS,emoteByKey,addEmote,recentEmotes} from './emotes.mjs';
 import {createCrewRanking,crewName,normalizeCrewNickname} from './crew-ranking.mjs?v=integer-scores133';
 import {createSfxPlayer} from './sfx.mjs?v=audio-mix155';
 import {createMusicPlayer} from './music.mjs?v=bgm-louder161';
 import {createScreenTransition} from './screen-transition.mjs?v=fast-wipe159';
-import {operationIntroFrame} from './operation-intro.mjs';
+import {operationIntroFrame} from './operation-intro.mjs?v=intro-click-v15';
 const $=id=>document.getElementById(id), all=q=>Array.from(document.querySelectorAll(q));
-const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world');
+const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world'),monitor=$('monitor');
+const launchLabel='일단 저질러!!';
 const introPanel=$('operation-intro'),introLine=$('operation-intro-line'),introAnnouncement=$('operation-intro-announcement');
-let presentedIntroTick=-1,presentedIntroRoom=null;
+const introNext=$('operation-intro-next'),introWait=$('operation-intro-wait');
+let presentedIntroTick=-1,presentedIntroIndex=-1,presentedIntroRoom=null;
 const paintInterval=1000/HZ,paintTolerance=.5;
 let s=initial(),mode='practice',myPlayer='p1',room=null,screen='',syncBusy=false,actBusy=false,netFailed=0,lastSync=0,lastTick=performance.now(),accum=0,lastPaint=0,lastStatus='',lastSerial=0,autoPaused=false,terminalSeen='',toastTimer;
 const playedCatapultLandings=new Set();
@@ -43,17 +45,37 @@ function updateProperty(element,key,value){if(element[key]!==value)element[key]=
 function updateStyle(element,key,value){if(element.style.getPropertyValue(key)!==value)element.style.setProperty(key,value);}
 function updateAttribute(element,key,value){if(element.getAttribute(key)!==value)element.setAttribute(key,value);}
 function updateOperationIntro(){
- if(room!==presentedIntroRoom||s.operationIntroTick==null)presentedIntroTick=-1;
+ const active=isOperationIntroActive(s);
+ const index=active?s.operationIntroLine??0:-1;
+ if(room!==presentedIntroRoom||index!==presentedIntroIndex)presentedIntroTick=-1;
  presentedIntroRoom=room;
- // Server snapshots may rewind prediction by a few ticks. Keep the text reveal moving forward.
+ presentedIntroIndex=index;
+ // Keep an in-progress line from losing its revealed text when a server snapshot rewinds prediction.
  presentedIntroTick=Math.max(presentedIntroTick,s.operationIntroTick??-1);
- const frame=operationIntroFrame(presentedIntroTick);
+ const frame=active?operationIntroFrame(presentedIntroTick,index):null;
  updateProperty(introPanel,'hidden',!frame);
  if(!frame){label(introAnnouncement,'');return;}
- const {text,visibleCharacters}=frame;
+ const {text,visibleCharacters,canAdvance,finalLine}=frame;
+ const canLead=mode!=='online'||room?.host===true;
  label(introLine,reducedMotion.matches?text:text.slice(0,visibleCharacters));
  label(introAnnouncement,'마왕. '+text);
+ label(introNext,finalLine?'작전 시작':'다음 대사');
+ updateProperty(introNext,'hidden',!canLead||!canAdvance);
+ updateProperty(introNext,'disabled',s.mode!=='run'||actBusy||screenTransition.active);
+ updateProperty(introWait,'hidden',canLead||!canAdvance);
 }
+introPanel.addEventListener('click',async ()=>{
+ if(introPanel.hidden||introNext.hidden||introNext.disabled||!isOperationIntroActive(s))return;
+ const lineIndex=s.operationIntroLine??0;
+ if(mode==='online'){
+   if(!room?.host)return;
+   introNext.disabled=true;
+   await send('intro-advance',{lineIndex});
+ }else{
+   advanceOperationIntro(s,lineIndex);
+ }
+ updateOperationIntro();
+});
 function toast(msg){label($('toast'),msg);$('toast').classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('on'),2500);}
 function tone(freq=350,duration=.08,type='triangle'){
  if(!sound)return;
@@ -628,7 +650,7 @@ function drawDialog(){
    '<div class="room-ticket"><span>방번호</span><strong id="room-number">'+room.code+'</strong></div>'+
    '<h3 class="room-count">플레이어 '+room.crew+' / 4명 · 봇 '+(4-room.crew)+'명</h3><div class="room-seats">'+roster+'</div>'+
    option('copy','↗','초대 링크 복사','링크를 받은 동료는 이 방에 바로 참가할 수 있습니다.')+
-   (ready&&room.host?'<button class="primary modal-primary" data-choice="room-start">작전 시작</button>':'<button class="primary modal-primary" data-choice="close">게임으로 돌아가기</button>')+
+   (ready&&room.host?'<button class="primary modal-primary" data-choice="room-start">'+launchLabel+'</button>':'<button class="primary modal-primary" data-choice="close">게임으로 돌아가기</button>')+
    '<button class="neutral" data-choice="leave">방 나가기</button><p id="error" class="error" role="alert"></p>';
    for(const id of PLAYER_IDS){
      const name=id===myPlayer&&!s.crewNames?.[id]?'나':crewName(s.crewNames,id);
@@ -837,7 +859,10 @@ async function start(testMode=false){
    if(s.mode==='ready')await transitionScene(()=>room?.host&&s.mode==='ready'&&send('start'));
    else await send('pause');
  }else if(s.mode==='ready'){
-   await transitionScene(()=>{begin(s,{testMode,operationIntro:!testMode});playSfx('start');});
+   await transitionScene(()=>{
+     if(testMode)closeScreen();
+     begin(s,{testMode,operationIntro:!testMode});playSfx('start');
+   });
  }
  else{
    s.mode=s.mode==='run'?'paused':'run';
@@ -1030,10 +1055,12 @@ topHudSize.observe(crewRankingBox);
 topHudSize.observe(topNotices);
 window.addEventListener('resize',measureTopHud);
 const hudSlots=['p1','p2'];
+const timingStopDuration=8*1000/HZ;
 const timingPrompts=Object.fromEntries(hudSlots.map(slot=>{
  const prompt=$('timing-'+slot);
  return [slot,{prompt,band:prompt.querySelector('.timing-band'),needleEl:prompt.querySelector('.timing-needle'),
-   text:prompt.querySelector('.timing-label'),feedback:prompt.querySelector('.timing-feedback')}];
+   text:prompt.querySelector('.timing-label'),feedback:prompt.querySelector('.timing-feedback'),
+   stopKey:null,stopStarted:-Infinity}];
 }));
 function updateLocalSfx(jobs,cameras,anchors,running){
  const timingReady=new Map();
@@ -1057,8 +1084,17 @@ function updateLocalSfx(jobs,cameras,anchors,running){
  previousTelescopeUsers=telescopeUsers;
 }
 function showTimingPrompt(slot,job,anchors,running){
- const {prompt,band,needleEl,text,feedback}=timingPrompts[slot],anchor=job&&anchors[job.id];
- updateProperty(prompt,'hidden',!job?.timed||!anchor);
+ const timing=timingPrompts[slot],{prompt,band,needleEl,text,feedback}=timing;
+ const anchor=job&&anchors[job.id],recorded=job?.p.timingStop,now=performance.now();
+ const stopKey=recorded?[job.id,job.p.scoreOwnerVersion,recorded.role,recorded.tick].join(':'):null;
+ if(stopKey!==timing.stopKey){
+   timing.stopKey=stopKey;
+   // Give each fresh server-confirmed press its full effect, even after client prediction.
+   timing.stopStarted=recorded&&s.tick-recorded.tick<HZ?now:-Infinity;
+ }
+ const stopAge=now-timing.stopStarted;
+ const stopped=stopAge<timingStopDuration?recorded:null;
+ updateProperty(prompt,'hidden',!anchor||(!job?.timed&&!stopped));
  if(prompt.hidden)return;
  const {p,role,info,needle,ready,feedbackState}=job;
  const {steadyX:x,steadyY:y,steadyScale:scale,left,right,top,bottom}=anchor;
@@ -1073,14 +1109,19 @@ function showTimingPrompt(slot,job,anchors,running){
  updateStyle(prompt,'--timing-label-width',Math.max(0,right-left-12)+'px');
  if(labelBelow)updateStyle(prompt,'--timing-label-gap',Math.max(5,campaignHudBottom+4-y-radius)+'px');
  updateProperty(prompt.dataset,'labelBelow',String(labelBelow));
- updateProperty(prompt.dataset,'ready',String(ready));
+ updateProperty(prompt.dataset,'ready',String(ready&&!stopped));
  updateProperty(prompt.dataset,'paused',String(!running));
- const bandPercent=width(s,role)*100;
+ const sparkleFrame=stopped?(reducedMotion.matches?1:Math.floor(3*stopAge/timingStopDuration)+1):0;
+ updateProperty(prompt.dataset,'stopFrame',String(sparkleFrame));
+ const bandPercent=stopped?.band??width(s,role)*100;
  updateAttribute(band,'stroke-dasharray',bandPercent+' '+(100-bandPercent));
  updateAttribute(band,'transform','rotate('+(-90-bandPercent*1.8)+' 50 50)');
- updateAttribute(needleEl,'transform','rotate('+((needle-target(s,role))*360)+' 50 50)');
- label(text,!running?info.action+' · 일시 정지':(ready?'지금! ':'초록 구간에서 ')+info.action);
- const result=p.noteUntil>s.tick&&p.note===feedbackState[feedbackKey(role)+'Msg']?p.note:'';
+ const angle=stopped?.angle??(needle-target(s,role))*360;
+ updateAttribute(needleEl,'transform','rotate('+angle+' 50 50)');
+ const showLabel=job.timed&&(!stopped||stopped.role===role);
+ updateProperty(text,'hidden',!showLabel);
+ if(showLabel)label(text,!running?info.action+' · 일시 정지':(ready&&!stopped?'지금! ':'초록 구간에서 ')+info.action);
+ const result=showLabel&&p.noteUntil>s.tick&&p.note===feedbackState[feedbackKey(role)+'Msg']?p.note:'';
  updateProperty(feedback,'hidden',!result);
  label(feedback,result);
 }
@@ -1222,13 +1263,15 @@ function hud(cameras,{anchors,catapultAlerts}){
  showRoyalWatch(playing&&!introActive?jobs:[],duo);
  campaignHud(playing);
  const clearLabel=s.mode==='clear'&&nextStagePosition(s.chapter??1,s.stage)?(s.intermission?.phase==='shop'?'팀 정비 상점':'마왕에게 보고'):'작전 결과';
- const startLabel=({ready:'작전 시작',run:'일시 정지',paused:'계속 달리기',clear:clearLabel,lost:'작전 결과'})[s.mode];
+ const onTitle=s.mode==='ready';
+ updateProperty(monitor.dataset,'titleScreen',String(onTitle));
+ const startLabel=({ready:launchLabel,run:'일시 정지',paused:'계속 달리기',clear:clearLabel,lost:'작전 결과'})[s.mode];
  const icon=s.mode==='run'?'<path d="M7 5h3v14H7zm7 0h3v14h-3z"/>':'<path d="m6 4 14 8-14 8z"/>';
  const startButton=$('start');
- updateProperty($('test-start'),'hidden',mode==='online'||s.mode!=='ready');
+ updateProperty($('test-start'),'hidden',mode==='online'||!onTitle);
  updateProperty($('test-stop'),'hidden',!s.testMode||mode==='online');
  if(lastStatus!==startLabel){
-   startButton.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">'+icon+'</svg><span>'+startLabel+'</span>';
+   startButton.innerHTML=(onTitle?'':'<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">'+icon+'</svg>')+'<span>'+startLabel+'</span>';
    startButton.ariaLabel=startLabel;startButton.title=startLabel;
    startButton.dataset.mode=s.mode;
    startButton.classList.toggle('gear',s.mode==='run'||s.mode==='paused');

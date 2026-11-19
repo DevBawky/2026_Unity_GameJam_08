@@ -17,7 +17,7 @@ export const CHAPTERS = [
   stages:[
    {
     title:'가시숲 고갯길',
-    goal:3000,
+    goal:1500,
     catapultFastFromWave:3,
     waves:[
      wave(4,{cavalry:2}),
@@ -29,7 +29,7 @@ export const CHAPTERS = [
    },
    {
     title:'잿빛 돌길',
-    goal:1000,
+    goal:500,
     waves:[
      wave(4,{cavalry:2,scout:1}),
      wave(15,{cavalry:2,guard:1}),
@@ -41,7 +41,7 @@ export const CHAPTERS = [
    },
    {
     title:'황혼의 국경',
-    goal:1000,
+    goal:500,
     waves:[
      wave(3,{cavalry:2,scout:1}),
      wave(13,{cavalry:2,scout:1,guard:1}),

@@ -1,6 +1,6 @@
-import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, LOOSE_WHEEL_HOP_TICKS, WHEEL_KNOCK_TICKS, HOOFPRINT_RANGE, BARREL, CANNON_IDS, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonIndexFor, cannonPad, cannonMount, cannonState, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, activeCatapultRocks, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning,operationElapsedTicks,draftGaitDistance} from './sim.mjs?v=v15-jinsoo-art';
+import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, LOOSE_WHEEL_HOP_TICKS, WHEEL_KNOCK_TICKS, HOOFPRINT_RANGE, BARREL, CANNON_IDS, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonIndexFor, cannonPad, cannonMount, cannonState, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, activeCatapultRocks, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning,operationElapsedTicks,draftGaitDistance} from './sim.mjs?v=v15-half-distance';
 import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseFrameOffset,draftHorseOrigin,horseBoardPoint} from './horse-targets.mjs?v=cavalry-hooves169';
-import {obstacleY, roadObstacleProfile, roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
+import {obstacleY, roadObstacleProfile} from './road-obstacles.mjs?v=loose-wheels34';
 import {art,emoteArt,sprite,frame} from './pixel-art.mjs?v=jinsoo-world178';
 const ink='#393933';
 const pixelFont='"NeoDunggeunmo", system-ui, sans-serif';
@@ -322,17 +322,6 @@ function drawRoadObstacle(obstacle){
     else roadBoulder();
   });
 }
-function drawRoadsideTree({x,y,r}){
-  if(!inView(x,y,48,93,14))return;
-  if(sprite(c,art['roadside-tree'],x,y-4*r,13*r))return;
-  pine(x,y-r,r/9,1);
-  oval(x+2,y+2,r*1.2,r*.68,'#62644565');
-  poly([
-    [x-r,y+2],[x-r*.62,y-r],[x-r*.43,y-r*1.7],[x+r*.46,y-r*1.65],
-    [x+r*.7,y-r],[x+r,y+1],[x+r*.53,y+r*.37],[x-r*.52,y+r*.4]
-  ],'#886144','#503f35',2);
-  line([[x-r*.3,y-r*1.34],[x-r*.45,y-r*.4],[x-r*.69,y]],'#c39463',2);
-}
 const horseStrideRate=2;
 function horse(x,y,z,palette,t,showShadow=true){
   const [coat,light,mane]=palette;
@@ -538,16 +527,17 @@ function spareWheel(x,y,scale,angle){
    if(angle!==undefined)line([[-2,-10.5],[2,-11]],'#e8c48b',2);
  });
 }
-function drawSpareWheelStack(x,y,side,count){
- oval(x,y+5,22,8,'#21160965');
+function drawSpareWheelStack(x,y,count){
+ const width=42,height=23;
+ oval(x,y+7,23,7,'#21160965');
  for(let level=0;level<count;level++){
-   const wheelX=x+side*(level%2)*2,wheelY=y-level*7;
-   if(sprite(c,art.cellar_wheelrefill,wheelX,wheelY,40,24))continue;
-   oval(wheelX,wheelY+3,20,8,'#65432e','#382419',1.5);
-   if(!sprite(c,art.bottom_wheel[0],wheelX,wheelY,40,18)){
-     at(wheelX,wheelY,1,()=>{
-       c.scale(1,.5);
-       spareWheel(0,0,40/26);
+   const wheelY=y-level*8;
+   if(sprite(c,art.cellar_wheelrefill,x,wheelY,width,height))continue;
+   oval(x,wheelY+3,width/2,height*.38,'#65432e','#382419',1.5);
+   if(!sprite(c,art.bottom_wheel[0],x,wheelY,width,height)){
+     at(x,wheelY,1,()=>{
+       c.scale(1,height/width);
+       spareWheel(0,0,width/26);
      });
    }
  }
@@ -729,7 +719,7 @@ function drawStairs(floor){
  }
  line([[x,y-dir*8],[x,y+dir*8]],'#ffe6aa',3);
  line([[x-6,y+dir*2],[x,y+dir*8],[x+6,y+dir*2]],'#ffe6aa',3);
- drawStairLabel(x,y-r-10,below?'1층 계단':'지하층 계단',below?'#755331':'#69462f');
+ if(below)drawStairLabel(x,y-r-10,'1층 계단','#755331');
 }
 function drawMountedWheel(x,y){
  at(x,y,1,()=>{
@@ -1179,8 +1169,8 @@ function drawCellar(s,t,offset){
    floorStation(s,'cook');
    floorStation(s,'wheel-pickup');
    const {x:wheelX,y:wheelY}=STATIONS['wheel-pickup'];
-   drawSpareWheelStack(wheelX-49,wheelY+12,-1,2);
-   drawSpareWheelStack(wheelX+49,wheelY+10,1,3);
+   drawSpareWheelStack(wheelX-49,wheelY+14,2);
+   drawSpareWheelStack(wheelX+49,wheelY+14,3);
    drawStairs(CELLAR_FLOOR);
    drawFallingAmmo(s,CELLAR_FLOOR,0);
  });
@@ -1890,7 +1880,6 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  const blasts=s.cannonImpacts?.length?s.cannonImpacts.map(impact=>({
    impact,x:impact.x+s.road-(impact.road??s.road),age:s.tick-impact.tick,
  })):null;
- let roadside;
  for(const camera of views){
  view={...impactCamera(camera,impactAge),cssX:viewCssX,stationOwners,royalHearts:[],royalRequestAnchors:[]};
  if(kick.x||kick.y)view={...view,left:view.left-kick.x*.56/view.zoom,top:view.top-kick.y*.7/view.zoom};
@@ -1934,8 +1923,6 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  drawHoofprints(s,s.hoofprints);
  drawHoofprints(s,s.cavalryHoofprints);
  drawWheelTracks(s);
- roadside??=roadsideTrees(s.road,ROAD_TOP,ROAD_BOTTOM);
- for(const tree of roadside)if(tree.y<LANES[1])drawRoadsideTree(tree);
  for(const obstacle of s.obstacles)drawRoadObstacle(obstacle);
  if(blasts)for(const {impact,x,age} of blasts){
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonScorch(impact,x,age);
@@ -1950,7 +1937,6 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
    vergeArt(s.road,lowerVerge);
    if(!sceneryTile('lower-verge',s.road))drawVerge(s.road,lowerVerge);
  }
- for(const tree of roadside)if(tree.y>LANES[1])drawRoadsideTree(tree);
 
  for(const cannon of cannons)drawCannonBurst(cannon,carriage,caliber);
  for(const shot of s.shots)drawShot(shot,s.tick);
