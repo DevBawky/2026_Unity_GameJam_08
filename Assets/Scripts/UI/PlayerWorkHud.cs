@@ -45,6 +45,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
     private static readonly Vector2[] CryPositions = { new(.27f,.34f), new(.73f,.38f), new(.49f,.51f), new(.25f,.68f), new(.72f,.67f) };
     private static readonly float[] CrySizes = { .13f, .12f, .18f, .12f, .14f };
     private static readonly float[] CryAngles = { 10f, -9f, 5f, 9f, -10f };
+    // 웹과 같이 문구 4개를 0.8초(24틱)마다 돌리고, 글자마다 19틱씩 어긋나게 시작한다.
+    private static readonly string[] CryPhrases = { "으앵----", "으앙---", "앙----", "에에엥---" };
     private Canvas canvas;
     private float Scale => canvas.scaleFactor;
     private float Vmin => Mathf.Min(Screen.width, Screen.height);
@@ -85,7 +87,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
             Place((RectTransform)testModeBadge.transform.parent, new Vector2(route.center.x, route.yMax - 5f - badgeHeight * .5f),
                 new Vector2(testModeBadge.preferredWidth * Scale + 10f, badgeHeight));
 
-        PresentCries(running ? game.CryingCount : 0);
+        PresentCries(running ? game.CryingCount : 0,
+            running && !SettingsPanel.ReducedMotion ? (int)(game.NetworkManager.ServerTime.Time * 30d) : 0);
         float baseTop = GameplayHudLayout.NoticeTop(safe, route.yMin - royalHeight - 6f);
         float noticeHeight = Mathf.Clamp(Vmin * .11f, 66f, 88f);
         float workWidth = Mathf.Min(760f, safe.width);
@@ -241,7 +244,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
         Place(row.condition.rectTransform, new Vector2(x, center.y - line), new Vector2(textWidth, line));
     }
 
-    private void PresentCries(int count)
+    private void PresentCries(int count, int tick)
     {
         for (int i = 0; i < cries.Length; i++)
         {
@@ -249,6 +252,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
             bool visible = count == 2 || count == 1 && i == 0;
             label.gameObject.SetActive(visible);
             if (!visible) continue;
+            label.text = CryPhrases[(tick + i * 19) / 24 % CryPhrases.Length];
             Vector2 pos = count == 1 ? new Vector2(.49f, .53f) : CryPositions[i];
             float size = Mathf.Clamp(Vmin * (count == 1 ? .08f : CrySizes[i]), 24f, count == 1 ? 68f : 134f);
             float motion = SettingsPanel.ReducedMotion ? 0f : .5f + .5f * Mathf.Sin(Time.unscaledTime * 15f + i);

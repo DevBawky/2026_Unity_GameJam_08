@@ -97,22 +97,26 @@ public sealed class GameplayHudLayout : MonoBehaviour
         float actionY = bottom + diameter * .5f;
         Place(action, new Vector2(actionX, actionY), Vector2.one * diameter, scale);
 
-        float menuRight = mobile ? actionX - diameter * .5f - controlGap : right;
-        float menuWidth = Mathf.Min(1120f, menuRight - left);
-        float menuHeight = Mathf.Clamp(height * .12f, 102f, 126f);
-        Place(emoteMenu, new Vector2((left + menuRight) * .5f, bottom + menuHeight * .5f),
+        // v14: 이모티콘 목록은 이동 스틱 오른쪽~행동 버튼 왼쪽 사이 아래쪽에 4열(최대 520px)로 뜨고, 열린 동안 이모티콘 버튼은 숨긴다.
+        const float emoteGap = 8f, menuPadding = 4f, cellGap = 4f, cellHeight = 56f;
+        int menuColumns = 4, menuRows = Mathf.CeilToInt(emoteMenu.childCount / (float)menuColumns);
+        float menuRight = actionX - diameter * .5f - (controlGap + support) * .5f - emoteGap;
+        float menuStart = left + inset + Mathf.Max(stick, 120f) + emoteGap;
+        float menuWidth = Mathf.Max(1f, Mathf.Min(520f, menuRight - menuStart));
+        float menuHeight = 2f * menuPadding + menuRows * cellHeight + (menuRows - 1) * cellGap;
+        float menuBottom = bottom + (diameter - support) * .5f;
+        Place(emoteMenu, new Vector2(menuRight - menuWidth * .5f, menuBottom + menuHeight * .5f),
             new Vector2(menuWidth, menuHeight), scale);
         if (emoteMenu.TryGetComponent(out GridLayoutGroup grid))
         {
-            float padding = Mathf.Clamp(vmin * .01f, 4f, 9f);
-            float gap = Mathf.Clamp(width * .0075f, 3f, 9f);
-            int insetPixels = Mathf.RoundToInt(padding / scale);
+            int insetPixels = Mathf.RoundToInt(menuPadding / scale);
             grid.padding = new RectOffset(insetPixels, insetPixels, insetPixels, insetPixels);
-            grid.spacing = Vector2.one * (gap / scale);
-            grid.cellSize = new Vector2((menuWidth - 2f * padding - 6f * gap) / 7f,
-                menuHeight - 2f * padding) / scale;
+            grid.spacing = Vector2.one * (cellGap / scale);
+            grid.constraintCount = menuColumns;
+            grid.cellSize = new Vector2((menuWidth - 2f * menuPadding - (menuColumns - 1) * cellGap) / menuColumns,
+                cellHeight) / scale;
         }
-        if (menuOpen) bottom += menuHeight + 8f;
+        emote.gameObject.SetActive(!menuOpen);
         float y = bottom + diameter * .5f;
         Place(exit, new Vector2(actionX - step * .5f, y + step * .866f), Vector2.one * support, scale);
         Place(emote, new Vector2(actionX - step, y), Vector2.one * support, scale);
