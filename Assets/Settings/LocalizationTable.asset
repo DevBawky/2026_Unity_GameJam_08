@@ -799,3 +799,5 @@ MonoBehaviour:
     english: "<size=30><color=#F2C14E>Planner</color></size>\n<size=10> </size>\n<size=50><b>\uC591\uBA85\uC9C4</b></size>\n<size=44>
       </size>\n<size=30><color=#F2C14E>Programmers</color></size>\n<size=10> </size>\n<size=50><b>\uC724\uBBFC\uD601\n\uC815\uD64D\uC7AC</b></size>\n<size=44>
       </size>\n<size=30><color=#F2C14E>Artist</color></size>\n<size=10> </size>\n<size=50><b>\uC774\uC9C4\uC218</b></size>"
+  - korean: "(\uBC29\uC7A5)"
+    english: (Host)

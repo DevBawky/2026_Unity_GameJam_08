@@ -48,7 +48,7 @@ public sealed class LobbyUI : MonoBehaviour
         {
             playerLabels[i].text = $"P{i + 1}\n{LocalizationTable.T("대기 중")}";
             foreach (LobbyPlayerInfo p in session.Roster.Players)
-                if (p.Slot == i) playerLabels[i].text = $"P{i + 1}\n{p.Nickname}" + (p.ClientId == 0 ? LocalizationTable.T(" (방장)") : "");
+                if (p.Slot == i) playerLabels[i].text = $"P{i + 1}\n{p.Nickname}" + (p.ClientId == 0 ? $"\n<size=75%><color=#F2C14E>{LocalizationTable.T("(방장)")}</color></size>" : "");
         }
     }
     public void ShowJoin() { joining = true; SoundManager.PlayCue(GameSfx.UiTick); }
