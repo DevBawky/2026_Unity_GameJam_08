@@ -55,3 +55,4 @@ MonoBehaviour:
   cookSeconds: 3
   fuseSeconds: 2.5
   shellHoldSeconds: 1.6
+  requiredPlayerOverlapPercent: 40

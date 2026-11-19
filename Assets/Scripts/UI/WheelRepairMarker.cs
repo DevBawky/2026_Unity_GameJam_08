@@ -19,6 +19,20 @@ public sealed class WheelRepairMarker : MonoBehaviour
     private Sprite availableTool, availablePad, availableLabel;
     private (CameraRig Rig, Camera View)[] views;
 
+    private static Vector3 MarkerPosition(CartStations game) =>
+        game.WheelWorkPoint + Vector3.up * NetworkPlayer.CellarOffset;
+
+    internal bool OverlapsPlayer(CartStations game, Bounds body)
+    {
+        if (!game.WheelDetached || game.DetachedTire == null) return false;
+        // Use the current wheel position before the marker's LateUpdate places it for rendering.
+        float unit = game.WorldPerWebUnit;
+        var markerToWorld = Matrix4x4.TRS(MarkerPosition(game), marker.rotation, new Vector3(unit, unit, 1f));
+        var padTransform = pad.rectTransform;
+        var worldToPad = padTransform.worldToLocalMatrix * marker.localToWorldMatrix * markerToWorld.inverse;
+        return TimingArea.OverlapsPlayer(body, padTransform.rect, worldToPad);
+    }
+
     private void Awake()
     {
         views = new (CameraRig, Camera)[rigs.Length];
@@ -61,7 +75,7 @@ public sealed class WheelRepairMarker : MonoBehaviour
             ? new Color32(246, 255, 218, 255) : new Color32(210, 234, 211, 255);
 
         var point = game.WheelWorkPoint;
-        marker.position = point + Vector3.up * NetworkPlayer.CellarOffset;
+        marker.position = MarkerPosition(game);
         var parentScale = marker.parent.lossyScale;
         float unit = game.WorldPerWebUnit;
         marker.localScale = new Vector3(unit / Mathf.Abs(parentScale.x), unit / Mathf.Abs(parentScale.y), 1f);

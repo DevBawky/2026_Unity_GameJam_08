@@ -7,7 +7,6 @@ using UnityEngine.InputSystem;
 [DefaultExecutionOrder(25)]
 public sealed class PlayerTiming : MonoBehaviour
 {
-    internal const float WorkRadiusFraction = .5f;
     private const float CatchTargetDegrees = .57f * 360f;
     private const float CatchWidthDegrees = .235f * 360f;
     private Vector3 panelOrigin;
@@ -39,6 +38,7 @@ public sealed class PlayerTiming : MonoBehaviour
 
     [SerializeField] private CartStations stations;
     private NetworkPlayer actor;
+    private WheelRepairMarker repairMarker;
     private RectTransform currentArea;
     private TimingArea currentSettings;
     public StationAction? NearbyRoyal { get; private set; }
@@ -65,6 +65,7 @@ public sealed class PlayerTiming : MonoBehaviour
     public StationAction? CurrentAction { get; private set; }
     private bool UsesTiming => CurrentAction is StationAction action && TimingArea.UsesTimingFor(action);
     private StationAction ActionAt(TimingArea area) => area.Action == StationAction.Cannon ? stations.CannonAction : area.Action;
+    private Bounds BodyBounds => actor.BodyArtwork != null && actor.BodyArtwork.sprite != null ? actor.BodyArtwork.bounds : default;
     public RectTransform ActiveTimingRect => timingPanel == null || !timingPanel.activeInHierarchy ? null
         : circularGraphic != null && circularGraphic.gameObject.activeInHierarchy ? circularGraphic.rectTransform : background;
     public bool TimingReady
@@ -80,6 +81,7 @@ public sealed class PlayerTiming : MonoBehaviour
     private void Awake()
     {
         actor = GetComponent<NetworkPlayer>();
+        if (interactionAreas != null) repairMarker = interactionAreas.GetComponent<WheelRepairMarker>();
         if (timingPanel != null) panelOrigin = timingPanel.transform.localPosition;
         if (timingPanel != null) timingPanel.SetActive(false);
     }
@@ -241,7 +243,8 @@ public sealed class PlayerTiming : MonoBehaviour
     private RectTransform FindArea()
     {
         if (interactionAreas == null) return null;
-        if (actor.InCellar && repairRect != null && stations.IsInsideDetachedTire(transform.position - Vector3.up * NetworkPlayer.CellarOffset)) return repairRect;
+        Bounds body = BodyBounds;
+        if (OverlapsWheelRepair(body)) return repairRect;
         RectTransform workArea = null;
         RectTransform nearestRoyal = null;
         RectTransform nearestUsableRoyal = null;
@@ -256,12 +259,12 @@ public sealed class PlayerTiming : MonoBehaviour
             if (royal && !stations.WithinRoyalInteraction(station.Action, actor)) continue;
             if (station.Action == StationAction.Cannon)
             {
-                if (actor.InCellar || !ContainsCannon(area)) continue;
+                if (actor.InCellar || !OverlapsCannon(station, body)) continue;
                 if (stations.HoldsStation(StationAction.Cannon, actor)) return area;
                 if (workArea == null) workArea = area;
                 continue;
             }
-            if (!royal && !ContainsStation(area, station.Action, transform.position)) continue;
+            if (!royal && !OverlapsStation(station, body)) continue;
             if (!royal)
             {
                 if (workArea == null) workArea = area;
@@ -293,9 +296,9 @@ public sealed class PlayerTiming : MonoBehaviour
 
     public bool InsideCompletedArea(StationAction action)
     {
-        if (action == StationAction.WheelRepair) return IsInActionArea(action);
+        if (action == StationAction.WheelRepair) return OverlapsWheelRepair(BodyBounds);
         var area = AreaFor(action);
-        return area != null && ContainsStation(area, action, transform.position);
+        return area != null && area.TryGetComponent<TimingArea>(out var station) && OverlapsStation(station, BodyBounds);
     }
 
     public bool IsInActionArea(StationAction action)
@@ -303,34 +306,28 @@ public sealed class PlayerTiming : MonoBehaviour
         if (TimingArea.IsCannon(action))
         {
             var cannon = AreaFor(StationAction.Cannon);
-            return !actor.InCellar && cannon != null && cannon.gameObject.activeInHierarchy && ContainsCannon(cannon);
+            return !actor.InCellar && cannon != null && cannon.gameObject.activeInHierarchy
+                && cannon.TryGetComponent<TimingArea>(out var station) && OverlapsCannon(station, BodyBounds);
         }
-        if (action==StationAction.WheelRepair) return actor.InCellar && stations.IsInsideDetachedTire(transform.position - Vector3.up * NetworkPlayer.CellarOffset);
+        if (action == StationAction.WheelRepair) return OverlapsWheelRepair(BodyBounds);
         var area=FindArea();
         return area != null && area.GetComponent<TimingArea>().Action==action;
     }
-    private bool ContainsCannon(RectTransform area)
+    private bool OverlapsWheelRepair(Bounds body) =>
+        actor.InCellar && repairRect != null && repairMarker != null && repairMarker.OverlapsPlayer(stations, body);
+
+    private bool OverlapsCannon(TimingArea station, Bounds body)
     {
         // 긴 손잡이 솔: 포신 청소 차례면 조금 더 멀리서도 닿는다.
         float reach = stations.CannonAction == StationAction.CannonCleaning && stations.Owns(ShopPerk.LongBrush) ? CartStations.LongBrushReach : 1f;
-        return ContainsStation(area, StationAction.Cannon, transform.position, reach);
+        return station.OverlapsPlayer(body, reach);
     }
 
-    private bool ContainsStation(RectTransform area, StationAction action, Vector3 worldPosition, float reach = 1f)
+    private bool OverlapsStation(TimingArea station, Bounds body)
     {
-        Vector2 centerOffset = (Vector2)area.InverseTransformPoint(worldPosition) - area.rect.center;
-        Vector2 radius = AreaRect(area, action).size * (.5f * WorkRadiusFraction * reach);
-        if (radius.x <= 0f || radius.y <= 0f) return false;
-        return new Vector2(centerOffset.x / radius.x, centerOffset.y / radius.y).sqrMagnitude <= 1f;
-    }
-
-    // 넓은 적재 받침: 적재함 판정 영역을 넓힌다.
-    private Rect AreaRect(RectTransform area, StationAction action)
-    {
-        var rect = area.rect;
-        if (action != StationAction.ShellDeposit || !stations.Owns(ShopPerk.WideRack)) return rect;
-        Vector2 size = rect.size * CartStations.WideRackScale;
-        return new Rect(rect.center - size * .5f, size);
+        float reach = station.Action == StationAction.ShellDeposit && stations.Owns(ShopPerk.WideRack)
+            ? CartStations.WideRackScale : 1f;
+        return station.OverlapsPlayer(body, reach);
     }
 
     // 장전 회수판용: 성공 구간을 살짝 벗어났는지.

@@ -111,7 +111,7 @@ public sealed partial class CartStations
         if (child.InCellar != actor.InCellar) return false;
         bool atSeat = child.Pose is RiderPose.Seated or RiderPose.Carried;
         Vector2 point = RoyalInteractionPosition(child, index);
-        float radius = atSeat ? 18f * PlayerTiming.WorkRadiusFraction : 30f;
+        float radius = atSeat ? 9f : 30f;
         return Vector2.Distance(point, actor.transform.position) <= radius * WorldPerWebUnit;
     }
 
