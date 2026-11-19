@@ -43,7 +43,7 @@ const cues = {
   'timing-ready': {asset:'ui-tick', gain:.34, rate:1.5},
   'cannon-clean': {asset:'brush-scrub', gain:.34},
   'cannon-ready': {asset:'cannon-load', gain:.44, rate:1.33},
-  'cannon-fuse': {asset:'fuse-burn', gain:.44, priority:1},
+  'cannon-fuse': {asset:'fuse-burn', gain:.44, rate:.60, priority:1},
   'cannon-imminent': {asset:'danger-pulse', gain:.48, rate:1.36, priority:2},
   'cannon-fire': {asset:'cannon-fire', gain:.83, priority:2},
   'cannon-ground': {asset:'impact-dirt', gain:.53, priority:1},
@@ -73,7 +73,7 @@ const cues = {
   'station-exit': {asset:'ui-tick', gain:.28, rate:.78},
   'stage-clear': {asset:'stage-result', gain:.62, priority:2},
   'chapter-clear': {asset:'stage-result', gain:.68, rate:.9, priority:2},
-  'stage-lost': {asset:'stage-result', gain:.59, rate:.88, endRate:.45, priority:2},
+  'stage-lost': {asset:'defeat-sting', gain:.59, priority:2},
 };
 
 // Fetch the sounds that can matter in the first few interactions before loading the rest.

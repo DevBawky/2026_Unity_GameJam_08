@@ -6,11 +6,11 @@
 - **한 화면 2인 직접 플레이** · 후속 로컬 빌드 `original-rope138`에서 협동 메뉴와 온라인 방 입력 UI를 확인했다. 한 화면 테스트 모드로 들어가 두 조작 패널과 P2 바퀴 수리 요청의 공용 알림을 확인했다.
 - **재현 및 코드 확인** · 시뮬레이션에서 1~3스테이지 클리어, 마왕 보고·구매와 출발, 내구도 소진 패배를 재현했다. 포탄 붙잡기·운반·장전·재발사와 놓침은 입력 재현 테스트에서 확인했다. 온라인 방의 실제 참가·동기화와 나머지 조건은 코드로 대조했다. 브라우저 스피커 출력은 청취하지 않았다. [입력 재현 테스트](../../tools/playtest/playtest.test.mjs)
 
-웹 효과음 기본값은 꺼짐이다. 켜면 Web Audio로 공용 UI·작업 확인음, 공용 충격음, 대포·투석기 착탄음, 가까운 아이 울음, 클리어·실패음을 합성한다. 1인과 한 화면 2인의 작업 판정에는 공용음이 쓰이며 온라인 작업 결과와 자동 적재·제작 완료는 이 재생 경로를 거치지 않는다. 아래 우선순위는 플레이와 코드 점검을 바탕으로 한 제안이다. [현재 웹 재생 코드](../../goblin-getaway/public/game.mjs#L17)
+점검 당시 웹 효과음 기본값은 꺼짐이었다. 켜면 공용 UI·작업 확인음, 공용 충격음, 대포·투석기 착탄음, 가까운 아이 울음, 클리어·실패음을 합성했다. 아래 표는 적용 전의 상태와 제작 우선순위를 기록한다. 현재 적용 결과는 [제작 및 적용 결과](#제작-및-적용-결과)에서 확인할 수 있다.
 
 ## 1차 작업 · 판단과 행동에 필요한 소리
 
-| 구간 | 재생 지점 | 현재 웹판 |
+| 구간 | 재생 지점 | 적용 전 웹판 |
 | --- | --- | --- |
 | 앞길 장애물 | 통나무·바위·야생동물 경고가 처음 뜰 때 위·아래 위험 방향을 구분한다. 실제 충돌은 별도 음으로 알린다. | 경고는 시각 표시. 실제 충돌은 공용 충격음 |
 | 추격대 | 새 웨이브, 후방 접근, 적의 공격 예고, 마차 피격을 구분한다. 같은 무리의 말마다 접근음을 반복할 필요는 없다. | 접근은 시각 표시. 피격은 공용 충격음 |
@@ -31,7 +31,7 @@
 
 ## 2차 작업 · 조작과 화면 전환 피드백
 
-| 구간 | 재생 지점 | 현재 웹판 |
+| 구간 | 재생 지점 | 적용 전 웹판 |
 | --- | --- | --- |
 | 메뉴·설정 | 환경설정 열기·뒤로·닫기, 효과음 켬·끔, 전체화면 전환·실패, 조작 가이드·정비 카드 도감·작전 현황 열기, 1인·한 화면 2인 모드와 탑승원 선택. 열기·뒤로·확정·오류음을 공유한다. 효과음 끄기는 설정 변경 즉시 반영한다. | 효과음을 켤 때만 확인음 |
 | 작전 제어 | 일반·테스트 모드 시작, 일시 정지·재개, 테스트 종료, 재도전·챕터 재시작. 메뉴 열기와 정지가 함께 발생하면 확인음 한 번. | 오프라인 시작에 공용음 |
@@ -60,7 +60,7 @@
 
 ## Suno 생성용 원본
 
-판타지 마차의 나무·쇠·흙 소리를 중심으로 20개 원본 후보를 준비한다. UI 확인음은 짧고 부드럽게, 팀 요청과 긴급 경고는 작은 스피커에서도 구분되는 음역으로 잡는다. 기본 프롬프트에 `Dry game sound effect, clean isolated recording, no music bed, no spoken words, short clean tail.`을 붙인다. 아래 시간은 게임에 넣을 편집본 기준이다.
+판타지 마차의 나무·쇠·흙 소리를 중심으로 21개 원본을 생성했다. UI 확인음은 짧고 부드럽게, 팀 요청과 긴급 경고는 작은 스피커에서도 구분되는 음역으로 잡았다. 기본 프롬프트는 `Dry game sound effect, clean isolated recording, no music bed, no spoken words, short clean tail.`이다. 아래 시간은 생성 시 목표 길이다.
 
 | 원본 이름 | Suno Sounds 프롬프트 | 연결할 지점 |
 | --- | --- | --- |
@@ -83,12 +83,17 @@
 | `whip-snap` | A short leather whip swish and sharp but restrained snap in open air. 0.30 s. | 채찍질, 폭주·피로·회복은 현재 단계에 맞춰 짧은 변형과 결합 |
 | `royal-whimper` | Soft startled cartoon toddler whimper, one breathy sob, no recognizable words. 0.65 s. | 아이 낙상과 울음, 왕자·공주는 피치로 구분. 들기·달래기·착석·먹이기는 확인음 변형 |
 | `cook-sizzle` | Quiet hot skillet sizzle with a soft wood spoon contact, even texture and no room noise. 0.85 s. | 간식 제작 중 지속음, 해제·충격 시 끊고 완성·전달에는 확인음을 사용 |
-| `stage-result` | Short medieval adventure game result sting, clean three-note brass and wooden percussion accent. No sustained backing track. 0.9 s. | 스테이지 통과와 챕터 완료, 패배는 별도 하강 편집 |
+| `stage-result` | Short medieval adventure game result sting, clean three-note brass and wooden percussion accent. No sustained backing track. 0.9 s. | 스테이지 통과와 챕터 완료 |
+| `defeat-sting` | Brief downward minor-third low wood and horn failure sting. 0.8 s. | 내구도 소진과 작전 실패 |
 
-원본은 Suno의 공식 다운로드·Export로 확보한 뒤 무음과 잔향을 정리한다. 도로 경고의 방향, 타이밍 성패, 장착과 핀 고정처럼 다음 행동을 바꾸는 소리는 재생 타이밍·위치·음형을 구분한다. 웹용 파일은 `goblin-getaway/public/sfx/`에, Unity용 파일과 메타데이터는 `Assets/Audio/SFX/`에 둔다. 위 원본 이름은 제작 순서를 잡기 위한 것으로, Export 후 실제 파일과 이벤트 연결을 확인한다. [Suno Sounds 사용법](https://help.suno.com/en/articles/10625537) · [공식 다운로드 한도](https://help.suno.com/en/articles/13876865)
+## 제작 및 적용 결과
+
+- Suno Studio v6에서 생성한 21개 테이크를 공식 Multitrack WAV로 내보냈다. 앞뒤 무음을 정리하고 짧은 페이드를 적용해 44.1 kHz 모노 PCM16으로 편집했다. 각 WAV의 INFO 주석에 공식 Export와 원본 파일의 SHA-256을 기록했다. [Suno Studio Export](https://help.suno.com/en/articles/13925249)
+- 웹은 21개 파일을 메뉴·작업·전투·팀 요청·결과 이벤트에서 재생한다. 온라인에서는 서버에서 확정한 새 이벤트를 사용한다. 방향 경고는 좌우 채널과 음높이를 함께 쓰고, 포탄 붙잡기 성공과 실패는 별도 판정음을 낸다. 짧은 심지 원본은 느리게 재생해 약 2.5초 카운트다운을 채운다. 효과음과 타이밍 안내는 환경설정에서 켤 수 있다. [웹 SFX 파일](../../goblin-getaway/public/sfx/) · [웹 재생 코드](../../goblin-getaway/public/sfx.mjs)
+- Unity에는 같은 21개 WAV와 가져오기용 `.meta`를 담았다. Unity 씬 재생 연결은 기존 대포·피격 에셋을 사용한다. [Unity SFX 파일](../../Assets/Audio/SFX/)
 
 ## 다음 단계
 
-- [ ] 웹 1차 적용 목록을 확정하고 음원 제작·재사용 여부를 결정한다.
+- [x] 웹 SFX 제작·정리와 이벤트 연결을 완료했다.
 - [ ] 브라우저에서 실제 출력음과 볼륨을 확인한다. 1인, 한 화면 2인, 온라인 협동에서 성공·실패·재연결 시 재생을 확인한다.
 - [ ] Unity에서는 기존 메인 씬의 발사·공용 충격 연결을 기준으로 같은 사건의 적용 지점을 정한다. [메인 씬](../../Assets/Scenes/mainGame.unity#L22053) · [대포 태스크](02-cannon.md) · [마차 태스크](03-carriage.md)
