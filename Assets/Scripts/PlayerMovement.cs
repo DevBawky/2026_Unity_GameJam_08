@@ -59,6 +59,7 @@ public sealed class PlayerMovement : MonoBehaviour
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
         {
             // 비상 제동 손잡이: E(2P는 오른쪽 Ctrl), 게임패드 X/□.
+            var keyboard = Keyboard.current;
             bool brake = actor.SecondLocal ? keyboard?.rightCtrlKey.wasPressedThisFrame == true
                 : keyboard?.eKey.wasPressedThisFrame == true || Gamepad.current?.buttonWest.wasPressedThisFrame == true;
             if (brake && stations.Owns(ShopPerk.EmergencyBrake)) actor.PullBrake();
