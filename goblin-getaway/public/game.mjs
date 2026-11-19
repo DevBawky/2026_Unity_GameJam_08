@@ -8,7 +8,7 @@ import {createControls} from './controls.mjs?v=nearest-wheel134';
 import {EMOTES,EMOTE_BUBBLE_MS,EMOTE_COOLDOWN_MS,emoteByKey,addEmote,recentEmotes} from './emotes.mjs';
 import {createCrewRanking,crewName,normalizeCrewNickname} from './crew-ranking.mjs?v=integer-scores133';
 import {createSfxPlayer} from './sfx.mjs?v=audio-mix155';
-import {createMusicPlayer} from './music.mjs?v=audio-mix155';
+import {createMusicPlayer} from './music.mjs?v=bgm-louder161';
 const $=id=>document.getElementById(id), all=q=>Array.from(document.querySelectorAll(q));
 const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world');
 const paintInterval=1000/HZ,paintTolerance=.5;

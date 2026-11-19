@@ -4,6 +4,7 @@ const tracks = {
   'stage-clear': {gain: .65},
   'game-over': {gain: .61},
 };
+const musicLevel = 1.5;
 const fadeOutSeconds = .12;
 const fadeInSeconds = .11;
 
@@ -44,7 +45,7 @@ export function createMusicPlayer({enabled = true} = {}) {
 
   function musicVolume() {
     const track = tracks[phase];
-    return track.gain * (paused && track.loopSeconds ? .28 : 1);
+    return track.gain * musicLevel * (paused && track.loopSeconds ? .28 : 1);
   }
 
   function updateGain() {

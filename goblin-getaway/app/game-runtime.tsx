@@ -5,7 +5,7 @@ export default function GameRuntime(){
    if(document.querySelector('script[data-game-runtime]'))return;
    const script=document.createElement('script');
    script.type='module';
-   script.src='/game.mjs?v=bgm148-audio-mix155';
+   script.src='/game.mjs?v=bgm148-audio-mix155-bgm-louder161';
    script.dataset.gameRuntime='true';
    document.body.appendChild(script);
  },[]);
