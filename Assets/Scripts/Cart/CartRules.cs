@@ -23,7 +23,7 @@ public sealed class CartRules : ScriptableObject
     public Card repair = new("수리", 3, 35);
     public Card precision = new("정밀 도구", 4, 0.027f);
     public Card stabilizer = new("대포 고정대", 4, 1);
-    public Card barrel = new("대구경 포신", 6, 0.25f);
+    public Card barrel = new("대구경 포신", 6, 0.17f);
     public Card hull = new("강화 차체", 6, 20);
     public Card porter = new("운반 장구", 4, 0.2f);
     public Card cushion = new("완충 차축", 5, 0.78f);
@@ -33,6 +33,10 @@ public sealed class CartRules : ScriptableObject
     [Min(0.01f)] public float cookSeconds = 3;
     [Min(0.01f)] public float fuseSeconds = 2.5f;
     [Min(0.01f)] public float shellHoldSeconds = 1.6f;
+
+    internal const int HorseBoostScore = 1, CannonCleanScore = 1, ShellReloadScore = 2,
+        EnemyEliminationScore = 4, ShellDeliveryScore = 8, ChildReseatScore = 20,
+        WheelInstallScore = 8, WheelRepairScore = 12;
 
     private static CartRules active;
     public static CartRules Active

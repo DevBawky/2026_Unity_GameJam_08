@@ -22,10 +22,7 @@ public sealed partial class CartStations
 {
     public event Action<List<CartDrivingHazard>> CollectDrivingHazards;
     private readonly List<CartDrivingHazard> drivingHazards = new();
-    private const int DodgeWhipTicks = 6;
-    private int nextDodgeWhip;
-
-    private float DrivingRisk(int hits, int direction, int wounds, float delay)
+    private float DrivingRisk(int direction, float delay)
     {
         float risk = 0;
         foreach (var hazard in drivingHazards)
@@ -33,8 +30,8 @@ public sealed partial class CartStations
             if (hazard.Exit < 0 || hazard.Enter > CartDrivingHazard.Lookahead) continue;
             float start = Mathf.Max(0, hazard.Enter);
             float end = Mathf.Clamp(hazard.Exit, start, CartDrivingHazard.Lookahead);
-            float y0 = DrivingYAt(start, hits, direction, wounds, delay);
-            float y1 = DrivingYAt(end, hits, direction, wounds, delay);
+            float y0 = DrivingYAt(start, direction, delay);
+            float y1 = DrivingYAt(end, direction, delay);
             float nearest = Mathf.Clamp(hazard.CenterY, Mathf.Min(y0,y1), Mathf.Max(y0,y1));
             float clearance = hazard.RadiusY + .08f;
             float worst = Mathf.Max(0, clearance - Mathf.Abs(nearest - hazard.CenterY));
@@ -44,35 +41,17 @@ public sealed partial class CartStations
         return risk;
     }
 
-    private float DrivingYAt(float seconds, int hits, int direction, int wounds, float delay)
-    {
-        float target = cart.Lane;
-        float y = cart.PredictSteeringY(cart.transform.position.y, target, Mathf.Min(seconds,delay));
-        float remaining = seconds - delay;
-        for (int i = 0; i < hits && remaining > 0; i++)
-        {
-            if (wounds + i + 1 == RunawayHits)
-            {
-                float edge = direction * cart.LateralLimit;
-                float runaway = Mathf.Min(remaining, RunawayTicks * Step);
-                y = Mathf.MoveTowards(y, edge, RunawaySteeringSpeed * WorldPerWebUnit * runaway);
-                return cart.PredictSteeringY(y, edge, remaining - runaway);
-            }
-            target = Mathf.Clamp(target + direction * CartMotion.WhipSteeringStep, -cart.LateralLimit, cart.LateralLimit);
-            float interval = Mathf.Min(remaining, DodgeWhipTicks * Step);
-            y = cart.PredictSteeringY(y, target, interval);
-            remaining -= interval;
-        }
-        return cart.PredictSteeringY(y, target, Mathf.Max(0, remaining));
-    }
+    private float DrivingYAt(float seconds, int direction, float delay) =>
+        Mathf.Clamp(cart.transform.position.y + direction * DriverSteeringSpeed * WorldPerWebUnit * Mathf.Max(0, seconds - delay),
+            -cart.LateralLimit, cart.LateralLimit);
 
     private NetworkPlayer EvasionDriver(out int direction)
     {
         direction = 0;
         drivingHazards.Clear();
         CollectDrivingHazards?.Invoke(drivingHazards);
-        if (drivingHazards.Count == 0 || RunawayDirection != 0) return null;
-        float bestRisk = DrivingRisk(0, 0, 0, 0);
+        if (drivingHazards.Count == 0) return null;
+        float bestRisk = DrivingRisk(0, 0);
         if (bestRisk <= 0) return null;
 
         NetworkPlayer driver = null;
@@ -96,27 +75,12 @@ public sealed partial class CartStations
         }
         if (driver == null) return null;
 
-        float delay = Mathf.Max(arrival, (nextDodgeWhip - careTicks) * Step);
-        float bestEffort = 0;
         for (int side = -1; side <= 1; side += 2)
         {
-            bool right = side > 0;
-            if ((right ? RightHorse : LeftHorse).Value.Mood != HorseMood.Normal) continue;
-            int wounds = (right ? RightWounds : LeftWounds).Value;
-            int toEdge = Mathf.CeilToInt((cart.LateralLimit - side * cart.Lane) / CartMotion.WhipSteeringStep);
-            int maxHits = Mathf.Min(toEdge, RunawayHits - wounds);
-            for (int count = 1; count <= maxHits; count++)
-            {
-                float risk = DrivingRisk(count, side, wounds, delay);
-                // Equal safety: prefer fewer hits, a rested horse, and avoiding a runaway.
-                float effort = count + wounds * .05f + (wounds + count == RunawayHits ? 20 : 0);
-                if (risk < bestRisk - .0001f || (direction != 0 && Mathf.Abs(risk-bestRisk) < .0001f && effort < bestEffort))
-                {
-                    direction = side;
-                    bestRisk = risk;
-                    bestEffort = effort;
-                }
-            }
+            float risk = DrivingRisk(side, arrival);
+            if (risk >= bestRisk - .0001f) continue;
+            direction = side;
+            bestRisk = risk;
         }
         return direction == 0 ? null : driver;
     }

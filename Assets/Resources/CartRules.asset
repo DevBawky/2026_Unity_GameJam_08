@@ -30,7 +30,7 @@ MonoBehaviour:
   barrel:
     title: "\uB300\uAD6C\uACBD \uD3EC\uC2E0"
     price: 6
-    amount: 0.25
+    amount: 0.17
     maxLevel: 3
   hull:
     title: "\uAC15\uD654 \uCC28\uCCB4"

@@ -12,6 +12,8 @@ public struct RiderState : INetworkSerializeByMemcpy
     public float Attention, Hunger;
     public bool Upset, Bored, BoredomPending, InCellar;
     public float Soothing;
+    public int AttentionHeartUntil;
+    public Vector2 AttentionHeartFrom;
     public Vector2 LastFoot, BoredFrom;
     public int Mischief, NextMischief;
     public Vector2 Destination;
@@ -31,8 +33,11 @@ public sealed partial class CartStations
     [SerializeField] private SpriteSequence[] royalWalks;
     [SerializeField] private Sprite[] princePoses;
     [SerializeField] private Sprite[] princessPoses;
-    [SerializeField] private RectTransform[] royalAreas;
     private readonly Vector2[] seats = new Vector2[2];
+    [SerializeField] private Transform[] royalChairs;
+    [SerializeField] private UnityEngine.UI.Image[] royalMarkers;
+    private Vector3[] chairStarts;
+    private readonly NetworkVariable<CartWorkShock> royalSeatBounce = new();
     public NetworkVariable<RiderState> Prince = new(), Princess = new();
     public NetworkVariable<int> Waves = new(), Affection = new(), ShopRound = new(), Report = new(-1);
     public NetworkVariable<int> Barrel = new(), Stabilizer = new(), Porter = new(), Hull = new();
@@ -77,21 +82,45 @@ public sealed partial class CartStations
         return IsCarrier(child, actor);
     }
 
-    internal Vector3 RoyalStatusAnchor(RiderState child, int index)
-    {
-        if (child.Pose == RiderPose.Carried && child.CarrierSlot >= 0 && child.CarrierSlot < gameScene.Players.Length)
-        {
-            var carrier = gameScene.Players[child.CarrierSlot];
-            if (carrier != null && carrier.Assigned.Value)
-            {
-                // The carry sprites draw the child on the left, with feet below the crew pivot.
-                return carrier.transform.position + new Vector3(carrier.FacingRight.Value ? 13f : -13f, -16f, 0f) * WorldPerWebUnit;
-            }
-        }
+    public readonly NetworkVariable<CartWorkShock> PrinceHeart = new(), PrincessHeart = new();
 
-        if (royalVisuals != null && index < royalVisuals.Length && royalVisuals[index] != null)
-            return royalVisuals[index].TransformPoint(Vector3.down * .16f);
-        return cart.transform.TransformPoint(child.Position) + Vector3.down * (16f * WorldPerWebUnit);
+    internal bool RoyalNearby(NetworkPlayer viewer, RiderState child)
+    {
+        if (viewer == null || !viewer.Assigned.Value || viewer.InCellar != child.InCellar) return false;
+        Vector2 childWorld = cart.transform.TransformPoint(child.Position);
+        return Vector2.Distance(childWorld, viewer.transform.position) <= 52f * WorldPerWebUnit;
+    }
+
+    internal StationAction? AttentionTarget(NetworkPlayer actor)
+    {
+        if (!actor.HandsFree) return null;
+        var prince = Prince.Value;
+        var princess = Princess.Value;
+        bool first = prince.Pose == RiderPose.Seated && RoyalNearby(actor, prince);
+        bool second = princess.Pose == RiderPose.Seated && RoyalNearby(actor, princess);
+        if (!first && !second) return null;
+        Vector2 foot = cart.transform.InverseTransformPoint(actor.transform.position);
+        return first && (!second || (foot - prince.Position).sqrMagnitude <= (foot - princess.Position).sqrMagnitude)
+            ? StationAction.RoyalFamily : StationAction.Princess;
+    }
+
+    internal bool WithinRoyalInteraction(StationAction action, NetworkPlayer actor)
+    {
+        int index = action == StationAction.Princess ? 1 : 0;
+        var child = index == 0 ? Prince.Value : Princess.Value;
+        if (child.InCellar != actor.InCellar) return false;
+        bool atSeat = child.Pose is RiderPose.Seated or RiderPose.Carried;
+        Vector2 point = RoyalInteractionPosition(child, index);
+        float radius = atSeat ? 18f * PlayerTiming.WorkRadiusFraction : 30f;
+        return Vector2.Distance(point, actor.transform.position) <= radius * WorldPerWebUnit;
+    }
+
+    private float RoyalSeatLift()
+    {
+        var bounce = royalSeatBounce.Value;
+        if (bounce.Strength <= 0f || SettingsPanel.ReducedMotion) return 0f;
+        float progress = Mathf.Clamp01((float)(NetworkManager.ServerTime.Time - bounce.Time) / .4f);
+        return (12f + 7f * bounce.Strength) * 4f * progress * (1f - progress) * WorldPerWebUnit;
     }
 
     public const float SootheDistance = 312.5f;
@@ -100,7 +129,6 @@ public sealed partial class CartStations
     private void ResetCare()
     {
         careTicks = 0;
-        nextDodgeWhip = 0;
         Array.Clear(nextBotAction,0,nextBotAction.Length);
         Array.Fill(botJobs,-1);
         Array.Clear(walkingRight,0,walkingRight.Length);
@@ -114,9 +142,9 @@ public sealed partial class CartStations
             if (i==0) Prince.Value=value; else Princess.Value=value;
             ignoreWanderUntil[i]=0;
         }
-        Array.Clear(nextHorseRest,0,2);
-        LeftHorse.Value = RightHorse.Value = default;
-        RightWounds.Value = LeftWounds.Value = 0;
+        HorseRage.Value = default;
+        royalSeatBounce.Value = default;
+        PrinceHeart.Value = PrincessHeart.Value = default;
         Waves.Value = 0;
         Report.Value = -1;
         KingReply.Value = default;
@@ -127,8 +155,7 @@ public sealed partial class CartStations
     private void AdvanceCare()
     {
         careTicks++;
-        AdvanceHorse(false);
-        AdvanceHorse(true);
+        AdvanceHorseRage();
         AdvanceChild(Prince,0);
         AdvanceChild(Princess,1);
         const float cookLossSecondsPerShock = .55f;
@@ -213,7 +240,7 @@ public sealed partial class CartStations
             case StationAction.Cannon:
                 if (loaded && !fuseLit) { gunner = null; StartFuse(0); }
                 break;
-            case StationAction.Driver: WhipRump(Sample() >= .5f); break;
+            case StationAction.Driver: WhipHorse(); break;
         }
         child.Mischief = 0;
         Bounds bounds = CartBody.bounds;
@@ -258,19 +285,25 @@ public sealed partial class CartStations
 
     private void LateUpdate()
     {
-        ShowDriverAim();
         if (cannonVisual != null)
             cannonVisual.sprite = IsFiring ? cannonFuse : cannonReady;
         if (muzzleVisual != null)
         {
             var shot = LastCannonShot.Value;
-            float age = shot.Time >= 0d && IsSpawned ? (float)(NetworkManager.ServerTime.Time - shot.Time) : Time.time - muzzleFlashStart;
+            double now = IsSpawned ? NetworkManager.ServerTime.Time : 0d;
+            float age = shot.Time >= 0d && IsSpawned ? (float)(now - shot.Time) : -1f;
             muzzleVisual.enabled = muzzleFlash != null && muzzleFlash.PlayingAt(age);
             if (muzzleVisual.enabled)
             {
-                muzzleVisual.sprite = muzzleFlash.FrameAt(age);
+                muzzleVisual.sprite = muzzleFlash.FrameAt(SettingsPanel.ReducedMotion ? 0f : age);
                 muzzleVisual.transform.rotation = Quaternion.Euler(0f, 0f, shot.Angle);
-                muzzleVisual.transform.position = CannonPivot.position + muzzleVisual.transform.right * CannonBarrelLength;
+                Vector3 direction = muzzleVisual.transform.right;
+                float unit = WorldPerWebUnit * CannonCaliber;
+                muzzleVisual.transform.position = RenderedMuzzle(direction, now)
+                    + (direction * 53f + muzzleVisual.transform.up * 3f) * unit;
+                float size = 119f * unit / muzzleVisual.sprite.bounds.size.x;
+                var parent = muzzleVisual.transform.parent.lossyScale;
+                muzzleVisual.transform.localScale = new Vector3(size / parent.x, size / parent.y, 1f);
             }
         }
         if (IsSpawned)
@@ -278,16 +311,40 @@ public sealed partial class CartStations
             float time = (float)NetworkManager.ServerTime.Time;
             if (horseWhipZones != null && horseWhipZones.Length == 2)
             {
-                horseWhipZones[0]?.ShowGallop(Running, LeftWounds.Value > 0, LeftHorse.Value.Mood, time);
-                horseWhipZones[1]?.ShowGallop(Running, RightWounds.Value > 0, RightHorse.Value.Mood, time);
+                horseWhipZones[0]?.ShowGallop(Running, HorseRage.Value.Value > 0, CurrentHorseMood, time);
+                horseWhipZones[1]?.ShowGallop(Running, HorseRage.Value.Value > 0, CurrentHorseMood, time);
             }
         }
         if (!IsSpawned || !Running || royalVisuals == null || royalVisuals.Length != 2) return;
         ShowWheels();
-        PlaceChild(Prince.Value,0);
-        PlaceChild(Princess.Value,1);
+        float lift = RoyalSeatLift();
+        for (int i = 0; i < chairStarts.Length; i++)
+            royalChairs[i].localPosition = chairStarts[i] + Vector3.up * lift;
+        PlaceChild(Prince.Value,0, lift);
+        PlaceChild(Princess.Value,1, lift);
+        if (royalMarkers is { Length: 2 })
+        {
+            ShowRoyalMarker(royalMarkers[0], Prince.Value);
+            ShowRoyalMarker(royalMarkers[1], Princess.Value);
+        }
     }
-    private void PlaceChild(RiderState child,int index)
+    private void ShowRoyalMarker(UnityEngine.UI.Image marker, RiderState child)
+    {
+        bool visible = false;
+        foreach (var player in Crew)
+        {
+            if (player == null || !player.Local || player.InCellar) continue;
+            if (child.Pose == RiderPose.Seated && player.Snack.Value
+                || child.Pose == RiderPose.Carried && !child.Upset && child.CarrierSlot == player.Slot.Value)
+            {
+                visible = true;
+                break;
+            }
+        }
+        marker.enabled = visible;
+    }
+
+    private void PlaceChild(RiderState child,int index, float lift)
     {
         var visual=royalVisuals[index];
         visual.position=cart.transform.TransformPoint(child.Position);
@@ -297,13 +354,14 @@ public sealed partial class CartStations
             newSprite.enabled = child.Pose != RiderPose.Carried;
             newSprite.sortingOrder = WorldDepth.Order(visual.position, true);
             bool seated = child.Pose == RiderPose.Seated;
-            if (seated) visual.position += Vector3.up * (15f * WorldPerWebUnit);
+            if (seated) visual.position += Vector3.up * (15f * WorldPerWebUnit + lift);
             visual.localScale = Vector3.one * (WorldPerWebUnit * 100f * (seated ? 1.42f : 1f));
             newSprite.sprite = poses[seated ? 0 : child.Bored ? 3 : child.Crying ? 2 : 1];
         }
         if (poses != null && poses.Length == 5 && visual.TryGetComponent(out SpriteRenderer sprite))
         {
             sprite.enabled = child.Pose != RiderPose.Carried;
+            if (child.Pose == RiderPose.Seated) visual.position += Vector3.up * lift;
             float size = WorldPerWebUnit * 100f * (child.Pose == RiderPose.Seated ? .83f : 1f);
             visual.localScale = Vector3.one * size;
             sprite.sprite = child.Pose == RiderPose.Fallen ? poses[1]
@@ -314,18 +372,21 @@ public sealed partial class CartStations
                     ? royalWalks[index].FrameAt(Time.time, true)
                     : poses[4];
         }
-        royalAreas[index].position = RoyalInteractionPosition(child, index);
     }
 
-    internal Vector3 RoyalInteractionPosition(StationAction action) => action == StationAction.Princess
-        ? RoyalInteractionPosition(Princess.Value, 1) : RoyalInteractionPosition(Prince.Value, 0);
-
     private Vector3 RoyalInteractionPosition(RiderState child, int index) =>
-        cart.transform.TransformPoint(child.Pose == RiderPose.Carried ? seats[index] : child.Position);
+        cart.transform.TransformPoint(child.Pose is RiderPose.Seated or RiderPose.Carried ? seats[index] + Vector2.down * (40f * WorldPerWebUnit) : child.Position);
 
     public CareAction AvailableCare(StationAction action, NetworkPlayer actor)
     {
         var child = action == StationAction.Princess ? Princess.Value : Prince.Value;
+        if (AttentionTarget(actor) == action)
+        {
+            var effect = (action == StationAction.Princess ? PrincessHeart : PrinceHeart).Value;
+            bool waiting = effect.Strength > 0f && actor.NetworkManager.ServerTime.Time < effect.Time + .6d;
+            if (child.Attention < 100f && !waiting) return CareAction.Attend;
+        }
+        if (!WithinRoyalInteraction(action, actor)) return CareAction.None;
         if (child.Pose == RiderPose.Carried && !IsCarrier(child, actor)) return CareAction.None;
         if (IsCarrier(child, actor)) return !child.Upset && !actor.InCellar ? CareAction.Reseat : CareAction.None;
         if (child.Pose == RiderPose.Seated) return actor.Snack.Value ? CareAction.Feed : CareAction.None;
@@ -338,7 +399,17 @@ public sealed partial class CartStations
         var station = index == 0 ? StationAction.RoyalFamily : StationAction.Princess;
         switch (AvailableCare(station, actor))
         {
+            case CareAction.Attend:
+                if (!actor.Timing.IsInActionArea(station) || actor.CanUseStairShelf()
+                    || child.Attention >= 100f || careTicks < child.AttentionHeartUntil) return;
+                child.Attention = Mathf.Min(100f, child.Attention + 20f);
+                child.AttentionHeartUntil = careTicks + 18;
+                child.AttentionHeartFrom = cart.transform.InverseTransformPoint(actor.transform.position);
+                var effect = index == 0 ? PrinceHeart : PrincessHeart;
+                effect.Value = new CartWorkShock { Time = NetworkManager.ServerTime.Time, Strength = 1f };
+                break;
             case CareAction.Reseat:
+                actor.AwardScore(CartRules.ChildReseatScore);
                 child.Pose = RiderPose.Seated;
                 child.Position = seats[index];
                 child.CarrierSlot = -1;
@@ -372,7 +443,7 @@ public sealed partial class CartStations
         if (Owns(ShopPerk.SeatCushion)) chance *= CushionFallRate;
         if(child.Pose!=RiderPose.Seated || Sample()>=chance) return;
         child.Pose=RiderPose.Fallen;
-        child.Position+=Vector2.down*0.65f;
+        child.Position += Vector2.down * (40f * WorldPerWebUnit);
         child.Upset=Sample()<0.85;
         child.Soothing=0;
         field.Value=child;
