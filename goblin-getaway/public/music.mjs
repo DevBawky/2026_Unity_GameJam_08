@@ -1,12 +1,11 @@
 const tracks = {
-  waiting: {loopSeconds: 41.739, gain: .48},
-  chase: {loopSeconds: 59.259, gain: .57},
-  'stage-clear': {gain: .60},
-  'game-over': {gain: .56},
+  waiting: {loopSeconds: 41.739, gain: .52},
+  chase: {loopSeconds: 59.259, gain: .72},
+  'stage-clear': {gain: .65},
+  'game-over': {gain: .61},
 };
 const fadeOutSeconds = .12;
 const fadeInSeconds = .11;
-const musicLevel = .65;
 
 function decode(context, bytes) {
   // Keep support for WebKit versions exposing the callback signature.
@@ -45,7 +44,7 @@ export function createMusicPlayer({enabled = true} = {}) {
 
   function musicVolume() {
     const track = tracks[phase];
-    return musicLevel * track.gain * (paused && track.loopSeconds ? .28 : 1);
+    return track.gain * (paused && track.loopSeconds ? .28 : 1);
   }
 
   function updateGain() {

@@ -84,7 +84,7 @@ const firstAssets = [
 export const SFX_ASSET_NAMES = Object.freeze([...new Set(Object.values(cues).map(cue => cue.asset))]);
 const allAssets = [...new Set([...firstAssets, ...SFX_ASSET_NAMES])];
 const maxVoices = 10;
-const masterLevel = .82;
+const masterLevel = .64;
 const sampleWaitMs = 120;
 
 function clamp(value, min, max) {
