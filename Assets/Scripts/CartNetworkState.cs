@@ -5,10 +5,10 @@ using Unity.Netcode;
 public struct CartNetworkState : INetworkSerializeByMemcpy, IEquatable<CartNetworkState>
 {
     public float Durability, Prince, Princess, StageStart;
-    public int Stage, Stored, Pile, Lost, RepairSteps, Tire, Cushion, Horse, Precision;
+    public int Stage, Stored, Pile, Lost, RepairSteps, Tire, Cushion, Horse, Precision, CleaningTaps;
     public StageFlow Flow;
     public bool Loaded, Firing, Wheel, EverWheel;
-    public bool Equals(CartNetworkState v) => Durability==v.Durability && Prince==v.Prince && Princess==v.Princess && StageStart==v.StageStart && Stage==v.Stage && Stored==v.Stored && Pile==v.Pile && Lost==v.Lost && RepairSteps==v.RepairSteps && Tire==v.Tire && Cushion==v.Cushion && Horse==v.Horse && Precision==v.Precision && Flow==v.Flow && Loaded==v.Loaded && Firing==v.Firing && Wheel==v.Wheel && EverWheel==v.EverWheel;
+    public bool Equals(CartNetworkState v) => Durability==v.Durability && Prince==v.Prince && Princess==v.Princess && StageStart==v.StageStart && Stage==v.Stage && Stored==v.Stored && Pile==v.Pile && Lost==v.Lost && RepairSteps==v.RepairSteps && Tire==v.Tire && Cushion==v.Cushion && Horse==v.Horse && Precision==v.Precision && CleaningTaps==v.CleaningTaps && Flow==v.Flow && Loaded==v.Loaded && Firing==v.Firing && Wheel==v.Wheel && EverWheel==v.EverWheel;
 }
 [Serializable]
 public struct CartMotionState : INetworkSerializeByMemcpy, IEquatable<CartMotionState>

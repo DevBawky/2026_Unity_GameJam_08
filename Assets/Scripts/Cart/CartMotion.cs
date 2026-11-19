@@ -16,9 +16,7 @@ public sealed class CartMotion : NetworkBehaviour
     [Tooltip("일반 조향 시 목표 Y에 접근하는 비율(초당). 5이면 약 0.46초에 90% 도달합니다.")]
     [UnityEngine.Serialization.FormerlySerializedAs("laneChangeSpeed")]
     [SerializeField, Min(0.01f)] private float steeringResponse = 5f;
-    [Tooltip("배경·장애물이 흐르는 속도 = Speed × 이 값")]
-    [SerializeField] private float scrollScale = 0.085f;
-    private const int OuterLane = 2;
+    private const float RoadUnitsPerMeter = 8f;
 
     [Header("Horse visual position")]
     [SerializeField] private Transform leftHorseVisual;
@@ -39,8 +37,7 @@ public sealed class CartMotion : NetworkBehaviour
     private Vector3 rightHorseStart;
 
     public float BaseSpeed => baseSpeed;
-    public float BaseScrollSpeed => baseSpeed * scrollScale;
-    public float LateralLimit => OuterLane;
+    public float LateralLimit => CartStations.Instance != null ? 100f * CartStations.Instance.WorldPerWebUnit : 0f;
 
     public float Speed { get; private set; }
     public float TargetSpeed { get; private set; }
@@ -52,7 +49,7 @@ public sealed class CartMotion : NetworkBehaviour
     public float LeftHorseSpeed { get; private set; }
     public float RightHorseSpeed { get; private set; }
     public float SpeedPerHorseLevel => CartRules.Active.horses.amount;
-    public Vector3 ScrollVelocity => Vector3.right * (Speed * scrollScale);
+    public Vector3 ScrollVelocity => Vector3.right * (Speed * RoadUnitsPerMeter * CartStations.Instance.WorldPerWebUnit);
     public float ScrollDistance { get; private set; }
 
     private void Awake()
@@ -64,7 +61,9 @@ public sealed class CartMotion : NetworkBehaviour
 
     public void ResetForStage(int horseLevel)
     {
-        baseSpeed = cruiseSpeed + Mathf.Max(0, horseLevel) * SpeedPerHorseLevel;
+        var stations = CartStations.Instance;
+        float wheels = stations != null && stations.Owns(ShopPerk.LightWheels) ? CartStations.LightWheelsSpeedBonus : 0f;
+        baseSpeed = cruiseSpeed + Mathf.Max(0, horseLevel) * SpeedPerHorseLevel + wheels;
         maximumHorseSpeed = Mathf.Min(baseSpeed + maxBoostAboveBase, 19f);
         LeftHorseSpeed = RightHorseSpeed = baseSpeed;
         TargetSpeed = baseSpeed;
@@ -98,11 +97,14 @@ public sealed class CartMotion : NetworkBehaviour
         LeftStep = right ? opposite : struck;
         RightStep = right ? struck : opposite;
         float targetY = Lane + (right ? WhipSteeringStep : -WhipSteeringStep);
-        Lane = Mathf.Clamp(targetY, -OuterLane, OuterLane);
+        Lane = Mathf.Clamp(targetY, -LateralLimit, LateralLimit);
 
         if (right) RightHorseSpeed = Mathf.Min(maximumHorseSpeed, RightHorseSpeed + speedGain*strength);
         else LeftHorseSpeed = Mathf.Min(maximumHorseSpeed, LeftHorseSpeed + speedGain*strength);
     }
+
+    // 출발용 당근 묶음: 기본 속도의 일정 비율로 출발한다.
+    public void Kickstart(float fraction) => Speed = Mathf.Max(Speed, baseSpeed * fraction);
 
     public void ResetHorsePace(bool right)
     {
@@ -128,7 +130,7 @@ public sealed class CartMotion : NetworkBehaviour
         Vector3 position = transform.position;
         if (direction != 0)
         {
-            Lane = direction * OuterLane;
+            Lane = direction * LateralLimit;
             position.y = Mathf.MoveTowards(position.y, Lane, CartStations.RunawaySteeringSpeed * stations.WorldPerWebUnit * dt);
         }
         else
@@ -142,7 +144,10 @@ public sealed class CartMotion : NetworkBehaviour
     }
 
     internal float PredictSteeringY(float y, float targetY, float seconds) =>
-        Mathf.Lerp(y, targetY, 1f - Mathf.Exp(-steeringResponse * seconds));
+        Mathf.Lerp(y, targetY, 1f - Mathf.Exp(-SteeringResponse * seconds));
+
+    private float SteeringResponse => CartStations.Instance != null && CartStations.Instance.Owns(ShopPerk.SteeringReins)
+        ? steeringResponse * CartStations.SteeringReinsResponse : steeringResponse;
 
     private void UpdateHorseVisual(Transform visual, Vector3 start, int step, float dt)
     {

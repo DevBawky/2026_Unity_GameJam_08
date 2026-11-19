@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47366fd0750fd514e8f884100a7c18e9, type: 3}
+  m_Name: Stage_03
+  m_EditorClassIdentifier: Assembly-CSharp::StageSO
+  waves:
+  - {fileID: 11400000, guid: 876e65195d510674b81e83a0f3f5fe73, type: 2}
+  - {fileID: 11400000, guid: f542b2e42f187d84887a21fe8a01f79c, type: 2}
+  - {fileID: 11400000, guid: b6535e174ba1f7548861a0699c7c37f7, type: 2}
+  - {fileID: 11400000, guid: cbb35b910a986f543a1371c6e9b733d1, type: 2}
+  - {fileID: 11400000, guid: 187c1c42e9dce554984ca2ee6ff76aee, type: 2}
+  - {fileID: 11400000, guid: 080aaecda07a4814f891934f3c60f1a3, type: 2}
+  - {fileID: 11400000, guid: 734e3398898377b40a57ab109bbaa162, type: 2}

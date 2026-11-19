@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public sealed class CrewControls : MonoBehaviour
@@ -51,6 +52,14 @@ public sealed class CrewControls : MonoBehaviour
         var stations=CartStations.Instance;
         if(keys!=null)
         {
+            var eventSystem = EventSystem.current;
+            var focused = eventSystem != null ? eventSystem.currentSelectedGameObject : null;
+            if (keys.backquoteKey.wasPressedThisFrame && CartStations.Running && Time.timeScale > 0f
+                && !menu.activeSelf && (testSettingsPanel == null || !testSettingsPanel.activeInHierarchy)
+                && (focused == null || (focused.GetComponentInParent<TMP_InputField>() == null
+                    && focused.GetComponentInParent<InputField>() == null))
+                && !stations.IsPostShotGunner(local))
+                local.RequestStoredShell();
             if (keys.escapeKey.wasPressedThisFrame)
             {
                 var owner = local;
@@ -72,7 +81,7 @@ public sealed class CrewControls : MonoBehaviour
         string news="";
         double now=local.NetworkManager.ServerTime.Time;
         foreach(var p in crew)
-            if(p.Assigned.Value && p.Emote.Value>0 && now-p.EmoteTime.Value<3) news+=$"{p.Nickname.Value} · {Messages[p.Emote.Value-1]}  ";
+            if(p.Assigned.Value && p.Emote.Value>0 && now-p.EmoteTime.Value<3) news+=$"{p.Nickname.Value} · {LocalizationTable.T(Messages[p.Emote.Value-1])}  ";
         team.text=news;
         task.text = stations.ChoosingUpgrade && LobbySession.LocalSeats == 2 ? "P1  1–9     P2  Right Shift + 1–9" : "";
     }

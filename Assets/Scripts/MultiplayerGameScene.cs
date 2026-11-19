@@ -28,9 +28,4 @@ public sealed class MultiplayerGameScene : MonoBehaviour
             player.TakeBotControl(slot);
         }
     }
-    public void Release(ulong client)
-    {
-        foreach (var player in players)
-            if (player.IsSpawned && player.Assigned.Value && player.OwnerClientId==client) player.Release();
-    }
 }

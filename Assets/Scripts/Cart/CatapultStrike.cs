@@ -6,8 +6,8 @@ using Random = UnityEngine.Random;
 public struct CatapultState : INetworkSerializeByMemcpy, IEquatable<CatapultState>
 {
     public bool Active, Landed;
-    public float Time, TargetScroll, Y, LandX;
-    public bool Equals(CatapultState v) => Active==v.Active && Landed==v.Landed && Time==v.Time && TargetScroll==v.TargetScroll && Y==v.Y && LandX==v.LandX;
+    public float Time, TargetDistance, Y, LandX;
+    public bool Equals(CatapultState v) => Active==v.Active && Landed==v.Landed && Time==v.Time && TargetDistance==v.TargetDistance && Y==v.Y && LandX==v.LandX;
 }
 
 // 투석기 바위. 씬에 하나 두고 재사용한다(한 번에 한 발). 웹판 sim.mjs·scene.mjs의 투석기를 옮겼다.
@@ -23,18 +23,22 @@ public sealed class CatapultStrike : NetworkBehaviour
     [SerializeField] private ObstacleSpawner obstacles;
 
     [Header("Visual (프리팹 자식)")]
-    [SerializeField] private SpriteRenderer warning;
     [SerializeField] private SpriteRenderer shadow;
     [SerializeField] private SpriteRenderer rock;
     [SerializeField] private SpriteRenderer shockwave;
+    [SerializeField] private Sprite approachShadow;
     [SerializeField] private Sprite dangerShadow;
     [SerializeField] private SpriteSequence impactSequence;
     private Sprite safeShadow;
 
     public bool TryGetWarning(out Vector3 point)
     {
-        point = warning.transform.position;
-        return warning.enabled && warning.gameObject.activeInHierarchy;
+        point = default;
+        if (!IsSpawned || !CartStations.Running) return false;
+        CatapultState strike = State.Value;
+        if (!strike.Active || strike.Landed || !IsLocked(strike)) return false;
+        point = new Vector3(GroundX(strike), strike.Y, 0f);
+        return HitsCart(point.x, point.y);
     }
 
     [Header("Timing (초)")]
@@ -58,8 +62,11 @@ public sealed class CatapultStrike : NetworkBehaviour
     [Header("Target")]
     [Tooltip("마차 중심에서 위·아래로 비키는 거리 (마차 반높이 비율, 최소~최대)")]
     [SerializeField] private Vector2 offsetRange = new(0.76f, 0.84f);
-    [Tooltip("착탄 판정 타원 반지름 (월드)")]
-    [SerializeField] private Vector2 hitRadius = new(0.75f, 0.6f);
+    private const float CatapultUnitsPerMeter = 4f;
+    private Vector2 HitRadius => new Vector2(35f, 24f) * stations.WorldPerWebUnit;
+    private float HullHalfHeight => 100f * stations.WorldPerWebUnit;
+    private float HullLeft => stations.CartBody.bounds.min.x - 23f * stations.WorldPerWebUnit;
+    private float HullRight => stations.CartBody.bounds.max.x + 21f * stations.WorldPerWebUnit;
 
     [Header("Hit")]
     [SerializeField, Min(0f)] private float hitDamage = 22f;
@@ -67,8 +74,7 @@ public sealed class CatapultStrike : NetworkBehaviour
     [SerializeField, Range(0.1f, 1f)] private float hitSpeedMultiplier = 0.78f;
 
     [Header("Look")]
-    [Tooltip("그림자·경고 링 크기 = 판정 타원 × 이 값")]
-    [SerializeField, Min(1f)] private float warningScale = 2f;
+    private const float WarningScale = 2f;
     [Tooltip("고정 전 그림자가 출발하는 뒤쪽 거리 (월드)")]
     [SerializeField, Min(0f)] private float approachDistance = 7f;
     [Tooltip("바위가 떨어지기 시작하는 높이 (월드). 화면 위쪽 밖이 되게 크게 둔다")]
@@ -84,24 +90,18 @@ public sealed class CatapultStrike : NetworkBehaviour
     private float stageTime;
     private float nextLaunch;
     private bool shown = true;
-    private Color warningColor;
     private Color shadowColor;
     private Color rockColor;
     private Color shockwaveColor;
     // 스프라이트마다 원래 크기가 달라서(원 1, 링 2.5) 지름을 줄 때 이 값을 곱해 맞춘다.
-    private float warningUnit;
-    private float shadowUnit;
     private float shockwaveUnit;
 
     private void Awake()
     {
-        warningColor = warning.color;
         shadowColor = shadow.color;
         safeShadow = shadow.sprite;
         rockColor = rock.color;
         shockwaveColor = shockwave.color;
-        warningUnit = Unit(warning);
-        shadowUnit = Unit(shadow);
         shockwaveUnit = Unit(shockwave);
         SetVisible(false);
     }
@@ -110,12 +110,15 @@ public sealed class CatapultStrike : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (IsServer && stations != null) stations.CollectDrivingHazards += CollectDrivingHazards;
+        if (!IsServer || stations == null) return;
+        stations.CollectDrivingHazards += CollectDrivingHazards;
+        CartStations.SimulationStep += Simulate;
     }
 
     public override void OnNetworkDespawn()
     {
         if (stations != null) stations.CollectDrivingHazards -= CollectDrivingHazards;
+        CartStations.SimulationStep -= Simulate;
     }
 
     private void CollectDrivingHazards(System.Collections.Generic.List<CartDrivingHazard> hazards)
@@ -124,24 +127,22 @@ public sealed class CatapultStrike : NetworkBehaviour
         if (!strike.Active || strike.Landed) return;
         float remaining = Mathf.Max(0, flightTime - strike.Time);
         var cart = stations.Cart;
-        var body = stations.CartBody.bounds;
-        float x = GroundX(strike) + cart.ScrollVelocity.x * remaining;
-        float dx = Mathf.Abs(x - Mathf.Clamp(x, body.min.x, body.max.x));
+        float x = GroundX(strike) + cart.Speed * CatapultUnitsPerMeter * stations.WorldPerWebUnit * remaining;
+        float dx = Mathf.Abs(x - Mathf.Clamp(x, HullLeft, HullRight));
+        var hitRadius = HitRadius;
         if (dx > hitRadius.x) return;
         float normalizedX = dx / Mathf.Max(.001f, hitRadius.x);
-        float radius = body.extents.y + hitRadius.y * Mathf.Sqrt(1f - normalizedX * normalizedX);
-        float center = strike.Y - (body.center.y - cart.transform.position.y);
-        hazards.Add(new CartDrivingHazard(center, radius, remaining, remaining));
+        float radius = HullHalfHeight + hitRadius.y * Mathf.Sqrt(1f - normalizedX * normalizedX);
+        hazards.Add(new CartDrivingHazard(strike.Y, radius, remaining, remaining));
     }
 
     private void Update()
     {
         if (!IsSpawned || stations == null || !stations.IsSpawned) return;
-        if (IsServer) Simulate();
         Draw(State.Value);
     }
 
-    private void Simulate()
+    private void Simulate(float dt)
     {
         if (!CartStations.Running) return;
         if (stations.StageNumber != stage)
@@ -151,17 +152,17 @@ public sealed class CatapultStrike : NetworkBehaviour
             nextLaunch = firstDelay;
             State.Value = default;
         }
-        stageTime += Time.deltaTime;
+        stageTime += dt;
 
         CatapultState s = State.Value;
         if (!s.Active)
         {
-            if (stageTime >= nextLaunch) Launch();
+            if (stageTime + .0001f >= nextLaunch) Launch();
             return;
         }
-        s.Time += Time.deltaTime;
-        if (!s.Landed && s.Time >= flightTime) Land(ref s);
-        if (s.Time >= flightTime + lingerTime) s = default;
+        s.Time += dt;
+        if (!s.Landed && s.Time + .0001f >= flightTime) Land(ref s);
+        if (s.Time + .0001f >= flightTime + lingerTime) s = default;
         State.Value = s;
     }
 
@@ -179,18 +180,20 @@ public sealed class CatapultStrike : NetworkBehaviour
         // 착탄이 장애물의 마차 앞 통과와 겹치면 미룬다.
         if (obstacles != null && obstacles.StrikeOverlapsObstacle(flightTime)) return;
         CartMotion cart = stations.Cart;
-        float halfHeight = stations.CartBody.bounds.extents.y;
+        float halfHeight = HullHalfHeight;
         float offset = Random.Range(offsetRange.x, offsetRange.y) * halfHeight;
         float cartY = cart.transform.position.y;
+        var hitRadius = HitRadius;
         // 가장자리에 붙어 있으면 바위를 그 가장자리 쪽에 둬서 길 안쪽으로 피할 수 있게 한다.
-        float clearance = halfHeight + hitRadius.y - offset;
+        float margin = 8f * stations.WorldPerWebUnit;
+        float clearance = halfHeight + hitRadius.y - offset + margin;
         float side = Random.value < 0.5f ? 1f : -1f;
         if (cart.LateralLimit - cartY < clearance) side = 1f;
         else if (cartY + cart.LateralLimit < clearance) side = -1f;
         // 앞에 장애물이 있으면 바위와 장애물을 함께 피할 차선을 남긴다. 안 되면 반대쪽, 둘 다 안 되면 미룬다.
         if (obstacles != null && obstacles.HasThreatAhead)
         {
-            float rockClearance = halfHeight + hitRadius.y;
+            float rockClearance = halfHeight + hitRadius.y + margin;
             if (!obstacles.HasEscapeLane(cartY + side * offset, rockClearance))
             {
                 if (!obstacles.HasEscapeLane(cartY - side * offset, rockClearance)) return;
@@ -201,7 +204,7 @@ public sealed class CatapultStrike : NetworkBehaviour
         State.Value = new CatapultState
         {
             Active = true,
-            TargetScroll = cart.ScrollDistance + cart.BaseScrollSpeed * flightTime,
+            TargetDistance = cart.Distance + cart.BaseSpeed * flightTime,
             Y = cartY + side * offset,
         };
         nextLaunch = stageTime + Mathf.Max(minInterval, baseInterval - (stage - 1) * intervalPerStage);
@@ -218,21 +221,25 @@ public sealed class CatapultStrike : NetworkBehaviour
 
     private bool HitsCart(float x, float y)
     {
-        Bounds body = stations.CartBody.bounds;
-        float dx = (x - Mathf.Clamp(x, body.min.x, body.max.x)) / hitRadius.x;
-        float dy = (y - Mathf.Clamp(y, body.min.y, body.max.y)) / hitRadius.y;
+        float yCenter = stations.Cart.transform.position.y;
+        var hitRadius = HitRadius;
+        float dx = (x - Mathf.Clamp(x, HullLeft, HullRight)) / hitRadius.x;
+        float dy = (y - Mathf.Clamp(y, yCenter - HullHalfHeight, yCenter + HullHalfHeight)) / hitRadius.y;
         return dx * dx + dy * dy <= 1f;
     }
 
-    // 도로에 고정된 착탄 지점의 현재 화면 x. 배경과 같은 속도로 흘러가며, 기본 속도면 착탄 순간 마차 뒤끝에 온다.
-    private float GroundX(CatapultState s) => stations.CartBody.bounds.max.x + (stations.Cart.ScrollDistance - s.TargetScroll);
+    private float GroundX(CatapultState s) => HullRight + 3f * stations.WorldPerWebUnit
+        + (stations.Cart.Distance - s.TargetDistance) * CatapultUnitsPerMeter * stations.WorldPerWebUnit;
+
+    private bool IsLocked(CatapultState strike) => strike.Time + .0001f >= lockTime;
 
     private void Draw(CatapultState s)
     {
         SetVisible(s.Active);
         if (!s.Active) return;
 
-        var marker = new Vector3(hitRadius.x * 2f * warningScale, hitRadius.y * 2f * warningScale, 1f);
+        var hitRadius = HitRadius;
+        var marker = new Vector3(hitRadius.x * 2f * WarningScale, hitRadius.y * 2f * WarningScale, 1f);
         if (s.Landed)
         {
             DrawImpact(s, marker);
@@ -240,27 +247,18 @@ public sealed class CatapultStrike : NetworkBehaviour
         }
 
         float approach = Mathf.Clamp01(s.Time / lockTime);
-        bool locked = s.Time >= lockTime;
+        bool locked = IsLocked(s);
         // 고정 전에는 뒤(오른쪽)에서 다가오며 커진다.
         var ground = new Vector3(GroundX(s) + approachDistance * Mathf.Pow(1f - approach, 2f), s.Y, 0f);
-        float grow = Mathf.Lerp(0.63f, 1f, approach);
 
         shadow.enabled = true;
         shadow.transform.position = ground;
-        shadow.transform.localScale = marker * (grow * shadowUnit);
-        shadow.color = WithAlpha(shadowColor, Mathf.Lerp(0.28f, 0.52f, approach));
-
-        bool danger = locked && (dangerShadow == null || HitsCart(ground.x, ground.y));
-        if (dangerShadow != null) shadow.sprite = danger ? dangerShadow : safeShadow;
-        warning.enabled = danger;
-        if (danger)
-        {
-            warning.transform.position = ground;
-            warning.transform.localScale = dangerShadow != null
-                ? Vector3.one * (marker.y * warningUnit * .48f)
-                : marker * warningUnit;
-            warning.color = WithAlpha(warningColor, warningColor.a * (0.68f + 0.22f * Mathf.Sin(s.Time * 10f)));
-        }
+        bool danger = locked && HitsCart(ground.x, ground.y);
+        shadow.sprite = !locked && approachShadow != null ? approachShadow : danger && dangerShadow != null ? dangerShadow : safeShadow;
+        shadow.color = locked ? Color.white : WithAlpha(shadowColor, Mathf.Lerp(.28f, .52f, approach));
+        marker.x *= Mathf.Lerp(22f / 35f, 1f, approach);
+        marker.y *= Mathf.Lerp(13f / 24f, 1f, approach);
+        SetShadowScale(marker, 1f);
 
         // 착탄 dropTime초 전부터 화면 밖 위에서 가속하며 떨어진다.
         float fall = 1f - (flightTime - s.Time) / dropTime;
@@ -278,7 +276,6 @@ public sealed class CatapultStrike : NetworkBehaviour
         float age = Mathf.Clamp01((s.Time - flightTime) / lingerTime);
         float fade = Mathf.Min(1f, (1f - age) * 3f);
         var ground = new Vector3(s.LandX, s.Y, 0f);
-        warning.enabled = false;
         if (impactSequence != null)
         {
             shadow.enabled = rock.enabled = false;
@@ -296,7 +293,7 @@ public sealed class CatapultStrike : NetworkBehaviour
         // 바닥 자국 + 바위
         shadow.enabled = true;
         shadow.transform.position = ground;
-        shadow.transform.localScale = marker * shadowUnit;
+        SetShadowScale(marker, 1f);
         shadow.color = WithAlpha(shadowColor, 0.6f * fade);
         rock.enabled = true;
         rock.transform.position = ground;
@@ -317,11 +314,16 @@ public sealed class CatapultStrike : NetworkBehaviour
         return color;
     }
 
+    private void SetShadowScale(Vector3 diameter, float growth)
+    {
+        Vector3 size = shadow.sprite.bounds.size;
+        shadow.transform.localScale = new Vector3(diameter.x * growth / size.x, diameter.y * growth / size.y, 1f);
+    }
+
     private void SetVisible(bool visible)
     {
         if (shown == visible) return;
         shown = visible;
-        warning.gameObject.SetActive(visible);
         shadow.gameObject.SetActive(visible);
         rock.gameObject.SetActive(visible);
         shockwave.gameObject.SetActive(visible);

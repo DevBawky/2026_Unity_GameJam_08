@@ -2,7 +2,6 @@ using UnityEngine;
 
 // 메인 카메라 연출. 평소엔 시작 위치·크기를 유지하고,
 // 스테이션에 들어가거나 포탄을 들면 플레이어 쪽으로 확대, 대포 조준 중엔 조준선과 마차 오른쪽이 보이게 맞춘다.
-// 충격(Shake)은 흔들림과 함께 타이밍 핀 흔들림 세기(ShakeAmount)로도 쓰인다.
 [RequireComponent(typeof(Camera))]
 public sealed class CameraRig : MonoBehaviour
 {
@@ -15,20 +14,25 @@ public sealed class CameraRig : MonoBehaviour
     // 웹판 v10 앞길 시야: 일반 주행·마부석은 말·마차 묶음 중심을 화면 너비 55%에 두고, 마부석은 가로·세로 15% 더 넓게 본다.
     private const float ConvoyScreenX = 0.55f;
     private const float DriverViewRange = 1.15f;
+    private const float TransitionSeconds = .5f;
 
     [Tooltip("말·마차 묶음의 가로 중심(월드 x). 말 앞끝~마차 뒤끝의 가운데 (웹판 convoyCenterX)")]
     [SerializeField] private float convoyCenterX = -0.75f;
     [SerializeField] private PlayerTiming player;
     [SerializeField] private CartStations stations;
     [SerializeField] private CannonAim cannonAim;
-    [SerializeField, Min(0.1f)] private float smoothness = 8f;
 
     private readonly Vector3[] uiCorners = new Vector3[4];
     [SerializeField] private NetworkPlayer secondSeat;
     [SerializeField] private bool secondary;
     [SerializeField] private bool matchWebFraming;
-    private bool wasCellar;
+    private (bool Split, bool Cellar, bool Carrying, StationAction? Station, bool Aiming) view;
+    private Vector3 transitionPosition, shotPosition;
+    private float transitionSize, transitionAge, shotSize;
+    private bool wasPostShot;
+    private bool primaryWasInCellar, secondWasInCellar;
     private Camera cam;
+    private int defaultLayers, cellarBackdropLayer;
     private Vector3 homePosition;
     private float homeSize;
     private Vector3 lastShakeOffset;
@@ -36,17 +40,28 @@ public sealed class CameraRig : MonoBehaviour
     private float shakeDuration = 0.01f;
     private float shakeStrength;
 
-    public void Bind(NetworkPlayer actor) { player=actor.Timing; cannonAim=actor.Cannon; }
+    public NetworkPlayer FollowedActor { get; private set; }
+
+    public void Bind(NetworkPlayer actor)
+    {
+        FollowedActor = actor;
+        player = actor.Timing;
+        cannonAim = actor.Cannon;
+    }
 
     public Vector3 ShakeOffset => lastShakeOffset;
     public bool CameraActive => cam != null && cam.enabled;
-    public float ShakeAmount => shakeRemaining > 0f ? shakeRemaining / shakeDuration : 0f;
 
     private void Awake()
     {
         cam = GetComponent<Camera>();
+        defaultLayers = cam.cullingMask;
+        cellarBackdropLayer = LayerMask.GetMask("CellarBackdrop");
         homePosition = transform.position;
         homeSize = cam.orthographicSize;
+        transitionPosition = homePosition;
+        transitionSize = homeSize;
+        transitionAge = TransitionSeconds;
     }
 
     public void Shake(float strength, float duration)
@@ -56,37 +71,61 @@ public sealed class CameraRig : MonoBehaviour
         shakeRemaining = shakeDuration;
     }
 
-    private static bool NeedsTaskView(NetworkPlayer actor)
+    private bool NeedsTaskView(NetworkPlayer actor)
     {
-        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver)) return false;
+        if (actor.InCellar && (actor.Carrying.Value || actor.Holding.Value) && !actor.Timing.HasStationAccess) return false;
+        if (!matchWebFraming && actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver)) return false;
         return actor.Timing.HasStationAccess || actor.Carrying.Value || actor.Holding.Value || actor.Timing.IsCannonFocus;
     }
     private void LateUpdate()
     {
         if (NetworkPlayer.LocalPlayer == null) return;
         var primary = NetworkPlayer.LocalPlayer;
-        bool split = LobbySession.LocalSeats == 2 && secondSeat != null && secondSeat.Assigned.Value && (primary.InCellar != secondSeat.InCellar || NeedsTaskView(primary) || NeedsTaskView(secondSeat));
+        bool duo = LobbySession.LocalSeats == 2 && secondSeat != null && secondSeat.Assigned.Value;
+        bool primaryInCellar = primary.InCellar;
+        bool secondInCellar = duo && secondSeat.InCellar;
+        bool floorChanged = primaryInCellar != primaryWasInCellar || secondInCellar != secondWasInCellar;
+        primaryWasInCellar = primaryInCellar;
+        secondWasInCellar = secondInCellar;
+        bool split = duo && (primaryInCellar != secondInCellar || NeedsTaskView(primary) || NeedsTaskView(secondSeat)
+                || stations.IsPostShotGunner(primary) || stations.IsPostShotGunner(secondSeat));
         if (secondary) cam.enabled = split;
         if (secondary && !split) return;
         cam.rect = split ? new Rect(secondary ? 0.5f : 0,0,0.5f,1) : new Rect(0,0,1,1);
         var follow = secondary ? secondSeat : primary;
-        if (player != follow.Timing) Bind(follow);
-        float t = 1f - Mathf.Exp(-smoothness * Time.deltaTime);
-        bool aiming = !player.IsAt(StationAction.Driver) && player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
-        bool carrying = follow.Carrying.Value || follow.Holding.Value;
-        bool atOwnStation = player.HasStationAccess && !player.IsAt(StationAction.Driver);
-        bool zooming = NeedsTaskView(follow);
-        carrying &= zooming;
-        bool driving = player.HasStationAccess && player.IsAt(StationAction.Driver);
+        int visibleLayers = follow.InCellar ? defaultLayers | cellarBackdropLayer : defaultLayers & ~cellarBackdropLayer;
+        if (cam.cullingMask != visibleLayers) cam.cullingMask = visibleLayers;
+        if (FollowedActor != follow) Bind(follow);
+        Vector3 currentPosition = transform.position - lastShakeOffset;
+        bool postShot = !follow.InCellar && stations.IsPostShotGunner(follow);
+        if (postShot && !wasPostShot)
+        {
+            shotPosition = currentPosition;
+            shotSize = cam.orthographicSize;
+        }
+        wasPostShot = postShot;
+        float shotReturn = postShot ? Mathf.Clamp01(1f - (float)(stations.PostShotEndsAt.Value
+            - follow.NetworkManager.ServerTime.Time) / CartStations.PostShotReturnSeconds) : 0f;
+        if (postShot && shotReturn <= 0f)
+        {
+            ApplyView(shotPosition, shotSize);
+            return;
+        }
+        StationAction? station = player.HasStationAccess ? player.CurrentAction : null;
+        bool aiming = !postShot && player.IsCannonFocus && cannonAim != null && cannonAim.Muzzle != null;
+        bool driving = station == StationAction.Driver;
+        bool carrying = !postShot && !driving && (follow.Carrying.Value || follow.Holding.Value);
+        bool atOwnStation = station.HasValue && !driving;
+        bool zooming = carrying || atOwnStation;
         float targetSize = homeSize / (carrying ? CarryZoom : atOwnStation ? StationZoom : 1f) * (driving ? DriverViewRange : 1f);
-        bool inCellar = player.GetComponent<NetworkPlayer>().InCellar;
+        bool inCellar = follow.InCellar;
         Vector3 destination = inCellar ? new Vector3(stations.Cart.transform.position.x, stations.Cart.transform.position.y + NetworkPlayer.CellarOffset, homePosition.z)
             : new Vector3(convoyCenterX - (ConvoyScreenX - 0.5f) * 2f * targetSize * cam.aspect, homePosition.y, homePosition.z);
-        if (matchWebFraming)
-            MatchWebFraming(follow, driving, carrying, atOwnStation, ref destination, ref targetSize);
         Bounds visible = new Bounds(player.transform.position, Vector3.zero);
 
-        if (aiming)
+        if (matchWebFraming)
+            MatchWebFraming(follow, driving, carrying, atOwnStation, aiming, ref destination, ref targetSize);
+        else if (aiming)
         {
             Vector3 muzzle = cannonAim.Muzzle.position;
             visible = stations.PursuerEntryBounds;
@@ -97,7 +136,7 @@ public sealed class CameraRig : MonoBehaviour
             float width = Mathf.Max((rearX - visible.min.x) / GunnerCartViewportX,
                 (visible.max.x - rearX) / (1f - GunnerCartViewportX));
             float requiredSize = Mathf.Max(visible.extents.y / SafeFraction, width / (2f * cam.aspect));
-            targetSize = Mathf.Max(matchWebFraming ? targetSize : homeSize / AimZoom, requiredSize);
+            targetSize = Mathf.Max(homeSize / AimZoom, requiredSize);
             float halfWidth = targetSize * cam.aspect;
             destination = new Vector3(rearX + (1f - 2f * GunnerCartViewportX) * halfWidth,
                 visible.center.y, homePosition.z);
@@ -109,25 +148,43 @@ public sealed class CameraRig : MonoBehaviour
             targetSize = Mathf.Max(targetSize, FitSize(visible.extents.x, visible.extents.y));
         }
 
-        if (wasCellar != follow.InCellar) { t = 1; wasCellar = follow.InCellar; }
-        Vector3 basePosition = Vector3.Lerp(transform.position - lastShakeOffset, destination, t);
-        lastShakeOffset = NextShakeOffset();
-        transform.position = basePosition + lastShakeOffset;
-
-        float size = Mathf.Lerp(cam.orthographicSize, targetSize, t);
-        if (zooming && !aiming)
+        var nextView = (split, inCellar, carrying, station, aiming);
+        if (view.Cellar != inCellar || (view.Split != split && floorChanged))
         {
-            // 이동 중에도 현재 카메라 위치 기준으로 보여야 할 영역이 잘리지 않게 한다.
-            Vector3 center = transform.position;
-            float halfWidth = Mathf.Max(Mathf.Abs(visible.min.x - center.x), Mathf.Abs(visible.max.x - center.x));
-            float halfHeight = Mathf.Max(Mathf.Abs(visible.min.y - center.y), Mathf.Abs(visible.max.y - center.y));
-            size = Mathf.Max(size, FitSize(halfWidth, halfHeight));
+            view = nextView;
+            transitionAge = TransitionSeconds;
+            ApplyView(destination, targetSize);
+            return;
         }
+        if (postShot)
+        {
+            view = nextView;
+            transitionAge = TransitionSeconds;
+            float eased = Mathf.SmoothStep(0f, 1f, shotReturn);
+            ApplyView(Vector3.Lerp(shotPosition, destination, eased), Mathf.Lerp(shotSize, targetSize, eased));
+            return;
+        }
+        if (view != nextView)
+        {
+            view = nextView;
+            transitionPosition = currentPosition;
+            transitionSize = cam.orthographicSize;
+            transitionAge = 0f;
+        }
+        transitionAge += Time.deltaTime;
+        float t = Mathf.SmoothStep(0f, 1f, transitionAge / TransitionSeconds);
+        ApplyView(Vector3.Lerp(transitionPosition, destination, t), Mathf.Lerp(transitionSize, targetSize, t));
+    }
+
+    private void ApplyView(Vector3 position, float size)
+    {
+        lastShakeOffset = NextShakeOffset();
+        transform.position = position + lastShakeOffset;
         cam.orthographicSize = size;
     }
 
     private void MatchWebFraming(NetworkPlayer follow, bool driving, bool carrying, bool atStation,
-        ref Vector3 destination, ref float targetSize)
+        bool aiming, ref Vector3 destination, ref float targetSize)
     {
         float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
         float width = Mathf.Clamp(550f + 300f * aspect, 650f, 1200f);
@@ -135,21 +192,47 @@ public sealed class CameraRig : MonoBehaviour
         float paneWidth = width * cam.rect.width;
         float unit = stations.WorldPerWebUnit;
         float zoom = Mathf.Min(1f, height / 480f, paneWidth / 760f);
+        float centerX = stations.CartBody.bounds.center.x;
+        float centerY = homePosition.y;
         if (follow.InCellar)
+        {
             zoom = atStation ? Mathf.Min(3.2f, paneWidth / 120f, height / 112f)
                 : Mathf.Min(3f, paneWidth / 411f, height / 234f);
-        else if (driving)
-            zoom /= 1.5f;
+            centerX = atStation ? follow.transform.position.x : centerX;
+            centerY = atStation ? follow.transform.position.y : stations.Cart.transform.position.y + NetworkPlayer.CellarOffset;
+        }
+        else if (aiming)
+        {
+            const float viewRight = 1660f;
+            const float gunnerWidth = viewRight - (641f - 65f);
+            zoom = Mathf.Min(2f, paneWidth / gunnerWidth, height / 492f);
+            centerX += (viewRight - 528.5f - paneWidth / (2f * zoom)) * unit;
+        }
         else if (carrying)
-            zoom = 3f;
+        {
+            var actor = follow.transform.position;
+            var rack = follow.Timing.AreaFor(StationAction.ShellDeposit).position;
+            zoom = follow.Holding.Value ? 3f : Mathf.Min(3f,
+                paneWidth / (Mathf.Abs(actor.x - rack.x) / unit + 112f),
+                height / (Mathf.Abs(actor.y - rack.y) / unit + 84f));
+            var midpoint = follow.Holding.Value ? actor : (actor + rack) * .5f;
+            centerX = midpoint.x;
+            centerY = midpoint.y;
+        }
         else if (atStation)
+        {
             zoom = 4f;
-
-        if (!follow.InCellar) zoom = Mathf.Max(zoom, paneWidth * ConvoyScreenX / 1450f);
+            centerX = follow.transform.position.x;
+            centerY = follow.transform.position.y;
+        }
+        else
+        {
+            if (driving) zoom /= 1.5f;
+            zoom = Mathf.Max(zoom, paneWidth * ConvoyScreenX / 1450f);
+            centerX -= (78.5f + (ConvoyScreenX - .5f) * paneWidth / zoom) * unit;
+        }
         targetSize = height / (2f * zoom) * unit;
-        if (!follow.InCellar)
-            destination.x = stations.Cart.transform.position.x - (77f + (ConvoyScreenX - .5f) * paneWidth / zoom) * unit;
-        destination.y -= .04f * targetSize;
+        destination = new Vector3(centerX, centerY - (aiming ? 0f : .04f * targetSize), homePosition.z);
     }
 
     private float FitSize(float halfWidth, float halfHeight)

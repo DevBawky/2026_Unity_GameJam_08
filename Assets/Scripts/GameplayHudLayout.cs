@@ -16,12 +16,22 @@ public sealed class GameplayHudLayout : MonoBehaviour
     [SerializeField] private RectTransform movementPreview, movementBase, movementHandle, aimHandle;
     [SerializeField] private CatapultStrike catapult;
     [SerializeField] private Image[] catapultIcons;
+    [SerializeField] private Image[] pursuitIcons, pursuitGlows;
+    [SerializeField] private RectTransform[] topRightControls;
 
     private Canvas canvas;
+    private CameraRig primaryRig, secondaryRig;
+    private readonly Vector3[] controlCorners = new Vector3[4];
     private Rect previousArea, previousPane;
     private float previousScale;
+    private bool previousMenu, previousMobile;
 
-    private void Awake() => canvas = GetComponent<Canvas>();
+    private void Awake()
+    {
+        canvas = GetComponent<Canvas>();
+        primaryRig = primary.GetComponent<CameraRig>();
+        if (secondary != null) secondaryRig = secondary.GetComponent<CameraRig>();
+    }
 
     private void LateUpdate()
     {
@@ -29,17 +39,25 @@ public sealed class GameplayHudLayout : MonoBehaviour
         var safe = Screen.safeArea;
         var pane = primary.pixelRect;
         float scale = canvas.scaleFactor;
-        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale))
+        bool menuOpen = emoteMenu.gameObject.activeSelf;
+        bool mobile = GameplayControlMode.IsMobile;
+        if (safe != previousArea || pane != previousPane || !Mathf.Approximately(scale, previousScale)
+            || menuOpen != previousMenu || mobile != previousMobile)
         {
             previousArea = safe;
             previousPane = pane;
             previousScale = scale;
-            Layout(safe, pane, scale);
+            previousMenu = menuOpen;
+            previousMobile = mobile;
+            Layout(safe, pane, scale, menuOpen, mobile);
         }
-        ShowCatapultIcons();
+        Vector3 landing = default;
+        bool danger = catapult != null && catapult.TryGetWarning(out landing);
+        ShowWarnings(0, primary, primaryRig, safe, danger, landing);
+        ShowWarnings(1, secondary, secondaryRig, safe, danger, landing);
     }
 
-    private void Layout(Rect safe, Rect pane, float scale)
+    private void Layout(Rect safe, Rect pane, float scale, bool menuOpen, bool mobile)
     {
         float width = Screen.width;
         float height = Screen.height;
@@ -77,22 +95,37 @@ public sealed class GameplayHudLayout : MonoBehaviour
         float support = diameter * 2f / 3f;
         float step = diameter + controlGap;
         float paneRight = Mathf.Min(right, pane.xMax - (pane.width < width ? 8f : 0f)) - inset;
-        float x = paneRight - diameter * .5f;
-        float y = bottom + diameter * .5f;
-        Place(action, new Vector2(x, y), Vector2.one * diameter, scale);
-        Place(exit, new Vector2(x - step, y), Vector2.one * support, scale);
-        Place(emote, new Vector2(x - step * .5f, y + step * .866f), Vector2.one * support, scale);
-        float menuWidth = Mathf.Min(342f, paneRight - left);
-        float menuBottom = Mathf.Min(y + step * .866f + support * .5f + 9f, top - 68f);
-        float menuHeight = Mathf.Min(388f, top - menuBottom);
-        Place(emoteMenu, new Vector2(paneRight - menuWidth * .5f, menuBottom + menuHeight * .5f),
+        float actionX = (mobile ? right - inset : paneRight) - diameter * .5f;
+        float actionY = bottom + diameter * .5f;
+        Place(action, new Vector2(actionX, actionY), Vector2.one * diameter, scale);
+
+        float menuRight = mobile ? actionX - diameter * .5f - controlGap : right;
+        float menuWidth = Mathf.Min(1120f, menuRight - left);
+        float menuHeight = Mathf.Clamp(height * .12f, 102f, 126f);
+        Place(emoteMenu, new Vector2((left + menuRight) * .5f, bottom + menuHeight * .5f),
             new Vector2(menuWidth, menuHeight), scale);
+        if (emoteMenu.TryGetComponent(out GridLayoutGroup grid))
+        {
+            float padding = Mathf.Clamp(vmin * .01f, 4f, 9f);
+            float gap = Mathf.Clamp(width * .0075f, 3f, 9f);
+            int insetPixels = Mathf.RoundToInt(padding / scale);
+            grid.padding = new RectOffset(insetPixels, insetPixels, insetPixels, insetPixels);
+            grid.spacing = Vector2.one * (gap / scale);
+            grid.cellSize = new Vector2((menuWidth - 2f * padding - 6f * gap) / 7f,
+                menuHeight - 2f * padding) / scale;
+        }
+        if (menuOpen) bottom += menuHeight + 8f;
+        float y = bottom + diameter * .5f;
+        Place(exit, new Vector2(actionX - step * .5f, y + step * .866f), Vector2.one * support, scale);
+        Place(emote, new Vector2(actionX - step, y), Vector2.one * support, scale);
 
         SizeControlLabel(exitLabel, exitGlyph, support, vmin, scale);
         SizeControlLabel(emoteLabel, emoteGlyph, support, vmin, scale);
         actionLabel.fontSize = (landscape ? Mathf.Clamp(vmin * .023f, 13f, 25f) : Mathf.Clamp(vmin * .02f, 11f, 15f)) / scale;
         float stickX = left + inset + stick * .5f;
         float stickY = bottom + stick * .5f;
+        movement.SetRadius(stick * .36f / scale);
+        aim.SetRadius(stick * .36f / scale);
         var movementArea = (RectTransform)movement.transform;
         movementArea.anchorMax = new Vector2(pane.width / (2f * width), movementArea.anchorMax.y);
         Place(movementPreview, new Vector2(stickX, stickY), Vector2.one * stick, scale);
@@ -100,8 +133,6 @@ public sealed class GameplayHudLayout : MonoBehaviour
         movementHandle.sizeDelta = Vector2.one * (stick * .52f / scale);
         Place((RectTransform)aim.transform, new Vector2(stickX, stickY), Vector2.one * stick, scale);
         aimHandle.sizeDelta = movementHandle.sizeDelta;
-        movement.SetRadius(stick * .36f / scale);
-        aim.SetRadius(stick * .36f / scale);
     }
 
     private static void SizeControlLabel(TMP_Text label, RectTransform glyph, float diameter, float vmin, float scale)
@@ -127,25 +158,76 @@ public sealed class GameplayHudLayout : MonoBehaviour
         rect.sizeDelta = pixels / scale;
     }
 
-    private void ShowCatapultIcons()
+    private void ShowWarnings(int index, Camera view, CameraRig rig, Rect safe, bool danger, Vector3 landing)
     {
-        if (catapult == null) return;
-        bool visible = catapult.TryGetWarning(out var point);
-        float size = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .042f, 26f, 44f);
-        ProjectIcon(catapultIcons[0], primary, visible, point, size);
-        if (secondary != null) ProjectIcon(catapultIcons[1], secondary, visible, point, size);
+        var actor = rig != null ? rig.FollowedActor : null;
+        bool onRoad = view != null && view.enabled && actor != null && !actor.InCellar && CartStations.Running;
+        if (catapultIcons != null && index < catapultIcons.Length)
+            ShowCatapultIcon(catapultIcons[index], view, onRoad && danger, landing);
+
+        if (pursuitIcons == null || index >= pursuitIcons.Length || pursuitGlows == null || index >= pursuitGlows.Length) return;
+        var icon = pursuitIcons[index];
+        var glow = pursuitGlows[index];
+        if (icon == null || glow == null) return;
+        Vector3 closest = default;
+        bool free = onRoad && !actor.Carrying.Value && !actor.Holding.Value && !actor.Timing.HasStationAccess
+            && !CartStations.Instance.IsPostShotGunner(actor);
+        bool show = onRoad && (free || actor.Timing.IsCannonFocus || actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
+            && TryGetPursuer(view, out closest);
+        icon.enabled = glow.enabled = show;
+        if (!show) return;
+
+        var pane = view.pixelRect;
+        var target = view.WorldToScreenPoint(closest);
+        float radius = 2f * Mathf.Clamp(pane.height * .05f, 14f, 22f);
+        float inset = Mathf.Min(radius * 1.4f + 4f, Mathf.Min(pane.width, pane.height) * .5f);
+        float x = Mathf.Min(safe.xMax - inset, pane.xMax - Mathf.Clamp(pane.xMax - target.x, inset, Mathf.Max(inset, pane.width * .28f)));
+        float yMax = Mathf.Min(safe.yMax, pane.yMax) - inset;
+        foreach (var control in topRightControls ?? System.Array.Empty<RectTransform>())
+        {
+            if (control == null || !control.gameObject.activeInHierarchy) continue;
+            control.GetWorldCorners(controlCorners);
+            var left = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, controlCorners[0]);
+            if (x + inset >= left.x) yMax = Mathf.Min(yMax, left.y - inset);
+        }
+
+        var point = new Vector2(x, Mathf.Clamp(target.y, Mathf.Max(safe.yMin, pane.yMin) + inset,
+            Mathf.Max(Mathf.Max(safe.yMin, pane.yMin) + inset, yMax)));
+        float time = (float)actor.NetworkManager.ServerTime.Time;
+        float pulse = .5f + .5f * Mathf.Sin(time * 5.7f);
+        Place(glow.rectTransform, point + Vector2.down * (radius / 20f), Vector2.one * ((46f + 10f * pulse) * radius / 20f), canvas.scaleFactor);
+        Place(icon.rectTransform, point + Vector2.up * (radius * .15f), Vector2.one * (2.25f * radius), canvas.scaleFactor);
     }
 
-    private void ProjectIcon(Image icon, Camera camera, bool visible, Vector3 point, float size)
+    private static bool TryGetPursuer(Camera view, out Vector3 closest)
     {
-        Vector3 projected = camera.WorldToScreenPoint(point);
-        var pane = camera.pixelRect;
-        pane.xMin += size * .5f;
-        pane.xMax -= size * .5f;
-        pane.yMin += size * .5f;
-        pane.yMax -= size * .5f;
-        bool show = visible && camera.enabled && projected.z > 0f && pane.Contains(projected);
+        closest = default;
+        float unit = CartStations.Instance.WorldPerWebUnit;
+        float span = 2f * view.orthographicSize * view.aspect;
+        float start = view.transform.position.x + span * .5f - Mathf.Min(100f * unit, span * .1f);
+        float nearestX = float.PositiveInfinity;
+        foreach (var enemy in Enemy.Active)
+        {
+            if (enemy == null || !enemy.IsApproaching) continue;
+            Vector3 position = enemy.transform.position + Vector3.right * (CavalryArtwork.RiderOffset * unit);
+            if (position.x < start || position.x >= nearestX) continue;
+            closest = position;
+            nearestX = position.x;
+        }
+        return !float.IsPositiveInfinity(nearestX);
+    }
+
+    private void ShowCatapultIcon(Image icon, Camera view, bool danger, Vector3 landing)
+    {
+        if (icon == null) return;
+        var projected = danger ? view.WorldToScreenPoint(landing) : Vector3.zero;
+        var pane = danger ? view.pixelRect : default;
+        bool show = danger && projected.z > 0f && pane.Contains(projected);
         icon.enabled = show;
-        if (show) Place(icon.rectTransform, projected, Vector2.one * size, canvas.scaleFactor);
+        if (!show) return;
+        float size = Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) * .042f, 26f, 44f);
+        if (icon.transform.parent.TryGetComponent(out RectMask2D mask))
+            Place(mask.rectTransform, pane.center, pane.size, canvas.scaleFactor);
+        Place(icon.rectTransform, projected, Vector2.one * size, canvas.scaleFactor);
     }
 }

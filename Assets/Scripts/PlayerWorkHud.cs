@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,16 +15,31 @@ public sealed class PlayerWorkHud : MonoBehaviour
         public Image background, fill;
         public TMP_Text hint, progressName, percent;
         public TMP_Text princeStatus, princessStatus;
+        [NonSerialized] public Vector2 DefaultBubbleSize;
+        [NonSerialized] public int? HintKey;
     }
 
     [SerializeField] private Camera primary, secondary;
     [SerializeField] private NetworkPlayer secondPlayer;
     [SerializeField] private RectTransform campaign;
+    [SerializeField] private bool useTopAimNotice;
     [SerializeField] private SeatHud[] seats;
 
     private Canvas canvas;
+    // 문구·글자 크기·폭이 바뀐 프레임에만 문자열과 크기를 다시 구한다(매 프레임 문자열 할당 방지).
+    private readonly Dictionary<TMP_Text, (int key, Vector2 size)> measured = new();
 
-    private void Awake() => canvas = GetComponent<Canvas>();
+    private void Awake()
+    {
+        canvas = GetComponent<Canvas>();
+        foreach (var seat in seats)
+        {
+            seat.DefaultBubbleSize = seat.bubble.rect.size;
+            seat.hint.enableAutoSizing = true;
+            seat.hint.textWrappingMode = TextWrappingModes.Normal;
+            seat.hint.overflowMode = TextOverflowModes.Ellipsis;
+        }
+    }
 
     private void LateUpdate()
     {
@@ -42,7 +58,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
 
     private void PresentHint(SeatHud hud, NetworkPlayer actor, CartStations game, Camera view)
     {
-        if (actor == null)
+        if (actor == null || useTopAimNotice && actor.Timing.IsCannonFocus)
         {
             Show(hud.bubble, false);
             return;
@@ -56,33 +72,44 @@ public sealed class PlayerWorkHud : MonoBehaviour
         var timing = actor.Timing;
         bool timed = guide.Timed && timing.ActiveTimingRect != null;
         bool ready = timed && timing.TimingReady;
-        string text = timing.VisibleResult ?? (timed
-            ? (ready ? "지금! " : "초록 구간에서 ") + guide.Action
-            : guide.Hint);
-        Show(hud.bubble, !string.IsNullOrEmpty(text));
-        if (string.IsNullOrEmpty(text)) return;
-        if (guide.Seconds >= 0f) text += $" · {guide.Seconds:0.0}초";
+        string result = timing.VisibleResult;
+        bool hasText = result != null || timed || !string.IsNullOrEmpty(guide.Hint);
+        Show(hud.bubble, hasText);
+        if (!hasText) return;
 
         float scale = canvas.scaleFactor;
         float vmin = Mathf.Min(Screen.width, Screen.height);
         float font = Mathf.Clamp(vmin * .023f, 12f, 17f);
         float subFont = Mathf.Clamp(vmin * .017f, 10f, 13f);
-        hud.hint.fontSize = font / scale;
+        hud.hint.fontSizeMin = 10f / scale;
+        hud.hint.fontSizeMax = font / scale;
         hud.progressName.fontSize = hud.percent.fontSize = subFont / scale;
-        hud.hint.text = text;
         hud.hint.color = ready ? new Color32(25, 41, 31, 255) : new Color32(255, 247, 239, 255);
         hud.background.color = ready ? new Color32(189, 242, 153, 255) : new Color32(41, 40, 49, 238);
 
         var pane = view.pixelRect;
-        float widthLimit = pane.width - 12f;
-        if (widthLimit < 32f) { Show(hud.bubble, false); return; }
-        var preferred = hud.hint.GetPreferredValues(text) * scale;
+        var safe = Screen.safeArea;
+        float campaignBottom = campaign == null ? pane.yMax - 52f
+            : ScreenPoint(campaign, new Vector2(0, campaign.rect.yMin)).y - 4f;
+        var bounds = Rect.MinMaxRect(Mathf.Max(pane.xMin, safe.xMin) + 6f, Mathf.Max(pane.yMin, safe.yMin) + 4f,
+            Mathf.Min(pane.xMax, safe.xMax) - 6f, Mathf.Min(Mathf.Min(pane.yMax, safe.yMax), campaignBottom));
+        Vector2 size = Vector2.Min(hud.DefaultBubbleSize, new Vector2(bounds.width, bounds.height * .28f));
+        if (size.x < 64f || size.y < 24f) { Show(hud.bubble, false); return; }
+
+        int tenths = guide.Seconds >= 0f ? Mathf.RoundToInt(guide.Seconds * 10f) : -1;
+        int key = HashCode.Combine(result, timed, ready, guide.Action, guide.Hint, tenths);
+        if (hud.HintKey != key)
+        {
+            string text = result ?? (timed ? LocalizationTable.T(ready ? "지금! " : "초록 구간에서 ") + guide.Action : guide.Hint);
+            if (tenths >= 0) text += LocalizationTable.F(" · {0:0.0}초", tenths / 10f);
+            hud.hint.text = text;
+            hud.HintKey = key;
+        }
         bool progress = guide.HasProgress && !timed;
-        float width = Mathf.Min(widthLimit, Mathf.Max(preferred.x + 20f, progress ? 165f : 32f));
-        float textHeight = Mathf.Max(font * 1.25f, preferred.y);
-        float height = textHeight + (progress ? 31f : 14f);
-        hud.hint.rectTransform.sizeDelta = new Vector2(-20f, textHeight) / scale;
-        hud.hint.rectTransform.anchoredPosition = Vector2.down * (6f / scale);
+        float progressHeight = progress ? Mathf.Min(16f, size.y * .32f) : 0f;
+        float verticalPadding = Mathf.Min(6f, size.y * .12f);
+        hud.hint.rectTransform.sizeDelta = new Vector2(-20f, size.y - 2f * verticalPadding - progressHeight) / scale;
+        hud.hint.rectTransform.anchoredPosition = Vector2.down * (verticalPadding / scale);
         Show(hud.progressRow, progress);
         if (progress)
         {
@@ -91,14 +118,19 @@ public sealed class PlayerWorkHud : MonoBehaviour
             hud.fill.color = hud.percent.color = hud.progressName.color = guide.Color;
             hud.percent.SetText("{0:0}%", Mathf.Floor(value * 100f));
             hud.progressName.text = guide.ProgressName ?? "";
+            float rowWidth = size.x - 20f;
+            float nameWidth = !string.IsNullOrEmpty(guide.ProgressName) && rowWidth >= 110f ? 40f : 0f;
+            float percentWidth = Mathf.Min(34f, rowWidth * .4f);
+            Show(hud.progressName, nameWidth > 0f);
             var bar = (RectTransform)hud.fill.transform.parent;
-            float barHeight = Mathf.Clamp(vmin * .017f, 8f, 12f) / scale;
-            hud.progressRow.sizeDelta = new Vector2(-20f, 16f) / scale;
-            hud.progressRow.anchoredPosition = Vector2.up * (6f / scale);
-            bar.offsetMin = new Vector2(string.IsNullOrEmpty(guide.ProgressName) ? 0f : 42f / scale, -barHeight * .5f);
-            bar.offsetMax = new Vector2(-38f / scale, barHeight * .5f);
-            hud.percent.rectTransform.sizeDelta = new Vector2(34f, 16f) / scale;
-            hud.progressName.rectTransform.sizeDelta = new Vector2(40f, 16f) / scale;
+            float barHeight = Mathf.Min(progressHeight, Mathf.Clamp(vmin * .017f, 8f, 12f)) / scale;
+            hud.progressRow.sizeDelta = new Vector2(-20f, progressHeight) / scale;
+            hud.progressRow.anchoredPosition = Vector2.up * (verticalPadding / scale);
+            bar.offsetMin = new Vector2(nameWidth > 0f ? (nameWidth + 2f) / scale : 0f, -barHeight * .5f);
+            bar.offsetMax = new Vector2(-(percentWidth + 4f) / scale, barHeight * .5f);
+            hud.percent.fontSize = Mathf.Min(subFont, percentWidth * .4f) / scale;
+            hud.percent.rectTransform.sizeDelta = new Vector2(percentWidth, progressHeight) / scale;
+            hud.progressName.rectTransform.sizeDelta = new Vector2(nameWidth, progressHeight) / scale;
         }
 
         Vector3 projected = view.WorldToScreenPoint(actor.transform.position);
@@ -106,14 +138,12 @@ public sealed class PlayerWorkHud : MonoBehaviour
             projected = new Vector3(pane.center.x, pane.yMin + pane.height * .38f);
         float offset = Mathf.Clamp(pane.height * worldUnit * 28f / (2f * view.orthographicSize), 23f, 75f);
         if (timed) offset = Mathf.Max(offset, pane.height * worldUnit * 29f / (2f * view.orthographicSize) + 5f);
-        float inset = Mathf.Min(width * .5f + 6f, pane.width * .5f);
-        float x = Mathf.Clamp(projected.x, pane.xMin + inset, pane.xMax - inset);
-        float campaignBottom = campaign == null ? pane.yMax - 52f
-            : ScreenPoint(campaign, new Vector2(0, campaign.rect.yMin)).y - 4f;
-        float y = projected.y + offset + height * .5f;
-        if (y + height * .5f > campaignBottom) y = projected.y - offset - height * .5f;
-        y = Mathf.Clamp(y, pane.yMin + height * .5f + 4f, campaignBottom - height * .5f);
-        Place(hud.bubble, new Vector2(x, y), new Vector2(width, height));
+        Vector2 half = size * .5f;
+        float x = Mathf.Clamp(projected.x, bounds.xMin + half.x, bounds.xMax - half.x);
+        float y = projected.y + offset + half.y;
+        if (y + half.y > bounds.yMax) y = projected.y - offset - half.y;
+        y = Mathf.Clamp(y, bounds.yMin + half.y, bounds.yMax - half.y);
+        Place(hud.bubble, new Vector2(x, y), size);
     }
 
     private void UpdateRoyalWatch(SeatHud hud, NetworkPlayer viewer, NetworkPlayer sharedViewer, CartStations game, Camera view)
@@ -146,10 +176,15 @@ public sealed class PlayerWorkHud : MonoBehaviour
 
         Rect LayoutRoyalRow(TMP_Text label, string name, string color, RiderState child, int index)
         {
-            if (widthLimit < 36f || (!IsRoyalNearby(viewer, game, child) && !IsRoyalNearby(sharedViewer, game, child)))
+            bool nearby = IsRoyalNearby(viewer, game, child) || IsRoyalNearby(sharedViewer, game, child);
+            // 쌍둥이 상태판: 지하층에서는 아이가 멀리 있어도 내 머리 위에 상태를 띄운다.
+            bool board = !nearby && viewer != null && viewer.InCellar && !child.InCellar && game.Owns(ShopPerk.TwinStatusBoard);
+            if (widthLimit < 36f || (!nearby && !board))
                 return default;
 
-            Vector3 feet = view.WorldToScreenPoint(game.RoyalStatusAnchor(child, index));
+            Vector3 anchor = board ? viewer.transform.position + Vector3.up * ((70f + 24f * index) * game.WorldPerWebUnit)
+                : game.RoyalStatusAnchor(child, index);
+            Vector3 feet = view.WorldToScreenPoint(anchor);
             if (feet.z <= 0f || !viewport.Contains(feet)) return default;
 
             Vector2 size = MeasureRoyalRow(label, name, color, child, font, widthLimit);
@@ -186,13 +221,21 @@ public sealed class PlayerWorkHud : MonoBehaviour
                 RiderPose.Carried => "안겨 있음",
                 _ => "착석 중"
             };
-        string moodColor = child.Crying || child.Pose == RiderPose.Fallen ? "#ffcea0" : "#e2d4ed";
-        string text = $"<color={nameColor}>{name}</color>  관심 {Mathf.FloorToInt(child.Attention)}% · 배고픔 {Mathf.FloorToInt(child.Hunger)}%  <color={moodColor}>{mood}</color>";
+        int attention = Mathf.FloorToInt(child.Attention), hunger = Mathf.FloorToInt(child.Hunger);
         float scale = canvas.scaleFactor;
         label.fontSize = font / scale;
-        label.text = text;
-        Vector2 size = label.GetPreferredValues(text, (widthLimit - 16f) / scale, 1000f) * scale;
-        return new Vector2(Mathf.Min(widthLimit, size.x + 16f), size.y + 8f);
+        bool alarm = child.Crying || child.Pose == RiderPose.Fallen;
+        int key = HashCode.Combine(name, attention, hunger, mood, alarm, font, widthLimit, scale);
+        if (!measured.TryGetValue(label, out var cached) || cached.key != key)
+        {
+            string moodColor = alarm ? "#ffcea0" : "#e2d4ed";
+            string stats = LocalizationTable.F("관심 {0}% · 배고픔 {1}%", attention, hunger);
+            string text = $"<color={nameColor}>{LocalizationTable.T(name)}</color>  {stats}  <color={moodColor}>{LocalizationTable.T(mood)}</color>";
+            label.text = text;
+            cached = (key, label.GetPreferredValues(text, (widthLimit - 16f) / scale, 1000f) * scale);
+            measured[label] = cached;
+        }
+        return new Vector2(Mathf.Min(widthLimit, cached.size.x + 16f), cached.size.y + 8f);
     }
 
     private static Vector2 ScreenPoint(RectTransform rect, Vector2 local) =>

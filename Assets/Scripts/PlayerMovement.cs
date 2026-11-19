@@ -50,37 +50,50 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (actor == null || !actor.Local || !CartStations.Running || actor.Holding.Value) return;
+        if (actor == null || !actor.Local || !CartStations.Running || actor.Holding.Value
+            || stations.HoldsStation(StationAction.Cannon, actor)) return;
         CrossStairs();
 
-        Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard != null && (joystick == null || !joystick.IsMobileMode))
-        {
-            input.x += (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-            input.y += (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
-        }
-        if (actor.SecondLocal) input = keyboard == null ? Vector2.zero : new Vector2((keyboard.rightArrowKey.isPressed?1:0)-(keyboard.leftArrowKey.isPressed?1:0),(keyboard.upArrowKey.isPressed?1:0)-(keyboard.downArrowKey.isPressed?1:0));
-        else if (Gamepad.current != null) input += Gamepad.current.leftStick.ReadValue();
+        Vector2 input = ReadInput();
         // At the two aiming seats the movement stick controls aim. Other work areas are walk-through.
         if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Driver))
         {
+            // 비상 제동 손잡이: E(2P는 오른쪽 Ctrl), 게임패드 X/□.
+            bool brake = actor.SecondLocal ? keyboard?.rightCtrlKey.wasPressedThisFrame == true
+                : keyboard?.eKey.wasPressedThisFrame == true || Gamepad.current?.buttonWest.wasPressedThisFrame == true;
+            if (brake && stations.Owns(ShopPerk.EmergencyBrake)) actor.PullBrake();
             AimWhip(input);
             return;
         }
         approachInput = input;
-        if (actor.Timing.HasStationAccess && actor.Timing.IsAt(StationAction.Cannon) && !actor.Carrying.Value) return;
 
         input = Vector2.ClampMagnitude(input, 1f);
-        float speed = moveSpeed * stations.WalkRate * (actor.Carrying.Value ? carrySpeedMultiplier * stations.PorterMultiplier :
-            actor.SpareWheel.Value ? 110f / 165f : stations.IsCarryingChild(actor) ? 125f / 165f : 1f);
-        Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (speed * Time.deltaTime);
+        Vector3 desired = transform.position + new Vector3(input.x, input.y, 0f) * (WalkSpeed * Time.deltaTime);
         if (!actor.InCellar && input.sqrMagnitude > 0f)
         {
             desired = SlidePastChild(desired, stations.Prince.Value);
             desired = SlidePastChild(desired, stations.Princess.Value);
         }
         transform.position = ClampToCartBody(desired);
+    }
+
+    private Vector2 ReadInput()
+    {
+        if (actor.UsesMobileControls) return joystick != null ? joystick.Direction : Vector2.zero;
+
+        var keyboard = Keyboard.current;
+        if (actor.SecondLocal)
+            return keyboard == null ? Vector2.zero : new Vector2(
+                (keyboard.rightArrowKey.isPressed ? 1f : 0f) - (keyboard.leftArrowKey.isPressed ? 1f : 0f),
+                (keyboard.upArrowKey.isPressed ? 1f : 0f) - (keyboard.downArrowKey.isPressed ? 1f : 0f));
+
+        Vector2 input = Gamepad.current?.leftStick.ReadValue() ?? Vector2.zero;
+        if (keyboard != null)
+        {
+            input.x += (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
+            input.y += (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
+        }
+        return input;
     }
 
     private Vector3 SlidePastChild(Vector3 desired, RiderState child)
@@ -99,16 +112,18 @@ public sealed class PlayerMovement : MonoBehaviour
 
     public Vector2 StairPoint(bool cellar) => (cellar ? cellarStairs : deckStairs).position;
 
-    private float BotWalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
-        ? carrySpeedMultiplier * stations.PorterMultiplier : actor.SpareWheel.Value ? 110f/165f
-        : stations.IsCarryingChild(actor) ? 125f/165f : 1f);
+    private float WalkSpeed => moveSpeed * stations.WalkRate * (actor.Carrying.Value
+        ? carrySpeedMultiplier * stations.PorterMultiplier
+        : actor.SpareWheel.Value ? (stations.Owns(ShopPerk.LightSpareWheel) ? CartStations.LightSpareWheelRate : 110f/165f)
+        : stations.IsCarryingChild(actor) ? 125f/165f
+        : stations.CheerActive ? CartStations.CheerSpeedRate : 1f);
 
     public float BotTimeToDeckPoint(Vector2 point)
     {
         Vector2 pos = transform.position;
         float distance = actor.InCellar ? Vector2.Distance(pos, StairPoint(true)) +
             Vector2.Distance(StairPoint(false), point) : Vector2.Distance(pos, point);
-        return distance / Mathf.Max(.01f, BotWalkSpeed);
+        return distance / Mathf.Max(.01f, WalkSpeed);
     }
 
     public void WalkBot(Vector2 destination, bool cellar, float dt)
@@ -116,7 +131,7 @@ public sealed class PlayerMovement : MonoBehaviour
         bool cross = actor.InCellar != cellar;
         if (cross) destination = StairPoint(actor.InCellar);
         Vector2 pos = transform.position;
-        var next = Vector2.MoveTowards(pos, destination, BotWalkSpeed * dt);
+        var next = Vector2.MoveTowards(pos, destination, WalkSpeed * dt);
         transform.position = ClampToCartBody(new Vector3(next.x, next.y, transform.position.z));
         if (cross && Vector2.Distance(next, destination) < .08f)
             transform.position += (Vector3)(StairPoint(cellar) - StairPoint(!cellar));

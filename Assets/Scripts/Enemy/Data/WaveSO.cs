@@ -36,8 +36,6 @@ public class WaveSO : ScriptableObject
     [Tooltip("이 웨이브 몬스터의 공격력 배율. 1 = 기본값 그대로")]
     [Min(0)] public float attackMultiplier = 1f;
 
-    public float RollSpeed(UnitSO unit) => unit.moveSpeed * UnityEngine.Random.Range(1f - speedMin, 1f + speedMax);
-
     public float AttackOf(UnitSO unit) => unit.attackPower * attackMultiplier;
 
     private void OnValidate()

@@ -109,6 +109,7 @@ MonoBehaviour:
   damage: 11
   slowFactor: 0.76
   slowSeconds: 0.95
+  hitHalfWidth: 31
 --- !u!114 &9109972777253113015
 MonoBehaviour:
   m_ObjectHideFlags: 0

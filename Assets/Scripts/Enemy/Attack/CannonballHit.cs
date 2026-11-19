@@ -15,7 +15,12 @@ public class CannonballHit : NetworkBehaviour
     private Collider2D shape;
     private void Awake() => shape = GetComponent<Collider2D>();
 
-    public int[] HitIndices(Enemy[] enemies) => System.Array.FindAll(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Range(0,enemies.Length)),i=>victims.Contains(enemies[i]));
+    public int[] HitIndices(Enemy[] enemies)
+    {
+        var indices = new List<int>();
+        for (int i = 0; i < enemies.Length; i++) if (victims.Contains(enemies[i])) indices.Add(i);
+        return indices.ToArray();
+    }
     public void RestoreHits(int[] indices,Enemy[] enemies)
     {
         if (indices==null) return;
@@ -39,7 +44,11 @@ public class CannonballHit : NetworkBehaviour
             float t = delta.x / length;
             float width = halfWidth * Mathf.Min(1f, (.55f + .95f * Mathf.Sin(Mathf.PI * t)) * Mathf.Sqrt(1f-t));
             if (Mathf.Abs(delta.y) <= width && victims.Add(enemy))
-                enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+            {
+                if (enemy.TryGetComponent<CavalryArtwork>(out _)) enemy.TakeDamage(damage, blast: true);
+                if (enemy.Health.Value > 0f)
+                    enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+            }
         }
     }
 

@@ -13,14 +13,77 @@ public struct LooseWheelState : INetworkSerializeByMemcpy, IEquatable<LooseWheel
         && Angle.Equals(other.Angle) && Mount == other.Mount;
 }
 
+// 바퀴 빠짐·수리와, 빠져서 굴러가는 바퀴(적을 튕겨냄).
+[Serializable]
+public struct WheelMountVisual : INetworkSerializeByMemcpy, IEquatable<WheelMountVisual>
+{
+    public int SlotKey;
+    public double Time;
+    public readonly bool Equals(WheelMountVisual other) => SlotKey == other.SlotKey && Time == other.Time;
+}
+
 public sealed partial class CartStations
 {
+    public readonly NetworkVariable<WheelMountVisual> WheelMount = new();
+    public SpriteRenderer TireAt(int index) => index >= 0 && index < tires.Count ? tires[index] : null;
+    public Vector3 WheelWorkPoint => detachedTire == null ? cart.transform.position
+        : detachedTire.transform.position + Vector3.up * (IsUpperWheel(detachedTire) ? -29f : 31f) * WorldPerWebUnit;
+    public bool IsUpperWheel(SpriteRenderer tire) => tire.transform.position.y > cart.transform.position.y;
+
+    private void SetTireAlpha(float alpha)
+    {
+        if (detachedTire == null) return;
+        Color color = detachedTire.color;
+        if (missingWheelSprite != null)
+        {
+            bool missing = alpha <= 0f;
+            detachedTire.sprite = missing ? missingWheelSprite : tireSprites[tires.IndexOf(detachedTire)];
+            alpha = missing ? tireAlphas[tires.IndexOf(detachedTire)] : alpha;
+        }
+        color.a = alpha;
+        detachedTire.color = color;
+    }
+
+    public bool IsInsideDetachedTire(Vector3 position)
+    {
+        if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
+        float radius = 28f * WorldPerWebUnit;
+        return ((Vector2)(position - WheelWorkPoint)).sqrMagnitude <= radius * radius;
+    }
+
+    private void DetachWheel()
+    {
+        if (wheelDetached || tires.Count == 0) return;
+        detachedTire = tires[(int)(Sample()*tires.Count)];
+        detachedTireAlpha = detachedTire.color.a;
+        LaunchWheel(detachedTire);
+        wheelDetached = true;
+        wheelEverDetached = true;
+        wheelRepairSteps = 0;
+        SetTireAlpha(0f);
+        cart.SpeedMultiplier = WheelLossSpeed;
+        AddImpactEffects(0f, impactShakeStrength, WheelShock, 0f);
+        Publish();
+    }
+
+    // 보조 지지대가 있으면 바퀴가 빠져도 속도가 덜 떨어진다.
+    private float WheelLossSpeed => Owns(ShopPerk.SupportStrut) ? Mathf.Max(wheelLossSpeedMultiplier, SupportStrutSpeed) : wheelLossSpeedMultiplier;
+
+    private void RepairWheel()
+    {
+        SetTireAlpha(detachedTireAlpha);
+        detachedTire = null;
+        wheelDetached = false;
+        cart.SpeedMultiplier = 1f;
+        Publish();
+    }
+
     public NetworkList<LooseWheelState> LooseWheels = new();
     private readonly List<SpriteRenderer> wheelVisuals = new();
 
     private void LaunchWheel(SpriteRenderer tire)
     {
-        Vector2 pos = tire.transform.position;
+        Vector2 pos = tire.transform.position + Vector3.up * (IsUpperWheel(tire) ? 2f : 0f) * WorldPerWebUnit;
         bool rear = pos.x >= cartBody.bounds.center.x;
         float side = pos.y >= cartBody.bounds.center.y ? 1 : -1;
         LooseWheels.Add(new LooseWheelState {
@@ -33,18 +96,15 @@ public sealed partial class CartStations
     {
         while (wheelVisuals.Count < LooseWheels.Count)
         {
-            var src=tires[LooseWheels[wheelVisuals.Count].Mount];
-            var copy=Instantiate(src,src.transform.position,Quaternion.identity);
-            copy.transform.localScale = looseWheelSprite != null ? Vector3.one * (WorldPerWebUnit * 100f) : src.transform.lossyScale;
-            copy.color=Color.white;
-            wheelVisuals.Add(copy);
+            var view=Instantiate(looseWheelPrefab);
+            view.transform.localScale=Vector3.one*(WorldPerWebUnit*100f);
+            wheelVisuals.Add(view);
         }
         for (int i=wheelVisuals.Count-1;i>=0;i--)
         {
             if (i>=LooseWheels.Count) {Destroy(wheelVisuals[i].gameObject);wheelVisuals.RemoveAt(i);continue;}
-            var w=LooseWheels[i];var view=wheelVisuals[i];
-            view.sprite = looseWheelSprite != null ? looseWheelSprite : tires[w.Mount].sprite;
-            view.transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
+            var w=LooseWheels[i];
+            wheelVisuals[i].transform.SetPositionAndRotation(w.Position,Quaternion.Euler(0,0,w.Angle));
         }
     }
     private void ClearWheelVisuals()

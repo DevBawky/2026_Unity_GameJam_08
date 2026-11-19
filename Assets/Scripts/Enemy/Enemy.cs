@@ -16,6 +16,9 @@ public class Enemy : NetworkBehaviour
     [SerializeField] private UnitSO unitDefinition;
     [SerializeField] private SpriteRenderer mountedVisual;
     [SerializeField] private SpriteSequence gallop;
+    [SerializeField] private CavalryArtwork cavalry;
+    public readonly NetworkVariable<CavalryPose> VisualPose = new(new CavalryPose { StrikeAt = -1, DeathAt = -1 });
+    private readonly NetworkVariable<bool> airborne = new();
     public NetworkVariable<float> Health = new();
     public static readonly System.Collections.Generic.List<Enemy> Active = new();
     public UnitSO Unit { get; private set; }
@@ -30,12 +33,15 @@ public class Enemy : NetworkBehaviour
     public Vector2 PreviousPosition { get; private set; }
     private Vector2 knockVelocity;
     private float knockLeft;
-    public bool Knocked => knockLeft > 0;
+    public bool Knocked => airborne.Value;
+    public bool IsApproaching => IsSpawned && !Knocked && Health.Value > 0f &&
+        VisualPose.Value.StrikeAt < 0d && (rope == null || !rope.Attached);
     public void KnockAway(Vector2 velocity)
     {
         if (!IsServer || !IsSpawned || Knocked) return;
         knockVelocity = velocity;
         knockLeft = 24f/30f;
+        airborne.Value = true;
         if (rope != null && rope.Attached) rope.Detach();
     }
     private SpriteRenderer target;
@@ -52,7 +58,7 @@ public class Enemy : NetworkBehaviour
 
     private void LateUpdate()
     {
-        if (mountedVisual != null && IsSpawned)
+        if (cavalry == null && mountedVisual != null && IsSpawned)
             mountedVisual.sprite = gallop.FrameAt((float)NetworkManager.ServerTime.Time, true);
     }
 
@@ -71,19 +77,29 @@ public class Enemy : NetworkBehaviour
             Debug.LogWarning($"[{name}] 추격조 프리팹에 EnemyRope가 없어 로프를 걸지 않습니다", this);
     }
 
-    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,KnockLeft=knockLeft,KnockVelocity=knockVelocity,Angle=transform.eulerAngles.z,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,EngagementAge=engagementAge,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike };
+    public PursuerCheckpoint Capture() => new() { Unit=Unit.name,KnockLeft=knockLeft,KnockVelocity=knockVelocity,Angle=transform.eulerAngles.z,Position=transform.position,Health=hp,Speed=speed,Damage=attack,Wait=attackTimer,EngagementAge=engagementAge,SinceStrike=float.IsInfinity(sinceStrike)?10:sinceStrike,
+        StrikeTarget=VisualPose.Value.Target, StrikeAge=VisualPose.Value.StrikeAt < 0d ? -1f : (float)(NetworkManager.ServerTime.Time-VisualPose.Value.StrikeAt),
+        AttackSlotKey=AttackSlot+1 };
     public void Restore(PursuerCheckpoint saved)
     {
         knockLeft=saved.KnockLeft;knockVelocity=saved.KnockVelocity;transform.rotation=Quaternion.Euler(0,0,saved.Angle);
         hp=saved.Health;speed=saved.Speed;attack=saved.Damage;attackTimer=saved.Wait;sinceStrike=saved.SinceStrike;engagementAge=saved.EngagementAge;Health.Value=hp;
+        airborne.Value = knockLeft > 0f;
+        savedAttackSlot = saved.AttackSlotKey - 1;
+        VisualPose.Value = new CavalryPose { StrikeAt = saved.AttackSlotKey > 0 && saved.StrikeAge >= 0f
+            ? NetworkManager.ServerTime.Time - saved.StrikeAge : -1d, Target = saved.StrikeTarget, DeathAt = -1d };
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, bool blast = false)
     {
-        if (!IsSpawned || !IsServer || Knocked || !CartStations.Running) return;
+        if (!IsSpawned || !IsServer || Knocked || VisualPose.Value.DeathKind != 0 || !CartStations.Running) return;
         hp -= Mathf.Max(0f,damage);
         Health.Value=hp;
-        if (hp <= 0f) NetworkObject.Despawn(true);
+        if (hp > 0f) return;
+        if (cavalry == null) { NetworkObject.Despawn(true); return; }
+        Active.Remove(this);
+        if (TryGetComponent(out Collider2D collider)) collider.enabled = false;
+        VisualPose.Value = new CavalryPose { DeathAt = NetworkManager.ServerTime.Time, StrikeAt = -1d, DeathKind = blast ? 2 : 1 };
     }
 
     public override void OnNetworkDespawn()
@@ -94,6 +110,11 @@ public class Enemy : NetworkBehaviour
     private void Advance(float dt)
     {
         if (!IsSpawned || !IsServer || !CartStations.Running || Unit==null || target==null) return;
+        if (VisualPose.Value.DeathKind != 0)
+        {
+            if (NetworkManager.ServerTime.Time - VisualPose.Value.DeathAt >= 1d) NetworkObject.Despawn(true);
+            return;
+        }
         PreviousPosition = transform.position;
         if (Knocked)
         {
@@ -118,11 +139,12 @@ public class Enemy : NetworkBehaviour
             return;
         }
         Vector3 pos = transform.position;
-        Vector3 goal = target.bounds.ClosestPoint(pos);
+        bool lance = cavalry != null && Unit.type == UnitType.Lancer;
+        Vector3 goal = lance ? CavalryGoal(false) : target.bounds.ClosestPoint(pos);
         goal.z = pos.z;
         bool inRange = Unit.type == UnitType.Archer
             ? pos.x <= screenRightX - Unit.screenInset
-            : Vector2.Distance(pos, goal) <= Unit.attackRange;
+            : Vector2.Distance(pos, goal) <= (lance ? .10f : Unit.attackRange);
         if (!inRange)
         {
             transform.position = Vector3.MoveTowards(pos, goal, speed * (sinceStrike < 2.2f ? 0.4f : 1f) * EnemyRope.MonsterSpeedMultiplier * dt);
@@ -142,14 +164,32 @@ public class Enemy : NetworkBehaviour
         if (Unit.type == UnitType.Lancer)
         {
             if (engagementAge < 0) engagementAge = 0;
+            if (cavalry != null)
+                VisualPose.Value = new CavalryPose { StrikeAt = NetworkManager.ServerTime.Time, DeathAt = -1d, Target = CavalryGoal(true) };
             HitCart(attack);
             sinceStrike = 0;
         }
         else if (Unit.arrowPrefab != null)
         {
+            if (VisualPose.Value.StrikeAt < 0d)
+                VisualPose.Value = new CavalryPose { StrikeAt = NetworkManager.ServerTime.Time, DeathAt = -1d, Target = goal };
             var shot=Instantiate(Unit.arrowPrefab,pos,Quaternion.identity);
             shot.GetComponent<Arrow>().Launch(goal,Unit.arrowSpeed,attack);
             shot.GetComponent<NetworkObject>().Spawn(true);
         }
+    }
+
+    private int savedAttackSlot = -1;
+    private int AttackSlot => savedAttackSlot >= 0 ? savedAttackSlot : (int)(NetworkObjectId % 5);
+    private static readonly float[] ApproachX = { 750, 750, 773, 783, 783 };
+    private static readonly float[] HitX = { 692, 692, 715, 715, 715 };
+    private static readonly float[] SlotY = { -86, 86, 0, -43, 43 };
+    private Vector3 CavalryGoal(bool strike)
+    {
+        int slot = AttackSlot;
+        var game = CartStations.Instance;
+        float x = (strike ? HitX : ApproachX)[slot];
+        return new Vector3(target.bounds.center.x + (x - 528.5f) * game.WorldPerWebUnit,
+            game.Cart.transform.position.y - SlotY[slot] * game.WorldPerWebUnit, transform.position.z);
     }
 }

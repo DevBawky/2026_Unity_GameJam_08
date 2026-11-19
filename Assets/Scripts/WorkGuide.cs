@@ -17,12 +17,12 @@ internal readonly struct WorkGuide
     private WorkGuide(string action = null, string hint = null, Color color = default,
         bool timed = false, float progress = -1f, string progressName = null, float seconds = -1f)
     {
-        Action = action;
-        Hint = hint;
+        Action = LocalizationTable.T(action);
+        Hint = LocalizationTable.T(hint);
         Color = color;
         Timed = timed;
         Progress = progress;
-        ProgressName = progressName;
+        ProgressName = LocalizationTable.T(progressName);
         Seconds = seconds;
     }
 
@@ -40,6 +40,9 @@ internal readonly struct WorkGuide
             if (care == CareAction.Feed) return new WorkGuide(name + " 먹이기", name + "에게 간식을 주세요", Sand);
             if (care == CareAction.PickUp) return new WorkGuide("안아 올리기", name + "를 안아 올리세요", Pink);
         }
+        if (player.CanUseStairShelf())
+            return new WorkGuide(player.InCellar ? "선반에 올리기" : "선반에서 받기",
+                player.InCellar ? "계단 선반에 포탄을 올려 두세요" : "계단 선반의 포탄을 받아 가세요", Blue);
         if (player.Carrying.Value)
             return new WorkGuide(hint: player.InCellar ? "계단으로 1층에 올라가세요" : "5시 방향 파란 적재칸으로 옮기세요", color: Blue);
         if (player.Snack.Value)
@@ -64,7 +67,12 @@ internal readonly struct WorkGuide
                     return new WorkGuide("길게 눌러 만들기", "행동을 길게 눌러 간식을 만드세요", Sand,
                         progress: player.CookProgress.Value / CartRules.Active.cookSeconds);
                 case StationAction.WheelRack: return new WorkGuide("예비 바퀴 들기", "예비 바퀴를 드세요", Sand);
-                case StationAction.Reload: return new WorkGuide("장전", color: Green, timed: true);
+                case StationAction.CannonCleaning:
+                    return new WorkGuide("청소하기", LocalizationTable.F("포신 청소 {0}/{1}", game.CleaningTaps, CartStations.CleaningTapsRequired), Orange,
+                        progress: (float)game.CleaningTaps / CartStations.CleaningTapsRequired);
+                case StationAction.Reload:
+                    return game.IsDeposited ? new WorkGuide("장전", color: Green, timed: true)
+                        : new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
                 case StationAction.ShellPile: return new WorkGuide("포탄 들기", color: Blue, timed: true);
                 case StationAction.WheelRepair:
                     string step = game.WheelRepairSteps == 0 ? "바퀴 끼우기" : "차축 핀 고정";
@@ -73,10 +81,17 @@ internal readonly struct WorkGuide
         }
         if (player.SpareWheel.Value)
             return new WorkGuide(hint: player.InCellar ? "고장 난 바퀴의 수리 원으로 이동하세요" : "계단으로 지하층에 내려가세요", color: Sand);
-        if (timing.NearbyStation == StationAction.Reload && !game.IsDeposited && !game.IsLoaded)
-            return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
+        if (timing.NearbyStation == StationAction.Reload)
+        {
+            if (game.NeedsCleaning) return new WorkGuide("장전 대기", "포신을 먼저 청소하세요", Orange);
+            if (!game.IsDeposited && !game.IsLoaded)
+                return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
+        }
         if (timing.NearbyStation == StationAction.WheelRepair && game.WheelDetached && game.WheelRepairSteps == 0)
-            return new WorkGuide(hint: "12시 방향에서 예비 바퀴를 가져오세요", color: Sand);
+            return new WorkGuide(hint: game.SpareKitReady.Value ? "비상 바퀴 꾸러미로 바로 수리하세요" : "12시 방향에서 예비 바퀴를 가져오세요", color: Sand);
+        // 정비 안내등: 어느 층에서든 빠진 바퀴와 남은 수리 단계를 알려 준다.
+        if (game.WheelDetached && game.Owns(ShopPerk.MaintenanceLamp))
+            return new WorkGuide(hint: LocalizationTable.F("{0}번 바퀴 고장 · 수리 {1}/{2}단계", game.DetachedTireNumber, game.WheelRepairSteps, CartStations.WheelRepairStepsNeeded), color: Sand);
         return default;
     }
 
@@ -86,7 +101,7 @@ internal readonly struct WorkGuide
         string name = prince ? "왕자" : "공주";
         if (child.Upset)
         {
-            float soothe = child.Soothing / CartStations.SootheDistance;
+            float soothe = child.Soothing / game.SootheTarget;
             return child.Bored
                 ? new WorkGuide(hint: "지루해요 · 마차 앞뒤나 지하층으로 가세요", color: new Color32(230, 186, 130, 255), progress: soothe)
                 : new WorkGuide(hint: "안고 걸어서 달래 주세요", color: Pink, progress: soothe);
@@ -118,7 +133,8 @@ internal readonly struct WorkGuide
         if (!game.AimsAtSteeringZone(player.DriverAim.Value))
             return new WorkGuide("채찍질", "왼쪽 스틱으로 말 엉덩이를 겨냥하세요", Purple);
         int hits = right ? game.RightWounds.Value : game.LeftWounds.Value;
-        return new WorkGuide("채찍질", $"{side} 채찍질 · {hits}/{CartStations.RunawayHits}회", Purple,
+        string whipFormat = right ? "오른말 채찍질 · {0}/{1}회" : "왼말 채찍질 · {0}/{1}회";
+        return new WorkGuide("채찍질", LocalizationTable.F(whipFormat, hits, CartStations.RunawayHits), Purple,
             progress: (float)hits / CartStations.RunawayHits);
     }
 }

@@ -10,7 +10,7 @@ public struct SeatCheckpoint
     public int CompletedStationKey; // Zero also means no completed station in older saves.
     public Vector3 Position;
     public Vector2 Aim, DriverAim;
-    public bool HasWhipAim;
+    public bool HasWhipAim, FacingRight;
     public bool Shell, Wheel, Snack, Holding;
     public float HoldRemaining, Cooking;
     public float ShellSafetyRemaining;
@@ -23,6 +23,9 @@ public struct PursuerCheckpoint
     public float KnockLeft, Angle;
     public Vector3 Position;
     public float Health, Speed, Damage, Wait, SinceStrike, EngagementAge;
+    public float StrikeAge;
+    public Vector2 StrikeTarget;
+    public int AttackSlotKey;
 }
 [Serializable]
 public struct ShotCheckpoint
@@ -43,7 +46,12 @@ public sealed class RunCheckpoint
     public string Failure, StageEntry, KingReply;
     public LooseWheelState[] LooseWheels;
     public int[] StationSlots;
+    public bool SharedCannon;
     public float CartY, WaveTime, FuseRemaining;
+    public int PostShotRemaining;
+    public int MountSlotKey;
+    public float MountAge, ShotVisualAge, ShotVisualAngle;
+    public bool HasShotVisual;
     public float ShockStrength, ShockPhase;
     public int Wave, CareTicks, GunnerSlot, AP, Report, Round, Barrel, Stabilizer, Porter, Hull, RightWounds, LeftWounds, PrincePoints, PrincessPoints;
     public uint RandomState;
@@ -62,23 +70,28 @@ public sealed partial class CartStations
     public RunCheckpoint Capture(string[] keys)
     {
         Publish();
-        var enemies=FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        var enemies=Enemy.Active.ToArray();
         double now = NetworkManager.ServerTime.Time;
         float shock = WorkShakeAt(now, out float phase);
         return new RunCheckpoint {
             StageEntry=stageEntryJson, KingReply=KingReply.Value.ToString(),
             ShockStrength=shock, ShockPhase=phase,
             LooseWheels=Enumerable.Range(0,LooseWheels.Count).Select(i=>LooseWheels[i]).ToArray(),
+            SharedCannon=true,
+            MountSlotKey=WheelMount.Value.SlotKey, MountAge=(float)(now-WheelMount.Value.Time),
+            HasShotVisual=LastCannonShot.Value.Time >= 0d,
+            ShotVisualAge=(float)(now-LastCannonShot.Value.Time), ShotVisualAngle=LastCannonShot.Value.Angle,
             StationSlots=Enumerable.Range(0,StationOwners.Count).Select(i=>Array.FindIndex(gameScene.Players,p=>p.NetworkObjectId==StationOwners[i])).ToArray(),
             Cart=State.Value, Failure=FailureReason, Motion=cart.Capture(), CartY=cart.transform.position.y,
-            WaveTime=waveSpawner.Elapsed, Wave=Waves.Value, FuseRemaining=fuseRemaining, GunnerSlot=gunner==null?-1:gunner.Slot.Value,
+            WaveTime=waveSpawner.Elapsed, Wave=Waves.Value, FuseRemaining=fuseRemaining, PostShotRemaining=postShotRemaining,
+            GunnerSlot=gunner==null?-1:gunner.Slot.Value,
             AP=Affection.Value, Report=Report.Value, Round=ShopRound.Value, Barrel=Barrel.Value, Stabilizer=Stabilizer.Value,
             Porter=Porter.Value, Hull=Hull.Value, RightWounds=RightWounds.Value, LeftWounds=LeftWounds.Value,
             LeftHorse=LeftHorse.Value, RightHorse=RightHorse.Value,
             Prince=Prince.Value, Princess=Princess.Value, PrincePoints=PrincePoints.Value, PrincessPoints=PrincessPoints.Value,
             CareTicks=careTicks, RandomState=randomState, Seated=seated, Crying=crying, Grace=ignoreWanderUntil, HorseRest=nextHorseRest, Attention=attentionSum,
             Votes=Enumerable.Range(0,4).Select(i=>Votes[i]).ToArray(), SeatKeys=keys, Seats=gameScene.Players.Select(p=>new SeatCheckpoint {
-                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
+                Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,FacingRight=p.FacingRight.Value,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
                 Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-now),Cooking=p.CookProgress.Value,
                 ShellSafetyRemaining=(float)Math.Max(0,p.ShellSafeUntil-now),CompletedStationKey=p.CompletedStation.Value+1
             }).ToArray(), Enemies=enemies.Select(e=>e.Capture()).ToArray(),
@@ -89,7 +102,10 @@ public sealed partial class CartStations
     public void Restore(RunCheckpoint data)
     {
         StopAllCoroutines();
+        ResetGunner();
         double now = NetworkManager.ServerTime.Time;
+        WheelMount.Value = new WheelMountVisual { SlotKey = data.MountSlotKey, Time = now - data.MountAge };
+        LastCannonShot.Value = new CannonShotVisual { Time = data.HasShotVisual ? now - data.ShotVisualAge : -1d, Angle = data.ShotVisualAngle };
         pendingCookingShock = 0f;
         workShock.Value = new CartWorkShock { Time = now, Strength = data.ShockStrength, Phase = data.ShockPhase };
         cart.Restore(data.Motion,data.Cart.Horse);
@@ -100,8 +116,20 @@ public sealed partial class CartStations
         LooseWheels.Clear();
         if(data.LooseWheels!=null) foreach(var wheel in data.LooseWheels) LooseWheels.Add(wheel);
         ClearStations();
+        int legacyCannonSlot = -1;
         if(data.StationSlots!=null) for(int i=0;i<Math.Min(StationOwners.Count,data.StationSlots.Length);i++)
-            if(data.StationSlots[i]>=0 && data.StationSlots[i]<gameScene.Players.Length) StationOwners[i]=gameScene.Players[data.StationSlots[i]].NetworkObjectId;
+        {
+            int slot = data.StationSlots[i];
+            if (slot < 0 || slot >= gameScene.Players.Length) continue;
+            var action = (StationAction)i;
+            if (TimingArea.IsCannon(action) && !data.SharedCannon)
+            {
+                if (legacyCannonSlot < 0 || action == StationAction.Cannon) legacyCannonSlot = slot;
+            }
+            else StationOwners[i] = gameScene.Players[slot].NetworkObjectId;
+        }
+        if (legacyCannonSlot >= 0)
+            StationOwners[(int)StationAction.Cannon] = gameScene.Players[legacyCannonSlot].NetworkObjectId;
         if(detachedTire!=null) detachedTireAlpha=tireAlphas[tires.IndexOf(detachedTire)];
         Affection.Value=data.AP;Report.Value=data.Report;ShopRound.Value=data.Round;
         Barrel.Value=data.Barrel;Stabilizer.Value=data.Stabilizer;Porter.Value=data.Porter;Hull.Value=data.Hull;
@@ -114,6 +142,8 @@ public sealed partial class CartStations
         for(int i=0;i<4;i++)
         {
             var p=gameScene.Players[i];var saved=data.Seats[i];p.Slot.Value=saved.Slot;
+            if (i == legacyCannonSlot && p.Timing.AreaFor(StationAction.Cannon) is RectTransform cannonArea)
+                saved.Position = p.transform.parent != null ? p.transform.parent.InverseTransformPoint(cannonArea.position) : cannonArea.position;
             p.RestoreSeat(saved);
             p.Carrying.Value=saved.Shell;p.SpareWheel.Value=saved.Wheel;p.Snack.Value=saved.Snack;
             p.Holding.Value=saved.Holding;p.HoldDeadline.Value=now+saved.HoldRemaining;p.CookProgress.Value=saved.Cooking;
@@ -128,12 +158,12 @@ public sealed partial class CartStations
             var shot=Instantiate(shellPrefab,saved.Position,saved.Rotation).GetComponent<Projectile>();
             shot.SetCaliber(saved.Caliber);shot.NetworkObject.Spawn(true);shot.Restore(saved,enemies);
         }
-        if(fuseLit)
+        if (fuseLit || data.PostShotRemaining > 0)
         {
-            gunner=data.GunnerSlot<0?null:gameScene.Players[data.GunnerSlot];
+            gunner = data.GunnerSlot >= 0 && data.GunnerSlot < gameScene.Players.Length ? gameScene.Players[data.GunnerSlot] : null;
             Gunner.Value=gunner==null?NoStationOwner:gunner.NetworkObjectId;
-            StationOwners[(int)StationAction.Cannon]=Gunner.Value;
-            StartFuse(data.FuseRemaining);
+            if (fuseLit) StartFuse(data.FuseRemaining);
+            else if (gunner != null && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(data.PostShotRemaining);
         }
         Refresh();
     }

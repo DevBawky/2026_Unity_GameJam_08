@@ -9,13 +9,14 @@ public sealed class Obstacle : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] private float slowFactor = 0.7f;
     [Tooltip("감속이 유지되는 시간(초)")]
     [SerializeField, Min(0f)] private float slowSeconds = 1f;
+    [Tooltip("마차 차선과의 충돌 판정 반폭 (웹 단위)")]
+    [SerializeField, Min(0f)] private float hitHalfWidth = 31f;
 
     public float Damage => damage;
     public float SlowFactor => slowFactor;
     public float SlowSeconds => slowSeconds;
+    public float HitHalfWidth => hitHalfWidth;
     public Vector2 Size { get; private set; }
-    // 소환 전 프리팹에서도 쓸 수 있는 크기 (예고 단계의 차선 판정용).
-    public Vector2 SpriteSize => Vector2.Scale(GetComponent<SpriteRenderer>().sprite.bounds.size, transform.lossyScale);
 
     public static readonly System.Collections.Generic.List<Obstacle> WheelSurfaces = new();
     private void OnEnable()
