@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47366fd0750fd514e8f884100a7c18e9, type: 3}
   m_Name: Stage_03
   m_EditorClassIdentifier: Assembly-CSharp::StageSO
+  goalMeters: 500
   waves:
   - {fileID: 11400000, guid: 876e65195d510674b81e83a0f3f5fe73, type: 2}
   - {fileID: 11400000, guid: f542b2e42f187d84887a21fe8a01f79c, type: 2}

@@ -35,7 +35,7 @@ public sealed class PlayerMovement : MonoBehaviour
     private void Update()
     {
         if (actor == null || !actor.Local || !CartStations.Running) return;
-        if (actor.Holding.Value || stations.HoldsStation(StationAction.Cannon, actor))
+        if (actor.Holding.Value || (stations.HoldsStation(StationAction.Cannon, actor) || stations.HoldsStation(StationAction.UpperCannon, actor)))
         {
             transform.position = ClampToCartBody(transform.position);
             return;

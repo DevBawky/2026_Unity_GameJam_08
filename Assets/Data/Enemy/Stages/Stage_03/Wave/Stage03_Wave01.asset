@@ -15,9 +15,9 @@ MonoBehaviour:
   waveStartTime: 3
   spawns:
   - unit: {fileID: 11400000, guid: 0c15eef4cd363f741ad2b76160912d95, type: 2}
-    count: 2
-  - unit: {fileID: 11400000, guid: 2e44ac0f084e7d648945c8c5742eb414, type: 2}
-    count: 1
+    count: 6
+  - unit: {fileID: 11400000, guid: eecc59efd8c1489aa60a61fe77d2f923, type: 2}
+    count: 3
   speedMin: 0.02
   speedMax: 0.02
   attackMultiplier: 1

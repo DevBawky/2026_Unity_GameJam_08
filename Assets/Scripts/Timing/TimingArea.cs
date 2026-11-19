@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public enum StationAction { Driver = 0, RoyalFamily = 2, ShellPile, ShellDeposit, Reload, Cannon, WheelRepair, WheelRack, Kitchen, Princess, Stairs, CannonCleaning }
+public enum StationAction { Driver = 0, RoyalFamily = 2, ShellPile, ShellDeposit, Reload, Cannon, WheelRepair, WheelRack, Kitchen, Princess, Stairs, CannonCleaning, UpperCannon, UpperReload, UpperCleaning }
 
 // 상호작용 영역 설정. 포탄 보관·대포는 타이밍 없이 바로 동작하고, 나머지는 원형 타이밍 미니게임을 쓴다.
 public sealed class TimingArea : MonoBehaviour
@@ -14,8 +14,17 @@ public sealed class TimingArea : MonoBehaviour
     [SerializeField] private StationTimingProfile profile;
 
     public static bool IsRoyal(StationAction action) => action is StationAction.RoyalFamily or StationAction.Princess;
-    public static bool IsCannon(StationAction action) => action is StationAction.Cannon or StationAction.CannonCleaning or StationAction.Reload;
-    public static bool UsesTimingFor(StationAction action) => action is StationAction.ShellPile or StationAction.Reload or StationAction.WheelRepair;
+    public static bool IsCannon(StationAction action) => CannonRole(action) is StationAction.Cannon or StationAction.CannonCleaning or StationAction.Reload;
+    public static bool IsUpper(StationAction action) => action is StationAction.UpperCannon or StationAction.UpperReload or StationAction.UpperCleaning;
+    public static StationAction CannonRole(StationAction action) => action switch
+    {
+        StationAction.UpperCannon => StationAction.Cannon,
+        StationAction.UpperReload => StationAction.Reload,
+        StationAction.UpperCleaning => StationAction.CannonCleaning,
+        _ => action
+    };
+    public static StationAction CannonStation(StationAction action) => IsUpper(action) ? StationAction.UpperCannon : StationAction.Cannon;
+    public static bool UsesTimingFor(StationAction action) => CannonRole(action) is StationAction.ShellPile or StationAction.Reload or StationAction.WheelRepair;
     public StationAction Action => action;
     public float CircularTargetAngle => profile != null ? profile.targetAngle : circularTargetAngle;
     public float CircularSpeed => profile != null ? profile.degreesPerSecond : circularSpeed;

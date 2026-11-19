@@ -15,8 +15,8 @@ public sealed class ShellSupplyView : MonoBehaviour
         bool test = running && game.Endless.Value;
         int stock = running ? game.ShellStock : 0;
         pile.enabled = running && (test || stock > 0);
-        stockLabel.transform.parent.gameObject.SetActive(running && !test);
-        if (!running || test || displayed == stock) return;
+        stockLabel.transform.parent.gameObject.SetActive(running);
+        if (!running || displayed == stock) return;
         displayed = stock;
         stockLabel.SetText("{0}", stock);
     }

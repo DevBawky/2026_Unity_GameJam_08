@@ -360,7 +360,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
 
     public void Request(StationAction action, bool hold = false)
     {
-        bool rateLimited = !hold && action != StationAction.CannonCleaning && action != StationAction.Driver;
+        bool rateLimited = !hold && TimingArea.CannonRole(action) != StationAction.CannonCleaning && action != StationAction.Driver;
         if (!Local || (rateLimited && Time.unscaledTime < nextRequestTime)) return;
         if (rateLimited) nextRequestTime = Time.unscaledTime + 0.12f;
         var stations = CartStations.Instance;
@@ -389,14 +389,14 @@ public sealed class NetworkPlayer : NetworkBehaviour
             return;
         }
         if (Holding.Value) return;
-        bool rateLimited = action != StationAction.CannonCleaning && action != StationAction.Driver;
+        bool rateLimited = TimingArea.CannonRole(action) != StationAction.CannonCleaning && action != StationAction.Driver;
         if ((rateLimited && now-lastActionTime < 0.12) || !timing.IsInActionArea(action) || !stations.CanUse(action,this)) return;
         if (TimingArea.IsRoyal(action) && care != stations.AvailableCare(action, this)) return;
         if (rateLimited) lastActionTime = now;
         if (action == StationAction.ShellDeposit) stations.Enter(action,this);
-        else if (action == StationAction.Cannon) stations.Ignite(this);
+        else if (TimingArea.CannonRole(action) == StationAction.Cannon) stations.Ignite(this, TimingArea.IsUpper(action));
         else if (action == StationAction.Driver) stations.WhipHorse(this);
-        else if (action != StationAction.ShellPile && action != StationAction.Reload && action != StationAction.WheelRepair
+        else if (!TimingArea.UsesTimingFor(action)
             || timing.TimingSuccess(action, false, inputTime)) stations.Succeed(action,this);
         else stations.Fail(action, this, timing.NearMiss(action, inputTime));
     }

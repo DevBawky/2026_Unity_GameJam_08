@@ -9,6 +9,8 @@ public sealed class CartArtwork : MonoBehaviour
     [SerializeField] private Sprite[] lightFrames, lowerLightFrames, flagFrames;
     [SerializeField] private Transform barrel;
     [SerializeField] private SpriteRenderer fuse;
+    [SerializeField] private Transform upperBarrel;
+    [SerializeField] private SpriteRenderer upperFuse;
     [SerializeField] private SpriteRenderer[] muzzleSmoke;
     private static readonly Vector4[] SmokePuffs =
     {
@@ -20,11 +22,19 @@ public sealed class CartArtwork : MonoBehaviour
     [SerializeField] private SpriteRenderer wheelMount;
     [SerializeField] private Sprite[] upperMountFrames, lowerMountFrames, wheelFrames, dustFrames;
     [SerializeField] private SpriteRenderer[] wheelDust;
-    private Vector3 barrelScale;
+    [SerializeField] private SpriteRenderer[] cellarWheels;
+    [SerializeField] private Sprite mountedCellarWheel, brokenCellarWheel;
+    [SerializeField] private UnityEngine.UI.Image cellarWheelSupply;
+    [SerializeField] private Sprite wheelSupplyAvailable, wheelSupplyUnavailable;
+    private Vector3 barrelScale, upperBarrelScale;
     private SpriteRenderer obscuredTire;
     private readonly List<Transform> recoilingRoots = new();
     private Vector3 renderOffset;
-    private void Awake() => barrelScale = barrel.localScale;
+    private void Awake()
+    {
+        barrelScale = barrel.localScale;
+        if (upperBarrel != null) upperBarrelScale = upperBarrel.localScale;
+    }
 
     private void OnEnable()
     {
@@ -68,28 +78,30 @@ public sealed class CartArtwork : MonoBehaviour
             rearLight.sprite = lowerLightFrames[((tick + 8) / 5) % lowerLightFrames.Length];
         flag.sprite = flagFrames[(tick / 5) % flagFrames.Length];
         for (int i = 0; i < shells.Length; i++) shells[i].enabled = i < game.DepositedShells;
-        DrawCannon(game, now, tick);
+        DrawCannon(game, now, tick, barrel, fuse, barrelScale, false);
+        if (upperBarrel != null) DrawCannon(game, now, tick, upperBarrel, upperFuse, upperBarrelScale, true);
         DrawWheels(game, now);
     }
 
-    private void DrawCannon(CartStations game, double now, int tick)
+    private void DrawCannon(CartStations game, double now, int tick, Transform barrel, SpriteRenderer fuse, Vector3 barrelScale, bool upper)
     {
-        var lastShot = game.LastCannonShot.Value;
+        var lastShot = game.ShotAt(upper);
         float recoil = lastShot.Time < 0d ? -1f : (float)((now - lastShot.Time) * 30d);
-        Vector2 scale = BarrelScale(game.IsFiring, (float)((game.FuseDeadline.Value - now) * 30d), recoil);
+        bool firing = game.FiringAt(upper);
+        Vector2 scale = BarrelScale(firing, (float)((game.FuseAt(upper) - now) * 30d), recoil);
         float caliber = game.CannonCaliber;
         barrel.localScale = Vector3.Scale(barrelScale, new Vector3(scale.x * caliber, scale.y * caliber, 1f));
-        var cannonOperator = game.CannonOperator;
+        var cannonOperator = game.OperatorAt(upper);
         var aim = cannonOperator != null ? cannonOperator.Aim.Value : Vector2.zero;
-        var pivot = game.CannonPivot.position;
-        Vector2 target = CannonAim.AimPoint(aim, pivot, game, now, out _, out _);
+        var pivot = game.PivotAt(upper).position;
+        Vector2 target = CannonAim.AimPoint(aim, pivot, game, now, out _, out _, upper: upper);
         Vector2 origin = CannonAim.Origin(pivot, game, now, game.CannonTick);
         float angle = recoil >= 0f && recoil < 12f ? lastShot.Angle :
             Vector2.SignedAngle(Vector2.right, target - origin);
         barrel.rotation = Quaternion.Euler(0, 0, angle);
-        fuse.enabled = game.IsFiring;
+        fuse.enabled = firing;
         if (fuse.enabled) fuse.sprite = fuseFrames[(tick / 3) % fuseFrames.Length];
-        DrawMuzzleSmoke(game, now, lastShot.Angle, recoil, caliber);
+        if (!upper) DrawMuzzleSmoke(game, now, lastShot.Angle, recoil, caliber);
     }
 
     private void DrawMuzzleSmoke(CartStations game, double now, float angle, float age, float caliber)
@@ -135,6 +147,8 @@ public sealed class CartArtwork : MonoBehaviour
 
     private void DrawWheels(CartStations game, double now)
     {
+        if (cellarWheelSupply != null)
+            cellarWheelSupply.sprite = game.WheelDetached && game.WheelRepairSteps == 0 ? wheelSupplyAvailable : wheelSupplyUnavailable;
         var mount = game.WheelMount.Value;
         int age = mount.SlotKey == 0 ? -1 : (int)System.Math.Floor((now - mount.Time) * 30d + .00001d);
         var tire = !SettingsPanel.ReducedMotion && age >= 0 && age < 10 ? game.TireAt(mount.SlotKey - 1) : null;
@@ -146,6 +160,8 @@ public sealed class CartArtwork : MonoBehaviour
             var wheel = game.TireAt(i);
             var dust = wheelDust[i];
             bool mounted = game.IsWheelMounted(i);
+            if (cellarWheels != null && i < cellarWheels.Length)
+                cellarWheels[i].sprite = mounted ? mountedCellarWheel : brokenCellarWheel;
             if (mounted) wheel.sprite = frame;
             if (dust == null) continue;
             dust.enabled = rolling && mounted && wheel != tire;

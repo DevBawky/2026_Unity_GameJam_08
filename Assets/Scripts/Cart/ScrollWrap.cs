@@ -8,7 +8,8 @@ public class ScrollWrap : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (transform.position.x > wrapX)
-            transform.position -= Vector3.right * loopLength;
+        float excess = transform.position.x - wrapX;
+        if (excess > 0f && loopLength > 0f)
+            transform.position -= Vector3.right * (Mathf.Ceil(excess / loopLength) * loopLength);
     }
 }

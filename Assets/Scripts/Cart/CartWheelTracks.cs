@@ -46,8 +46,9 @@ public sealed class CartWheelTracks : MonoBehaviour
         for (int i = 0; i < WheelCount; i++)
         {
             var wheel = game.TireAt(i);
-            bool attached = game.IsWheelMounted(i);
-            if (attached && disconnected[i])
+            if (wheel == null) continue;
+            bool attached = game.IsWheelSecured(i);
+            if (!attached && !disconnected[i])
             {
                 (active[i], interrupted[i]) = (interrupted[i], active[i]);
                 active[i].Clear();
@@ -56,7 +57,7 @@ public sealed class CartWheelTracks : MonoBehaviour
 
             float ground = wheel.bounds.min.y;
             Vector3 contact = transform.InverseTransformPoint(new Vector3(wheel.transform.position.x, ground, transform.position.z));
-            active[i].Draw(contact, rolling && attached, now, unit);
+            if (attached) active[i].Draw(contact, rolling, now, unit);
             interrupted[i].Draw(contact, false, now, unit);
         }
     }

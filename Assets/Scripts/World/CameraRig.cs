@@ -106,7 +106,7 @@ public sealed class CameraRig : MonoBehaviour
             shotSize = cam.orthographicSize;
         }
         wasPostShot = postShot;
-        float shotReturn = postShot ? Mathf.Clamp01(1f - (float)(stations.PostShotEndsAt.Value
+        float shotReturn = postShot ? Mathf.Clamp01(1f - (float)(stations.PostShotAt(follow)
             - follow.NetworkManager.ServerTime.Time) / CartStations.PostShotReturnSeconds) : 0f;
         if (postShot && shotReturn <= 0f)
         {

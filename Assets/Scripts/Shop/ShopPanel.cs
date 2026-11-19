@@ -30,7 +30,7 @@ public sealed class ShopPanel : MonoBehaviour
 
     private void Update()
     {
-        bool open = stations.IsSpawned && stations.ChoosingUpgrade && stations.Report.Value >= 0;
+        bool open = stations.IsSpawned && stations.ChoosingUpgrade && stations.ResultsVisible && stations.Report.Value >= 0;
         if (panel.activeSelf != open)
         {
             panel.SetActive(open);

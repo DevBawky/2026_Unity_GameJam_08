@@ -31,6 +31,7 @@ public sealed class Projectile : NetworkBehaviour
     private Collider2D shape;
     private NetworkPlayer shooter;
     private int shooterOwnerVersion;
+    private int eliminations;
 
     internal void SetShooter(NetworkPlayer actor)
     {
@@ -40,6 +41,7 @@ public sealed class Projectile : NetworkBehaviour
 
     internal void AwardElimination()
     {
+        eliminations++;
         if (IsServer && shooter != null && shooter.ScoreOwnerVersion == shooterOwnerVersion)
             shooter.AwardScore(CartRules.EnemyEliminationScore);
     }
@@ -96,6 +98,7 @@ public sealed class Projectile : NetworkBehaviour
         transform.position = next;
         if (next != landing) return;
         hit.Blast(landing, Length, HalfWidth);
+        CartStations.Instance.ResolveCannonCombo(eliminations);
         impact.Value = new CannonImpactVisual { Time = NetworkManager.ServerTime.Time, Landing = landing, Scroll = cart.ScrollDistance };
         CartStations.Instance.PlayCannonLanding();
     }
@@ -145,12 +148,12 @@ public sealed class Projectile : NetworkBehaviour
     }
     public ShotCheckpoint Capture(Enemy[] enemies) => new() {
         Position=transform.position, Rotation=transform.rotation, Landing=landing, Speed=speed, Caliber=caliber.Value, ShooterSlotKey=shooter != null ? shooter.Slot.Value + 1 : 0, ShooterOwnerVersion=shooterOwnerVersion,
-        Landed=impact.Value.Time!=double.MinValue,
+        Landed=impact.Value.Time!=double.MinValue, Eliminations=eliminations,
         ImpactAge=impact.Value.Time==double.MinValue ? 0 : (float)(NetworkManager.ServerTime.Time-impact.Value.Time),
         ScrollAtImpact=impact.Value.Scroll, HitEnemies=hit.HitIndices(enemies), NearMissEnemies=hit.NearMissIndices(enemies) };
     public void Restore(ShotCheckpoint data, Enemy[] enemies)
     {
-        landing = data.Landing; speed = data.Speed;
+        landing = data.Landing; speed = data.Speed; eliminations = data.Eliminations;
         if (speed <= 0) { speed=data.Velocity.magnitude; landing=(Vector2)data.Position+(Vector2)data.Velocity*data.Remaining; }
         if (data.Landed)
             impact.Value = new CannonImpactVisual

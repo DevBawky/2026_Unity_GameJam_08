@@ -10,6 +10,10 @@ public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private StageSO stage;
     [SerializeField] private StageSO[] laterStages;
+    [SerializeField] private WaveSO reinforcements;
+    private const int ReinforcementCap = 12;
+    private const int PracticeCap = 48;
+    private const float ReinforcementInterval = 12f;
     public int SpawnedWaves => nextWave;
     [SerializeField] private SpriteRenderer cartBody;
     [SerializeField] private CartStations cartStations;
@@ -30,6 +34,15 @@ public class EnemySpawner : MonoBehaviour
         return laterStages != null && index >= 0 && index < laterStages.Length && laterStages[index] != null
             ? laterStages[index] : stage;
     }
+
+    public int GoalFor(int number, int fallback)
+    {
+        var setup = StageFor(number);
+        return setup != null && setup.goalMeters > 0 ? setup.goalMeters : fallback;
+    }
+
+    public bool HasStageAfter(int number) => number < 3 ||
+        (laterStages != null && number - 1 < laterStages.Length && laterStages[number - 1] != null);
 
     // 대포 조준 등으로 카메라가 움직이기 전, 기본 화면의 오른쪽 끝 (궁수 정지 기준)
     private void Awake()
@@ -61,6 +74,7 @@ public class EnemySpawner : MonoBehaviour
         if (!isActiveAndEnabled || cartStations == null || !cartStations.IsServer || !CartStations.Running) return;
         if (cartStations.StageNumber != stageNumber) RestartWaves();
 
+        float previousElapsed = elapsed;
         elapsed += dt;
         var setup = StageFor(stageNumber);
         if (setup == null) return;
@@ -75,12 +89,21 @@ public class EnemySpawner : MonoBehaviour
             {
                 int incoming = 0;
                 foreach (var group in waves[index].spawns) incoming += group.count;
-                while (Enemy.Active.Count > 0 && Enemy.Active.Count + incoming > 16)
+                while (Enemy.Active.Count > 0 && Enemy.Active.Count + incoming > PracticeCap)
                     Enemy.Active[0].NetworkObject.Despawn(true);
             }
-            SpawnWave(waves[index]);
+            if (SpawnWave(waves[index], int.MaxValue)) cartStations.PlayCartCueRpc(GameSfx.PursuitHorn);
             nextWave++;
         }
+        if (cartStations.Endless.Value || nextWave < waves.Count || reinforcements == null ||
+            cartStations.StageDistance >= cartStations.StageGoal) return;
+
+        float lastWave = waves[^1].waveStartTime;
+        int previousWindow = Mathf.FloorToInt((previousElapsed - lastWave) / ReinforcementInterval);
+        int window = Mathf.FloorToInt((elapsed - lastWave) / ReinforcementInterval);
+        if (window >= 1 && window > previousWindow &&
+            SpawnWave(reinforcements, ReinforcementCap - Enemy.Active.Count))
+            cartStations.PlayCartCueRpc(GameSfx.PursuitHorn);
     }
 
     // 남은 몬스터와 날아가던 화살(둘 다 이 오브젝트의 자식)을 치우고 타이머를 처음으로 돌린다.
@@ -118,16 +141,18 @@ public class EnemySpawner : MonoBehaviour
         }
         return enemies;
     }
-    private void SpawnWave(WaveSO wave)
+    private bool SpawnWave(WaveSO wave, int available)
     {
+        int spawned = 0;
         foreach (var s in wave.spawns)
-            for (int i = 0; i < s.count; i++)
+            for (int i = 0; i < s.count && spawned < available; i++, spawned++)
             {
                 var offset = new Vector3((cartStations.Sample()-0.5f) * areaSize.x, (cartStations.Sample()-0.5f) * areaSize.y);
                 var go = Instantiate(s.unit.prefab, transform.position + offset, Quaternion.identity);
                 go.GetComponent<Enemy>().Init(s.unit,wave,cartBody,baseScreenRightX);
                 go.GetComponent<NetworkObject>().Spawn(true);
             }
+        return spawned > 0;
     }
 
     private void OnDrawGizmos()

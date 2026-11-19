@@ -37,6 +37,7 @@ public struct ShotCheckpoint
     public Vector2 Landing;
     public bool Landed;
     public int Caliber, ShooterSlotKey, ShooterOwnerVersion;
+    public int Eliminations;
     public int[] StartledEnemies;
     public int[] NearMissEnemies;
     public int[] HitEnemies;
@@ -51,6 +52,11 @@ public sealed class RunCheckpoint
     public int[] StationSlots;
     public bool SharedCannon;
     public float CartY, WaveTime, FuseRemaining;
+    public int IntroLine;
+    public UpperCannonState UpperCannon;
+    public int UpperCannonGunner;
+    public int CannonCombo;
+    public double IntroElapsed;
     public int PostShotRemaining;
     public int MountSlotKey;
     public float MountAge, ShotVisualAge, ShotVisualAngle;
@@ -78,6 +84,9 @@ public sealed partial class CartStations
         float shock = WorkShakeAt(now, out float phase);
         return new RunCheckpoint {
             StageEntry=stageEntryJson, KingReply=KingReply.Value.ToString(),
+            IntroLine=IntroLine, IntroElapsed=InOperationIntro ? IntroElapsed : 0d,
+            UpperCannon=CaptureUpperCannon(now), UpperCannonGunner=upperGunner != null ? upperGunner.Slot.Value + 1 : 0,
+            CannonCombo=CannonCombo.Value,
             ShockStrength=shock, ShockPhase=phase,
             LooseWheels=Enumerable.Range(0,LooseWheels.Count).Select(i=>LooseWheels[i]).ToArray(),
             SharedCannon=true,
@@ -125,7 +134,7 @@ public sealed partial class CartStations
             int slot = data.StationSlots[i];
             if (slot < 0 || slot >= gameScene.Players.Length) continue;
             var action = (StationAction)i;
-            if (TimingArea.IsCannon(action) && !data.SharedCannon)
+            if (TimingArea.IsCannon(action) && !TimingArea.IsUpper(action) && !data.SharedCannon)
             {
                 if (legacyCannonSlot < 0 || action == StationAction.Cannon) legacyCannonSlot = slot;
             }
@@ -166,6 +175,9 @@ public sealed partial class CartStations
             if (fuseLit) StartFuse(data.FuseRemaining);
             else if (gunner != null && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(data.PostShotRemaining);
         }
+        RestoreUpperCannon(data.UpperCannon, data.UpperCannonGunner, now);
+        CannonCombo.Value = data.CannonCombo;
+        if (InOperationIntro) SetIntroLine(data.IntroLine, data.IntroElapsed);
         Refresh();
     }
 }

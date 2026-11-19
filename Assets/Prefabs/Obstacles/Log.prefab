@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.632653, y: 1.3414634, z: 1}
+  m_LocalScale: {x: 3.265306, y: 2.682927, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -109,7 +109,7 @@ MonoBehaviour:
   damage: 6
   slowFactor: 0.52
   slowSeconds: 1.65
-  hitHalfWidth: 30
+  hitHalfWidth: 60
 --- !u!114 &7379280594054886909
 MonoBehaviour:
   m_ObjectHideFlags: 0
