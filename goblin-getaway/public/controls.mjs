@@ -1,5 +1,5 @@
-import {cannonAimCursor,cannonAimInput,occupiedStation} from './sim.mjs?v=nearest-wheel134';
-import {worldPoint} from './workstation.mjs?v=nearest-wheel134';
+import {cannonAimCursor,cannonAimInput,cannonIndexFor,occupiedStation} from './sim.mjs?v=dual-cannons170';
+import {worldPoint} from './workstation.mjs?v=dual-cannons170';
 
 const WASD=['KeyA','KeyD','KeyW','KeyS'];
 const ARROWS=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
@@ -29,7 +29,7 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
  const keys=new Set(),blockedKeys=new Set(),pointers=new Map();
  let mouseAimPointer=null;
  const state=Object.fromEntries(SLOTS.map(slot=>[slot,{
-   actor:null,role:null,whipSequence:null,drag:null,ax:0,ay:0,lastSample:0,waitForPad:false,padAct:false,padExit:false,
+   actor:null,role:null,cannonIndex:null,whipSequence:null,drag:null,ax:0,ay:0,lastSample:0,waitForPad:false,padAct:false,padExit:false,
    cookPointer:null,waitForCookPad:false
  }]));
  const mapSlot=slot=>isDuo()?slot:active();
@@ -54,7 +54,7 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
    if(button.hasPointerCapture(pointer))button.releasePointerCapture(pointer);
  }
  function resetDirections(slot){
-   if(slot==='p1')mouseAimPointer=null;
+   if(mouseAimPointer?.slot===slot)mouseAimPointer=null;
    const codes=slot==='p2'?ARROWS:isDuo()?WASD:[...WASD,...ARROWS];
    for(const code of codes)if(keys.delete(code))blockedKeys.add(code);
    for(const [pointerId,pointer] of pointers)if(pointer.slot===slot)finish(pointerId);
@@ -65,12 +65,14 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
  function context(slot){
    const s=getState(),actor=mapSlot(slot),player=s.players[actor],local=state[slot];
    const role=occupiedStation(player,s);
-   const changed=local.actor!==actor||local.role!==role;
+   const cannonIndex=role==='gunner'?cannonIndexFor(s,player):null;
+   const changed=local.actor!==actor||local.role!==role||local.cannonIndex!==cannonIndex;
    if(changed){
      if(local.actor!==null)resetDirections(slot);
      local.actor=actor;
      local.role=role;
-     const aim=role==='gunner'?cannonAimCursor(s,player):player;
+     local.cannonIndex=cannonIndex;
+     const aim=role==='gunner'?cannonAimCursor(s,player,cannonIndex):player;
      local.ax=aim?.ax??0;
      local.ay=aim?.ay??0;
      local.lastSample=performance.now();
@@ -119,7 +121,8 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
      (actionDown&&!local.waitForCookPad));
    local.padAct=actionDown;
    local.padExit=exitDown;
-   return {mx,my,ax,ay,aimRole:controlRole(local.role),aimCursor:aiming,whipSequence:local.whipSequence??undefined,cookHeld};
+   return {mx,my,ax,ay,aimRole:controlRole(local.role),aimCannon:local.cannonIndex??undefined,
+     aimCursor:aiming,whipSequence:local.whipSequence??undefined,cookHeld};
  }
  function action(slot){
    if(canPlay()&&!actionButtons[slot].disabled&&context(slot).role!=='cook')onAct(mapSlot(slot),input(slot));
@@ -191,7 +194,7 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
  }
  for(const surface of [canvas,...Object.values(sticks)]){
    for(const name of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(name,e=>{
-     if(mouseAimPointer===e.pointerId)mouseAimPointer=null;
+     if(mouseAimPointer?.id===e.pointerId)mouseAimPointer=null;
      finish(e.pointerId);
    });
  }
@@ -239,27 +242,33 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
  document.addEventListener('keyup',e=>{keys.delete(e.code);blockedKeys.delete(e.code);});
 
  function mouseAim(e){
-   if(e.pointerType!=='mouse'||!(e.buttons&1)||!canPlay())return;
-   const local=context('p1');
-   if(local.role!=='gunner')return;
-   const s=getState(),r=canvas.getBoundingClientRect(),camera=getViews()[0];
-   const point=worldPoint(camera,(e.clientX-r.left)*camera.screenWidth/r.width,(e.clientY-r.top)*camera.height/r.height);
-   if(!point)return;
-   ({ax:local.ax,ay:local.ay}=cannonAimInput(s,point.x,point.y));
+   if(e.pointerType!=='mouse'||!(e.buttons&1)||!canPlay())return false;
+   const views=getViews(),first=views?.[0];
+   if(!first)return false;
+   const rect=canvas.getBoundingClientRect();
+   const x=(e.clientX-rect.left)*first.screenWidth/rect.width;
+   const y=(e.clientY-rect.top)*first.height/rect.height;
+   const captured=mouseAimPointer;
+   const viewIndex=captured?SLOTS.indexOf(captured.slot):views.findIndex(view=>x>=view.start&&x<view.start+view.span);
+   const camera=views[viewIndex],slot=SLOTS[viewIndex];
+   if(!camera||!Number.isFinite(y))return false;
+   const local=context(slot);
+   if(local.role!=='gunner'||captured&&captured!==mouseAimPointer)return false;
+   const point=worldPoint(camera,x,y);
+   if(!point)return false;
+   mouseAimPointer=captured??{id:e.pointerId,slot};
+   ({ax:local.ax,ay:local.ay}=cannonAimInput(getState(),point.x,point.y,local.cannonIndex));
+   return true;
  }
  canvas.addEventListener('pointerdown',e=>{
    if(!canPlay())return;
+   if(e.button===0&&mouseAim(e))return;
    const slot=movementSlot(e);
-   if(e.pointerType==='mouse'&&e.button===0&&slot!=='p2'&&context('p1').role==='gunner'){
-     mouseAimPointer=e.pointerId;
-     mouseAim(e);
-     return;
-   }
    if(slot)startPointer(e,slot,canvas);
  });
  canvas.addEventListener('pointermove',e=>{
    if(pointers.has(e.pointerId))updatePointer(e);
-   else if(e.pointerId===mouseAimPointer)mouseAim(e);
+   else if(e.pointerId===mouseAimPointer?.id)mouseAim(e);
  });
  return {input,readGamepads,clear,action,exit};
 }

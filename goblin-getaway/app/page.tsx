@@ -126,6 +126,10 @@ export default function Home(){return <>
      <circle cx="21" cy="19" r="3.4" fill="#6b503c" stroke="#3a2b26" strokeWidth="1.7"/>
     </svg>
    </div>
+   <div className="campaign-health" id="campaign-health" hidden>
+    <Shield className="campaign-health-icon" aria-hidden="true" focusable="false"/>
+    <progress className="campaign-progress campaign-health-progress" id="campaign-health-progress" max={100} value={100} aria-label="마차 체력"/>
+   </div>
    <RoyalWatch/>
   </div>
   <div id="top-notices" className="top-notices">
@@ -141,7 +145,7 @@ export default function Home(){return <>
    {[0,1,2,3,4].map(index=><span key={index}/>)}
   </div>
   <div className="catapult-alerts" aria-hidden="true">
-   {[0,1].map(pane=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
+   {Array.from({length:6},(_,pane)=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
   </div>
   <div className="controls" role="group" aria-label="가상 조이스틱과 행동 버튼"><PlayerControls id="p1"/><PlayerControls id="p2"/></div>
  </section>

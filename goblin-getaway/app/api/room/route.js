@@ -1,5 +1,5 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, cannonIndexFor, cannonState, isCannonRole, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
@@ -143,23 +143,29 @@ export async function POST(req){
       if(error)return fail(error);
     }else if(op==='exit-station'){
       if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
-      if(!b.role||!leaveStation(state,seat.id,b.role))return respond(snap);
+      const expectedCannon=isCannonRole(b.role)?b.cannonIndex??0:undefined;
+      if(!b.role||!leaveStation(state,seat.id,b.role,expectedCannon))return respond(snap);
     }else if(op==='add-rack-shell'){
       if(b.stage!==state.stage||!sameCampaign||!addRackShell(state))return respond(snap);
     }else if(op==='act'||op==='input'){
       if(state.mode!=='run'||b.stage!==state.stage||!sameCampaign)return respond(snap);
       const tick=Number.isInteger(b.tick)?Math.max(state.tick-12,Math.min(state.tick,b.tick)):state.tick;
-      setInput(state,seat.id,b.input);
+      const input=b.input?.aimRole==='gunner'&&b.input.aimCannon==null?{...b.input,aimCannon:0}:b.input;
+      setInput(state,seat.id,input);
       if(op==='act'){
         const player=state.players[seat.id];
         const role=stationAt(player,state),atRole=!b.role||role===b.role;
         const child=royalActionTarget(state,player,role);
         const sameChild=b.royalId?child?.id===b.royalId:role!=='royal-feed'&&role!=='royal-attention';
         const staleWhip=role==='driver'&&b.input?.whipSequence!==undefined&&b.input.whipSequence!==(player.whipSwing?.sequence??0);
-        if(atRole&&sameChild&&!staleWhip){
-          if(role!=='cleaner')operate(state,seat.id,tick);
-          else if(b.role==='cleaner'&&b.cannonRound===(state.cannonRecoil?.tick??0))operate(state,seat.id,tick,b.taps);
+        let sameCannon=true;
+        if(isCannonRole(role)){
+          const index=cannonIndexFor(state,player);
+          const round=cannonState(state,index).cannonRecoil?.tick??0;
+          const legacyAction=b.cannonIndex==null&&b.cannonRound==null&&role!=='cleaner';
+          sameCannon=b.role===role&&index===(b.cannonIndex??0)&&(legacyAction||b.cannonRound===round);
         }
+        if(atRole&&sameChild&&!staleWhip&&sameCannon)operate(state,seat.id,tick,b.taps);
       }
     }else if(op==='pause'&&snap.host&&['run','paused'].includes(state.mode)){
       state.mode=state.mode==='run'?'paused':'run';

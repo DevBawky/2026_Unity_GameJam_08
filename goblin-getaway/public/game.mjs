@@ -1,20 +1,21 @@
 import {isRoomNumber,isLegacyRoomCode} from './room-number.mjs';
-import {chapterSpec,stageSpec,nextStagePosition} from './campaign.mjs';
+import {chapterSpec,stageSpec,nextStagePosition} from './campaign.mjs?v=wave-density163';
 import {REPORT_OPTIONS,UPGRADE_CARDS,submitReport,voteForCard,voteThreshold,maxDurability,cardCost,canBuyCard} from './intermission.mjs?v=wheel-axle83';
-import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalActionTarget,royalStatusNearby,cryingChildCount,cookingProgress,stopStationInputs,ROLES,WHEELS,hasBrokenAxle,CANNON_CLEAN_TAPS,cannonStation,isCannonRole,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,addRackShell} from './sim.mjs?v=game-sfx139';
-import {cameraViews,createCameraTransition,workInfo} from './workstation.mjs?v=nearest-wheel134';
-import {render} from './scene.mjs?v=cannon-dot-cleanup140';
-import {createControls} from './controls.mjs?v=nearest-wheel134';
+import {initial,begin,PLAYER_IDS,humanIds,setHumanSlots,step,advance,operate,setInput,stationAt,occupiedStation,leaveStation,royalActionTarget,royalStatusNearby,cryingChildCount,cookingProgress,stopStationInputs,ROLES,WHEELS,hasBrokenAxle,CANNON_CLEAN_TAPS,CANNON_IDS,cannonIndexFor,cannonState,cannonStation,isCannonRole,incomingPursuit,playerFloor,CELLAR_FLOOR,feedbackKey,hit,nextStage,restartStage,restartChapter,phase,width,target,catchPhase,HZ,STEP,LANES,roadApproachWarning,activeCatapultRocks,addRackShell} from './sim.mjs?v=bot-ammo176';
+import {cameraViews,cannonLabel,createCameraTransition,workInfo} from './workstation.mjs?v=dual-cannons170';
+import {render} from './scene.mjs?v=dropped-shell175';
+import {createControls} from './controls.mjs?v=dual-cannons170';
 import {EMOTES,EMOTE_BUBBLE_MS,EMOTE_COOLDOWN_MS,emoteByKey,addEmote,recentEmotes} from './emotes.mjs';
 import {createCrewRanking,crewName,normalizeCrewNickname} from './crew-ranking.mjs?v=integer-scores133';
 import {createSfxPlayer} from './sfx.mjs?v=audio-mix155';
 import {createMusicPlayer} from './music.mjs?v=bgm-louder161';
+import {createScreenTransition} from './screen-transition.mjs?v=fast-wipe159';
 const $=id=>document.getElementById(id), all=q=>Array.from(document.querySelectorAll(q));
 const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world');
 const paintInterval=1000/HZ,paintTolerance=.5;
 let s=initial(),mode='practice',myPlayer='p1',room=null,screen='',syncBusy=false,actBusy=false,netFailed=0,lastSync=0,lastTick=performance.now(),accum=0,lastPaint=0,lastStatus='',lastSerial=0,autoPaused=false,terminalSeen='',toastTimer;
-let lastCatapultLanding='';
-let lastCannonLanding='';
+const playedCatapultLandings=new Set();
+const playedCannonLandings=new Set();
 let nextWhimper=0;
 let sound=false;try{sound=localStorage.getItem('gg-sound')==='on';}catch{}
 let timingSound=false;try{timingSound=localStorage.getItem('gg-timing-sound')==='on';}catch{}
@@ -126,30 +127,34 @@ function groundImpactSound(cannon=false){
    thump.stop(beat+.4);
  }catch{}
 }
-function playCatapultLanding(){
- const rock=s.catapult;
- if(s.tick===0)lastCatapultLanding='';
- if(rock?.hit===undefined||s.tick<rock.landAt)return false;
- const landing=[room?.code,s.chapter,s.stage,rock.landAt].join('/');
- if(lastCatapultLanding===landing)return false;
- lastCatapultLanding=landing;
- if(s.tick-rock.landAt>HZ*.45)return false;
- playSfx(rock.hit?'catapult-hit':'catapult-ground');
- return rock.hit;
+function playCatapultLandings(){
+ const rocks=activeCatapultRocks(s);
+ if(s.tick===0||!rocks.length)playedCatapultLandings.clear();
+ let hit=false;
+ for(const rock of rocks){
+   if(rock.hit===undefined||s.tick<rock.landAt||s.tick-rock.landAt>HZ*.45)continue;
+   const landing=[room?.code,s.chapter,s.stage,rock.landAt,rock.salvoIndex??0].join('/');
+   if(playedCatapultLandings.has(landing))continue;
+   playedCatapultLandings.add(landing);
+   playSfx(rock.hit?'catapult-hit':'catapult-ground');
+   hit||=rock.hit;
+ }
+ return hit;
 }
-function playCannonLanding(){
- if(s.tick===0)lastCannonLanding='';
+function playCannonLandings(){
+ if(s.tick===0)playedCannonLandings.clear();
  if(!sound)return;
- const impact=s.cannonImpacts?.at(-1);
- if(!impact||s.tick<impact.tick||s.tick-impact.tick>HZ*.45)return;
- const landing=[room?.code,s.chapter,s.stage,impact.id,impact.tick].join('/');
- if(lastCannonLanding===landing)return;
- lastCannonLanding=landing;
- playSfx('cannon-ground');
+ for(const impact of s.cannonImpacts??[]){
+   if(s.tick<impact.tick||s.tick-impact.tick>HZ*.45)continue;
+   const landing=[room?.code,s.chapter,s.stage,impact.id,impact.tick].join('/');
+   if(playedCannonLandings.has(landing))continue;
+   playedCannonLandings.add(landing);
+   playSfx('cannon-ground');
+ }
 }
 function playLegacyWorldSfx(){
- const catapultHit=playCatapultLanding();
- playCannonLanding();
+ const catapultHit=playCatapultLandings();
+ playCannonLandings();
  if(s.serial!==lastSerial){
    if(s.serial>lastSerial&&!catapultHit)tone(105,.16);
    lastSerial=s.serial;
@@ -221,7 +226,6 @@ function playSimulationSfx(state,silent=false){
    if(Number.isFinite(tick)&&state.tick-tick>HZ*1.25)continue;
    if(playerId&&!localCuePlayer(playerId))continue;
    if(cue==='cook-start'||cue==='cook-stop'&&state.mode!=='run')continue;
-   if(cue==='cannon-fire')sfx.stop('cannon-fuse');
    playSfx(cue,{pan:pan??(playerId?localAudioPan(playerId):undefined),rate});
  }
  return true;
@@ -235,7 +239,7 @@ function stopSustainedSfx(){
 function resetSfx(){
  simulationSfxCursor=0;terminalAudioSeen='';nextWhimper=0;
  previousTimingReady.clear();previousTelescopeUsers.clear();
- lastCatapultLanding='';lastCannonLanding='';lastSerial=0;
+ playedCatapultLandings.clear();playedCannonLandings.clear();lastSerial=0;
  cookingLoopActive=false;sfx.stopAll();
 }
 function updateCookSfx(){
@@ -259,10 +263,15 @@ function playTerminalSfx(state,silent=false){
 }
 let inputBusy=false,lastInputAt=0,lastInputKey='';
 const pendingActs=[];
-const inputKey=input=>[input.aimRole??'',input.whipSequence??'',Number(input.aimCursor===true),Number(input.cookHeld===true),...['mx','my','ax','ay'].map(key=>Math.round(input[key]*90))].join('/');
+const inputKey=input=>[input.aimRole??'',input.aimCannon??'',input.whipSequence??'',Number(input.aimCursor===true),Number(input.cookHeld===true),...['mx','my','ax','ay'].map(key=>Math.round(input[key]*90))].join('/');
 const position=state=>({chapter:state.chapter??1,stage:state.stage});
 const sameStage=(a,b)=>(a.chapter??1)===(b.chapter??1)&&a.stage===b.stage;
+const stationCannon=(state,p,role)=>isCannonRole(role)?cannonIndexFor(state,p):null;
+const cannonRound=(state,index)=>cannonState(state,index).cannonRecoil?.tick??0;
+const stationLabel=(role,index)=>index==null?ROLES[role]:cannonLabel(index)+' · '+ROLES[role];
 const transitionCamera=createCameraTransition();
+const screenTransition=createScreenTransition();
+let holdScenePaint=false;
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const updateCrewRanking=createCrewRanking($('crew-ranking'),$('crew-ranking-list'));
 const crewScores=state=>Object.fromEntries(PLAYER_IDS.map(id=>[id,state.players[id].score??0]));
@@ -270,7 +279,7 @@ let paintedCameras;
 const topNotices=$('top-notices');
 const emoteButtons=all('[data-emote-toggle]'),emoteNotices=$('emote-notices');
 const emotePlayer=slot=>mode==='local'?slot:myPlayer;
-const canEmote=()=>!dlg.open&&['ready','run','paused'].includes(s.mode);
+const canEmote=()=>!screenTransition.active&&!dlg.open&&['ready','run','paused'].includes(s.mode);
 let openEmotes=null,emoteSending=null;
 function closeEmotes(restoreFocus=false){
  if(!openEmotes)return false;
@@ -387,12 +396,27 @@ function updateEmoteDisplay(wall){
  return icons;
 }
 const controls=createControls({
- isDuo:()=>mode==='local',active:()=>myPlayer,canPlay:()=>s.mode==='run'&&!dlg.open,
+ isDuo:()=>mode==='local',active:()=>myPlayer,canPlay:()=>s.mode==='run'&&!dlg.open&&!screenTransition.active,
  getState:()=>s,getViews:()=>paintedCameras,canvas,onAct:useStation,onExit:exitWorkstation,onEscape:handleEscape,onAddShell:addShellToRack
 });
 all('[data-work]').forEach(b=>b.onclick=()=>controls.action(b.dataset.work));
 all('[data-exit]').forEach(b=>b.onclick=()=>controls.exit(b.dataset.exit));
+async function transitionScene(change){
+ if(screenTransition.active)return;
+ controls.clear();
+ holdScenePaint=true;
+ try{
+   await screenTransition.cover();
+   await change();
+   paint(performance.now());
+ }finally{
+   holdScenePaint=false;
+   await screenTransition.reveal();
+   lastTick=performance.now();accum=0;
+ }
+}
 function handleEscape(){
+ if(screenTransition.active)return;
  if(closeEmotes(true)){playSfx('ui-tick');return;}
  if(controls.exit('p1')||(mode==='local'&&controls.exit('p2')))return;
  openScreen('settings',true);
@@ -415,7 +439,10 @@ function closeScreen(menuSound=false){
  dlg.close();
 }
 dlg.addEventListener('close',()=>{screen='';if(autoPaused&&mode!=='online'&&s.mode==='paused')s.mode='run';autoPaused=false;lastTick=performance.now();});
-dlg.addEventListener('cancel',()=>playSfx('ui-tick'));
+dlg.addEventListener('cancel',event=>{
+ if(screenTransition.active)event.preventDefault();
+ else playSfx('ui-tick');
+});
 $('close-dialog').onclick=()=>closeScreen(true);dlg.addEventListener('click',e=>{if(e.target===dlg){const r=dlg.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeScreen(true);}});
 function title(h,p){return '<h2 class="modal-title">'+h+'</h2><p class="intro">'+p+'</p>';}
 function option(id,tag,name,desc,tail='›'){return '<button class="option" data-choice="'+id+'"><span class="token">'+tag+'</span><span><b>'+name+'</b><small>'+desc+'</small></span><span class="end">'+tail+'</span></button>';}
@@ -459,9 +486,10 @@ function reportPanel(progress,canLead){
      '<p>“'+escapeHtml(progress.report.reply)+'”</p></section>';
  }
  const ammo=s.ammo;
+ const loaded=CANNON_IDS.filter(index=>cannonState(s,index).ammo.loaded).length;
  const details={
    damage:'내구도 '+durability()+' · '+wheelCondition(),
-   supplies:'남은 포탄 '+(ammo.stock+ammo.rack+Number(ammo.loaded))+'발 · 손실 '+ammo.lost+'발',
+   supplies:'남은 포탄 '+(ammo.stock+ammo.rack+loaded)+'발 · 손실 '+ammo.lost+'발',
  };
  const choices=REPORT_OPTIONS.map(option=>
    '<button type="button" class="option report-choice" data-choice="report" data-report="'+escapeHtml(option.id)+'"><span><b>'+escapeHtml(option.label)+'</b><small>'+escapeHtml(details[option.id]??option.description)+'</small></span><span class="end">보고</span></button>'
@@ -553,15 +581,15 @@ function drawDialog(){
  if(screen==='guide'){
    body.innerHTML=title('갑판 조작 가이드','화면 왼쪽 절반을 누른 채 원하는 방향으로 끌면 스틱이 움직입니다. 빈 작업 원에 들어가 오른쪽 버튼으로 작업하세요. 이탈을 누르면 갑판 시점으로 돌아갑니다.')+
    row('마차 맨 앞 마부석','왼쪽 스틱을 위아래로 밀어 마차를 조종하세요. 채찍질할수록 두 말의 분노가 차오르고 마차가 빨라집니다.')+
-   row('분노 게이지','채찍질을 멈추고 2초가 지나면 분노가 서서히 줄어듭니다. 100%에 도달하면 5초간 더 빨라진 뒤, 말이 지쳐 12초간 급격히 느려집니다.')+
+   row('분노 게이지','채찍질을 멈추고 1초가 지나면 분노가 서서히 줄어듭니다. 100%에 도달하면 5초간 더 빨라진 뒤, 말이 지쳐 12초간 급격히 느려집니다.')+
    row('앞길 장애물','화면 왼쪽에 빨간 느낌표가 뜨면 같은 높이에서 장애물이 나타납니다. 표시가 위쪽이면 아래로, 아래쪽이면 위로 마차를 움직이세요.')+
-   row('투석기 바위','다가오는 바위 그림자에 테두리가 생기면 착탄 지점이 길 위에 고정됩니다. 마차를 위아래로 움직여 피하거나, 충분히 가속해 착탄점을 앞지르세요.')+
+   row('투석기 바위','다가오는 바위 그림자에 테두리가 생기면 착탄 지점이 길 위에 고정됩니다. 바위 한 개는 위아래로 움직여 피하세요. 바위가 2~3개 연달아 날아오면 마부석에서 채찍질해 부스트로 착탄점을 앞지르세요.')+
    row('1층과 지하층','마차 6시 반 방향의 계단으로 들어가면 층이 바뀝니다. 반대쪽 층에서도 같은 위치의 계단을 이용합니다. 바로 돌아오려면 계단 밖으로 한 걸음 나왔다가 다시 들어가세요.')+
    row('타이밍 맞추기','캐릭터 위에 표시된 행동을 확인하세요. 캐릭터 둘레의 바늘이 12시 방향 초록 구간에 들어와 지금!이 뜨면 행동 버튼을 누르세요.')+
    row('이모티콘과 팀 요청','이모티콘 목록에서 선택하거나 PC에서 숫자키 1~7을 눌러 바로 보낼 수 있습니다. 한 화면 2인에서는 P2가 자기 목록을 열고 숫자키를 사용합니다. 팀 요청은 다른 층에 있는 동료에게도 화면 위쪽에 표시됩니다.')+
    row('포탄 운반','지하층 포탄 더미에서 한 발을 들고 계단으로 1층에 올라오세요. 마차 오른쪽 아래의 적재 장판에 닿으면 자동으로 내려놓습니다. 포탄이 미끄러지면 원형 게이지의 색 구간에서 붙잡으세요.')+
-   row('포신 청소 · 노란 원','발사 전에는 청소, 장전, 발사 순서로 하나씩 열립니다. 대포 옆 노란 원에서 행동 버튼을 연타해 청소를 끝내세요. 발사하면 청소부터 다시 시작합니다.')+
-   row('장전 · 초록 원','청소를 마치고 적재칸에 포탄이 있으면 장전할 수 있습니다. 바늘이 초록 구간에 들어올 때 누르세요. 실패하면 포탄 한 발이 마차 밖으로 떨어집니다. 한 발을 시도하면 자동으로 장전대에서 이탈합니다.')+
+   row('포신 청소 · 노란 원','동료와 위·아래 대포를 한 대씩 맡을 수 있습니다. 대포 옆 노란 원에서 행동 버튼을 연타해 청소를 끝내세요. 발사한 대포는 청소부터 다시 시작합니다.')+
+   row('장전 · 초록 원','청소를 마치면 두 대포가 함께 쓰는 적재칸에서 포탄을 가져와 장전할 수 있습니다. 바늘이 초록 구간에 들어올 때 누르세요. 실패하면 포탄 한 발이 마차 밖으로 떨어집니다.')+
    row('포격 · 주황 원','왼쪽 스틱으로 착탄점을 옮기고 오른쪽 버튼으로 점화하세요. 심지가 타는 2.5초 동안에도 조준할 수 있습니다. 멀리 조준할수록 조준률이 낮아지고 탄착 범위가 넓어집니다. 포탄은 직선으로 적을 관통하고 착탄점 오른쪽으로 충격파를 일으킵니다.')+
    row('왕자와 공주','아이에게 가까이 가면 관심과 배고픔, 지금 상태를 확인할 수 있습니다. 왕자는 지하층 간식 제작대를 자주 찾고, 공주는 포탄 적재칸에서 포탄을 갖고 놀다 떨어뜨릴 수 있습니다. 아이를 안아 올리고 1층의 자기 좌석으로 데려오세요.')+
    row('아이들의 울음','우는 아이가 많을수록 졸개의 이동이 느려지고 간식 만들기와 달래기가 오래 걸립니다. 타이밍 바늘은 일정하게 돌고 초록색 성공 구간이 좁아집니다.')+
@@ -722,6 +750,7 @@ function receiveRoomSfx(data){
 }
 function accept(data,latency=0){
  if(!room||data.code!==room.code||data.rev<room.rev||(data.rev===room.rev&&data.stamp<room.stamp))return;
+ const alreadyInRoom=room.rev>=0;
  const beforeResult=screen==='result'?resultSignature():null;
  const stageChanged=!sameStage(data.state,s);
  if(data.state.mode!=='run'||stageChanged)pendingActs.length=0;
@@ -731,6 +760,10 @@ function accept(data,latency=0){
  room.receivedAt=performance.now()-Math.min(350,latency/2);
  receiveRoomSfx(data);
  advance(s,Math.min(12,Math.round(latency*HZ/2000)));netFailed=0;lastTick=performance.now();accum=0;
+ if(alreadyInRoom&&prevMode==='ready'&&s.mode==='run'&&!screenTransition.active){
+   void transitionScene(()=>{if(s.mode==='run'&&screen==='crew')closeScreen();});
+   return;
+ }
  if(dlg.open&&screen==='crew'&&prevRoster!==crewRosterSignature(s,room.captain))drawDialog();
  if(screen==='result'&&s.mode==='run')closeScreen();
  else if(beforeResult!==null&&beforeResult!==resultSignature())refreshResult();
@@ -781,10 +814,16 @@ async function addShellToRack(){
  }catch(error){if(room===currentRoom)toast(error.message);}
 }
 async function start(testMode=false){
+ if(screenTransition.active)return;
  if(testMode&&(mode==='online'||s.mode!=='ready'))return;
  if(s.mode==='clear'||s.mode==='lost'){openScreen('result',true);return;}
- if(mode==='online'){if(!room.host){errorMsg('방장이 출발과 일시 정지를 맡습니다.');return;}await send(s.mode==='ready'?'start':'pause');}
- else if(s.mode==='ready'){begin(s,{testMode});playSfx('start');}
+ if(mode==='online'){
+   if(!room.host){errorMsg('방장이 출발과 일시 정지를 맡습니다.');return;}
+   if(s.mode==='ready')await transitionScene(()=>room?.host&&s.mode==='ready'&&send('start'));
+   else await send('pause');
+ }else if(s.mode==='ready'){
+   await transitionScene(()=>{begin(s,{testMode});playSfx('start');});
+ }
  else{
    s.mode=s.mode==='run'?'paused':'run';
    if(s.mode==='paused'){
@@ -806,6 +845,7 @@ function useStation(id,input){
  if(s.mode!=='run'||dlg.open||pendingActs[0]?.op==='exit-station')return;
  const p=s.players[id],role=stationAt(p,s);
  if(!role||role==='cook')return;
+ const cannonIndex=stationCannon(s,p,role);
  setInput(s,id,input);
  const info=workInfo(s,p,role);
  if(!info.action||info.blocked){
@@ -815,14 +855,14 @@ function useStation(id,input){
  const royalId=royalActionTarget(s,p,role)?.id??null;
  if(mode==='online'){
    const now=performance.now();
-   const act={op:'act',tick:s.tick,...position(s),input,role,royalId,queuedAt:now};
+   const round=cannonIndex==null?undefined:cannonRound(s,cannonIndex);
+   const act={op:'act',tick:s.tick,...position(s),input,role,royalId,cannonIndex,cannonRound:round,queuedAt:now};
    if(role==='cleaner'){
-     const cannonRound=s.cannonRecoil?.tick??0;
      const queued=pendingActs[0];
-     const sameRound=queued?.role===role&&sameStage(queued,s)&&queued.cannonRound===cannonRound;
+     const sameRound=queued?.role===role&&sameStage(queued,s)&&queued.cannonIndex===cannonIndex&&queued.cannonRound===round;
      // Keep each press while a previous request is in flight.
      const taps=sameRound?Math.min(CANNON_CLEAN_TAPS,queued.taps+1):1;
-     pendingActs.splice(0,pendingActs.length,{...act,cannonRound,taps});
+     pendingActs.splice(0,pendingActs.length,{...act,taps});
    }else{
      if(role!=='driver')pendingActs.length=0;
      if(pendingActs.length<4)pendingActs.push(act);
@@ -831,7 +871,8 @@ function useStation(id,input){
  }
  if(!operate(s,id))return;
  if(Array.isArray(s.sfxEvents))return;
- const msg=s.players[id].note||s[feedbackKey(role)+'Msg']||'';
+ const feedbackState=cannonIndex==null?s:cannonState(s,cannonIndex);
+ const msg=s.players[id].note||feedbackState[feedbackKey(role)+'Msg']||'';
  tone(msg.includes('실패')||msg.includes('놓쳤습니다')?130:460,.075);
 }
 function exitWorkstation(id){
@@ -841,7 +882,7 @@ function exitWorkstation(id){
  if(mode!=='online'){leaveStation(s,id);return;}
  pendingActs.length=0;
  const now=performance.now();
- pendingActs.push({op:'exit-station',...position(s),role,queuedAt:now});
+ pendingActs.push({op:'exit-station',...position(s),role,cannonIndex:stationCannon(s,p,role),queuedAt:now});
  pumpInput(now,controls.input('p1'));
 }
 async function pumpInput(now,input){
@@ -855,11 +896,12 @@ async function pumpInput(now,input){
    const exiting=next.op==='exit-station';
    const cleaning=next.role==='cleaner'&&!exiting;
    const staleWhip=next.role==='driver'&&!exiting&&next.input?.whipSequence!==(player.whipSwing?.sequence??0);
-   const currentRound=!cleaning||next.cannonRound===(s.cannonRecoil?.tick??0);
    const recent=cleaning||now-next.queuedAt<=600;
    const role=exiting?occupiedStation(player,s):currentRole;
+   const cannonIndex=stationCannon(s,player,role);
+   const currentRound=exiting||cannonIndex==null||next.cannonRound===cannonRound(s,cannonIndex);
    const sameRole=next.role===role||(exiting&&isCannonRole(next.role)&&isCannonRole(role));
-   if(sameStage(next,s)&&currentRound&&!staleWhip&&sameRole&&(exiting||recent))break;
+   if(sameStage(next,s)&&currentRound&&!staleWhip&&sameRole&&next.cannonIndex===cannonIndex&&(exiting||recent))break;
    pendingActs.shift();
  }
  const act=pendingActs.shift();
@@ -872,7 +914,9 @@ async function pumpInput(now,input){
    if(act?.tick!==undefined)extra.tick=act.tick;
    if(act?.role)extra.role=act.role;
    if(act?.royalId)extra.royalId=act.royalId;
-   if(act?.taps!==undefined){extra.taps=act.taps;extra.cannonRound=act.cannonRound;}
+   if(act?.cannonIndex!=null)extra.cannonIndex=act.cannonIndex;
+   if(act?.cannonRound!==undefined)extra.cannonRound=act.cannonRound;
+   if(act?.taps!==undefined)extra.taps=act.taps;
    const data=await transport(act?.op??'input',extra);
    if(room?.token===token)accept(data,performance.now()-now);
  }catch(e){lastInputKey='';if(act){toast(e.message);playSfx('room-error');}}
@@ -903,12 +947,21 @@ function clockText(seconds){
  return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
 }
 function campaignHud(playing){
- const showRoute=!s.testMode&&(playing||s.mode==='clear');
+ const showHealth=playing||s.mode==='clear'||s.mode==='lost';
+ const showRoute=!s.testMode&&showHealth;
  const showTest=playing&&!!s.testMode;
  const route=$('campaign-route');
- updateProperty($('campaign-hud'),'hidden',!showRoute&&!showTest);
+ updateProperty($('campaign-hud'),'hidden',!showHealth&&!showTest);
  updateProperty($('test-mode-label'),'hidden',!showTest);
  updateProperty(route,'hidden',!showRoute);
+ updateProperty($('campaign-health'),'hidden',!showHealth);
+ if(showHealth){
+   const health=$('campaign-health-progress'),max=maxDurability(s);
+   const value=Math.max(0,Math.min(max,s.hp));
+   updateProperty(health,'max',max);
+   updateProperty(health,'value',value);
+   updateAttribute(health,'aria-valuetext',Math.ceil(value)+' / '+max);
+ }
  const left=Math.max(0,s.goal-s.distance);
  const remaining=s.goal>0?Math.min(100,left/s.goal*100):0;
  if(showRoute){
@@ -941,14 +994,17 @@ const crewRankingBox=$('crew-ranking');
 const playTools=$('settings-button').parentElement;
 let playToolsBounds=null;
 let royalRequestAvoid=[];
+let crewRankingBounds=null;
 function measureTopHud(){
  const campaign=campaignHudBox.getBoundingClientRect();
  const tools=playTools.getBoundingClientRect(),world=canvas.getBoundingClientRect();
+ const ranking=crewRankingBox.getBoundingClientRect();
  campaignHudBottom=campaign.bottom;
  playToolsBounds={left:tools.left-world.left,bottom:tools.bottom-world.top};
+ crewRankingBounds=ranking.width&&ranking.height?{left:ranking.left-world.left,bottom:ranking.bottom-world.top}:null;
  if(campaignHudBottom)updateStyle(topNotices,'--campaign-notice-floor',campaignHudBottom+6+'px');
  else topNotices.style.removeProperty('--campaign-notice-floor');
- royalRequestAvoid=[campaign,tools,crewRankingBox.getBoundingClientRect(),topNotices.getBoundingClientRect()]
+ royalRequestAvoid=[campaign,tools,ranking,topNotices.getBoundingClientRect()]
    .filter(rect=>rect.width>0&&rect.height>0)
    .map(({left,top,right,bottom})=>({left:left-world.left,top:top-world.top,right:right-world.left,bottom:bottom-world.top}));
 }
@@ -970,8 +1026,9 @@ function updateLocalSfx(jobs,cameras,anchors,running){
  if(running){
    for(const job of jobs){
      if(!job.ready||!anchors[job.id])continue;
-     timingReady.set(job.id,job.role);
-     if(timingSound&&previousTimingReady.get(job.id)!==job.role)
+     const station=job.cannonIndex==null?job.role:job.role+':'+job.cannonIndex;
+     timingReady.set(job.id,station);
+     if(timingSound&&previousTimingReady.get(job.id)!==station)
        playSfx('timing-ready',{gain:.58,pan:localAudioPan(job.id)});
    }
    for(const id of telescopeUsers){
@@ -988,7 +1045,7 @@ function showTimingPrompt(slot,job,anchors,running){
  const {prompt,band,needleEl,text,feedback}=timingPrompts[slot],anchor=job&&anchors[job.id];
  updateProperty(prompt,'hidden',!job?.timed||!anchor);
  if(prompt.hidden)return;
- const {p,role,info,needle,ready}=job;
+ const {p,role,info,needle,ready,feedbackState}=job;
  const {steadyX:x,steadyY:y,steadyScale:scale,left,right,top,bottom}=anchor;
  const radius=Math.max(24,Math.min(scale*29,x-left-8,right-x-8,y-top-54,bottom-y-20));
  const labelInset=Math.min(106,(right-left)/2);
@@ -1008,7 +1065,7 @@ function showTimingPrompt(slot,job,anchors,running){
  updateAttribute(band,'transform','rotate('+(-90-bandPercent*1.8)+' 50 50)');
  updateAttribute(needleEl,'transform','rotate('+((needle-target(s,role))*360)+' 50 50)');
  label(text,!running?info.action+' · 일시 정지':(ready?'지금! ':'초록 구간에서 ')+info.action);
- const result=p.noteUntil>s.tick&&p.note===s[feedbackKey(role)+'Msg']?p.note:'';
+ const result=p.noteUntil>s.tick&&p.note===feedbackState[feedbackKey(role)+'Msg']?p.note:'';
  updateProperty(feedback,'hidden',!result);
  label(feedback,result);
 }
@@ -1026,9 +1083,9 @@ const workProgressLabels={
  'horse-rage':'분노 게이지',
  'cannon-accuracy':'조준률','cannon-cleaning':'포신 청소 진행도',
 };
-function showWorkNotice(slot,job,duo){
+function showWorkNotice(slot,job,duo,salvo){
  const notice=workNotices[slot],{bubble,player}=notice;
- const info=job?.info;
+ const info=salvo?{...job.info,hint:`바위 ${salvo}연발 · ${job.role==='driver'?'채찍으로 부스트':'마부석에서 부스트'}`}:job?.info;
  updateProperty(bubble,'hidden',!info?.hint);
  if(bubble.hidden)return;
  updateProperty(player,'hidden',!duo);
@@ -1118,13 +1175,15 @@ function hud(cameras,{anchors,catapultAlerts}){
    isLocal:id=>id===myPlayer||duo&&id==='p2',reduceMotion:reducedMotion.matches});
  const jobs=(duo?hudSlots:[myPlayer]).map(id=>{
    const p=s.players[id],role=playing?stationAt(p,s):null;
+   const cannonIndex=stationCannon(s,p,role),feedbackState=cannonIndex==null?s:cannonState(s,cannonIndex);
    const info=role?workInfo(s,p,role):null,timed=!!info&&!info.mode;
    const needle=role==='catch'?catchPhase(p,s.tick):timed?phase(s,role):0;
-   const ready=timed&&running&&!info.blocked&&hit(s,role,needle)&&(role==='catch'||!(s[feedbackKey(role)+'Cd']>s.tick));
-   return {id,p,role,info,timed,needle,ready,floor:playerFloor(p)};
+   const ready=timed&&running&&!info.blocked&&hit(s,role,needle)&&(role==='catch'||!(feedbackState[feedbackKey(role)+'Cd']>s.tick));
+   return {id,p,role,info,timed,needle,ready,cannonIndex,feedbackState,floor:playerFloor(p)};
  });
  updateLocalSfx(jobs,cameras,anchors,running&&!dlg.open&&netFailed<2);
  const outside=cameras.some(view=>view.floor!==CELLAR_FLOOR);
+ const salvo=playing&&activeCatapultRocks(s).find(rock=>rock.salvo&&rock.landAt>s.tick);
  const sceneLabel=outside&&cameras.every(view=>view.floor!==CELLAR_FLOOR)?'왼쪽을 향해 달리는 마차와 뒤에서 쫓아오는 왕국군':outside?'마차 1층과 지하층 분할 화면':'마차 지하층 내부';
  const roadWarning=cameras.map(view=>roadApproachWarning(s,view)).find(Boolean);
  const roadNotice=roadWarning?' · 앞길 '+(roadWarning.y<LANES[1]?'위쪽':'아래쪽')+'에 장애물 등장 예정':'';
@@ -1132,14 +1191,16 @@ function hud(cameras,{anchors,catapultAlerts}){
  const pursuitNotice=pursuing?' · 오른쪽에서 왕국군 접근 중':'';
  updateCatapultAlerts(catapultAlerts);
  updateRoyalCries(running);
- const catapultNotice=catapultAlerts.length?' · 투석기 착탄 위험':'';
+ const catapultNotice=outside&&salvo?' · 투석기 연속 착탄 위험 · 말을 부스트해 피하세요':catapultAlerts.length?' · 투석기 착탄 위험':'';
  const telescopeNotice=cameras.some(view=>view.telescope)?' · 망원경으로 마차 뒤쪽 관찰 중':'';
- updateAttribute(canvas,'aria-label',sceneLabel+roadNotice+pursuitNotice+catapultNotice+telescopeNotice);
+ const comboNotice=playing&&s.cannonCombo?.count>=2?' · 대포 콤보 '+s.cannonCombo.count:'';
+ updateAttribute(canvas,'aria-label',sceneLabel+roadNotice+pursuitNotice+catapultNotice+telescopeNotice+comboNotice);
  $('desk').classList.toggle('focusing',focused);canvas.parentElement.classList.toggle('split',cameras.length===2);
  for(const [i,slot] of hudSlots.entries()){
    const job=jobs[i];
    showTimingPrompt(slot,job,anchors,running);
-   showWorkNotice(slot,job,duo);
+   const canWarn=job&&job.floor!==CELLAR_FLOOR&&(job.role==='driver'||!job.info?.hint);
+   showWorkNotice(slot,job,duo,canWarn?salvo?.salvo:undefined);
  }
  showRoyalWatch(playing?jobs:[],duo);
  campaignHud(playing);
@@ -1167,10 +1228,14 @@ function hud(cameras,{anchors,catapultAlerts}){
      const human=humans.includes(id);
      label($(id+'-crew-name'),human?(names?.[id]||(id===myPlayer?'내 졸개':crewName(names,id))):'자동 동료');
      const role=stationAt(p,s),assignment=role||(!human?p.job:null);
-     const activity=p.ball?'포탄 운반 중':assignment?.startsWith('royal-')?'아이 돌봄':ROLES[assignment]?(ROLES[assignment]+(role?'':' 이동 중')):'';
+     const work=stationLabel(assignment,stationCannon(s,p,role));
+     const activity=p.ball?'포탄 운반 중':assignment?.startsWith('royal-')?'아이 돌봄':work?work+(role?'':' 이동 중'):'';
      label($(id+'-crew-job'),activity?floorName(playerFloor(p))+' · '+activity:floorName(playerFloor(p)));
    }
-   const cannonStatus={cleaner:'포신 청소 필요',loader:'장전 대기',gunner:'대포 장전됨'}[cannonStation(s)];
+   const cannonStatus=CANNON_IDS.map(index=>{
+     const status={cleaner:'청소 필요',loader:'장전 대기',gunner:cannonState(s,index).fuse.end?'점화 중':'장전됨'};
+     return cannonLabel(index)+' '+status[cannonStation(s,index)];
+   }).join(' · ');
    const pileStock=s.testMode?'무제한':s.ammo.stock+'발';
    label($('ammo-readout'),'지하층 포탄 더미 '+pileStock+' · 1층 적재칸 '+s.ammo.rack+'발 · '+cannonStatus+' · 손실 '+s.ammo.lost+'발');
    const broken=WHEELS[s.wheel.broken];
@@ -1179,7 +1244,7 @@ function hud(cameras,{anchors,catapultAlerts}){
    label($('wheel-readout'),wheelCondition()+(broken?' · '+broken.name+' · '+wheelStep:''));
  }
  updateProperty(playerHud.p2.pads,'hidden',!duo);playerHud.p1.pads.parentElement.classList.toggle('duo',duo);
- for(const [i,{id,p,role,info,ready,floor}] of jobs.entries()){
+ for(const [i,{id,p,role,info,ready,floor,cannonIndex}] of jobs.entries()){
    const {ident,stick,stickLabel,action,exit,location,context,hint}=playerHud[hudSlots[i]],playerName=id.toUpperCase();
    const seat=playing?occupiedStation(p,s):null;
    const atDriver=seat==='driver',atGun=seat==='gunner';
@@ -1196,7 +1261,7 @@ function hud(cameras,{anchors,catapultAlerts}){
    updateProperty(exit,'hidden',!seat);
    updateProperty(exit,'disabled',!running);
    label(ident,playerName);ident.classList.toggle('second',id==='p2');
-   label(location,ROLES[role]||floorName(floor));
+   label(location,stationLabel(role,cannonIndex)||floorName(floor));
    const note=p.noteUntil>s.tick?p.note:'';
    context.classList.toggle('visible',running&&!role&&!!note);
    label(hint,note);
@@ -1226,11 +1291,11 @@ function paint(now){
  const reduceMotion=reducedMotion.matches;
  const targets=cameraViews(s,mode==='local',myPlayer,canvasSize.width,canvasSize.height,reduceMotion);
  paintedCameras=transitionCamera(targets,now,reduceMotion);
- hud(paintedCameras,render(canvas,s,now,paintedCameras,updateEmoteDisplay(now),canvasSize,sceneScale,playToolsBounds,royalRequestAvoid));
+ hud(paintedCameras,render(canvas,s,now,paintedCameras,updateEmoteDisplay(now),canvasSize,sceneScale,playToolsBounds,royalRequestAvoid,crewRankingBounds));
 }
 function frame(now){
  const dt=Math.min(.2,(now-lastTick)/1000);lastTick=now;
- if(s.mode==='run'&&!(mode==='online'&&netFailed>=2)){
+ if(s.mode==='run'&&!screenTransition.active&&!(mode==='online'&&netFailed>=2)){
    const gamepads=controls.readGamepads();
    const first=controls.input('p1',gamepads),second=mode==='local'?controls.input('p2',gamepads):null;
   if(dlg.open){first.mx=first.my=0;if(second)second.mx=second.my=0;}
@@ -1243,8 +1308,15 @@ function frame(now){
   }
  }
  if(room&&now-lastSync>(s.mode==='run'?350:750))sync();
+ const terminal=terminalKey(s);
+ if(!terminal)terminalSeen='';
+ else if(terminal!==terminalSeen&&!screenTransition.active){
+   terminalSeen=terminal;
+   campaignHud(false);
+   void transitionScene(()=>{if(terminalKey(s)===terminal)openScreen('result');});
+ }
  const paintElapsed=now-lastPaint;
- if(paintElapsed>=paintInterval-paintTolerance){
+ if(!holdScenePaint&&paintElapsed>=paintInterval-paintTolerance){
    // Keep the paint clock's phase when the display interval is not a divisor of 30 Hz.
    lastPaint+=Math.floor((paintElapsed+paintTolerance)/paintInterval)*paintInterval;
    paint(now);
@@ -1256,9 +1328,6 @@ function frame(now){
  }
  updateCookSfx();
  playRoyalWhimper(now);
- const terminal=terminalKey(s);
- if(terminal&&terminal!==terminalSeen)openScreen('result');
- terminalSeen=terminal;
  syncMusic();
  requestAnimationFrame(frame);
 }

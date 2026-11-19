@@ -1,4 +1,4 @@
-import {stationAt,atTelescope,horseRageStatus,royalTarget,royalActionTarget,canGiveRoyalAttention,royalBoredHint,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,SUPPLY_PILE,WHEELS,CELLAR,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_VIEW_RIGHT_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,isCannonRole,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=nearest-wheel134';
+import {stationAt,atTelescope,horseRageStatus,royalTarget,royalActionTarget,canGiveRoyalAttention,royalBoredHint,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,SUPPLY_PILE,WHEELS,CELLAR,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_VIEW_RIGHT_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,cannonIndexFor,cannonMount,cannonState,isCannonRole,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=dual-cannons170';
 
 const isRoyalRole=role=>['royal-soothe','royal-pickup','royal-carry','royal-seat','royal-attention'].includes(role);
 const isSpareWheelRole=role=>['wheel-missing','wheel-pickup','wheel-carry','wheel-return'].includes(role);
@@ -16,6 +16,7 @@ const driverHints={
  boost:'분노 폭주 · 추가 가속',
  slow:'지침 · 이동 속도 감소',
 };
+export const cannonLabel=index=>index===1?'위쪽 대포':'아래쪽 대포';
 
 function overviewCamera(base){
  const {span,height,role,telescope}=base;
@@ -57,16 +58,17 @@ export function cameraViews(s,duo,player,pixelWidth=1200,pixelHeight=350,reduced
  const views=ids.map(id=>{
    const p=s.players[id],floor=playerFloor(p);
    const role=playing?stationAt(p,s):null;
+   const cannonIndex=isCannonRole(role)?cannonIndexFor(s,p):null;
    const telescope=playing&&atTelescope(p);
    const shot=role==='cleaner'?cannonAfterShot(s,p):null;
    const recoilReturn=shot?Math.max(0,Math.min(1,(s.tick-shot.tick-CANNON_VIEW_HOLD_TICKS)/CANNON_VIEW_RETURN_TICKS)):null;
    const overview=isRoyalRole(role)||isSpareWheelRole(role)||role==='royal-feed'||role==='food-carry'||(floor===CELLAR_FLOOR&&role==='carry');
-   return {id,p,floor,role:overview||telescope?null:role,recoilReturn,telescope};
+   return {id,p,floor,role:overview||telescope?null:role,cannonIndex,recoilReturn,telescope};
  });
  const count=duo&&(views.some(view=>view.role||view.telescope)||views[0].floor!==views[1].floor)?2:1;
- return views.slice(0,count).map(({id,p,floor,role,recoilReturn,telescope},i)=>{
+ return views.slice(0,count).map(({id,p,floor,role,cannonIndex,recoilReturn,telescope},i)=>{
    const span=screenWidth/count;
-   const base={id,localPlayers:count===1?ids:[id],role,telescope,floor,span,height,screenWidth,start:i*span};
+   const base={id,localPlayers:count===1?ids:[id],role,cannonIndex,telescope,floor,span,height,screenWidth,start:i*span};
    if(floor===CELLAR_FLOOR){
      const supply=role==='supply';
      const focusWidth=supply?supplyViewRight-supplyViewLeft:120;
@@ -79,11 +81,12 @@ export function cameraViews(s,duo,player,pixelWidth=1200,pixelHeight=350,reduced
    if(role==='gunner')return gunnerCamera(base);
    const carrying=role==='carry'||role==='catch';
    const destination=role==='carry'?STATIONS.rack:null;
+   const mount=cannonIndex===null?null:cannonMount(s,cannonIndex);
    // Leave room for the pile beside the rack pad.
    const carryZoom=destination?Math.min(3,span/(Math.abs(p.x-destination.x)+112),height/(Math.abs(p.y-destination.y)+84)):3;
-   const zoom=carrying?carryZoom:4;
-   const cx=destination?(p.x+destination.x)/2:p.x;
-   const cy=s.y+(destination?(p.y+destination.y)/2:p.y);
+   const zoom=carrying?carryZoom:mount?Math.min(4,span/(mount.x-p.x+125),height/(Math.abs(mount.y-p.y)+108)):4;
+   const cx=destination?(p.x+destination.x)/2:mount?(p.x+mount.x+22)/2:p.x;
+   const cy=s.y+(destination?(p.y+destination.y)/2:mount?(p.y+mount.y)/2:p.y);
    const target={...base,zoom,left:cx-span/(2*zoom),top:cy-height*.48/zoom};
    if(reducedMotion||recoilReturn===null)return target;
    // Keep the work controls on the cleaning step while the camera follows the shot.
@@ -106,7 +109,7 @@ export function createCameraTransition(){
      if(target.cannonReturning)return {view:target};
 
      let transition=prior.transition;
-     if(previous.role!==target.role||previous.telescope!==target.telescope||previous.span!==target.span){
+     if(previous.role!==target.role||previous.cannonIndex!==target.cannonIndex||previous.telescope!==target.telescope||previous.span!==target.span){
        transition={start:now,zoom:previous.zoom,...cameraCenter(previous),blendViewport:isCannonRole(previous.role)||isCannonRole(target.role)};
      }
      if(!transition||now-transition.start>=cameraTransitionMs)return {view:target};
@@ -127,13 +130,21 @@ export function workInfo(s,p,role){
    return {mode:'whip',action:'채찍질',color:'#bb91d9',hint:driverHints[phase],blocked,
      progress,progressKind:'horse-rage',ragePhase:phase,seconds:blocked?seconds:undefined};
  }
- if(role==='cleaner')return {mode:'mash',color:'#e9cd82',action:'포신 청소',
-   hint:'행동 버튼을 연타하세요',progress:s.ammo.cleaning/CANNON_CLEAN_TAPS,progressKind:'cannon-cleaning'};
- if(role==='gunner'){
+ if(isCannonRole(role)){
+   const index=cannonIndexFor(s,p)??0;
+   const name=cannonLabel(index);
+   const cannon=cannonState(s,index);
+   if(role==='cleaner')return {mode:'mash',color:'#e9cd82',action:'포신 청소',
+     hint:name+' · 행동 버튼을 연타하세요',progress:cannon.ammo.cleaning/CANNON_CLEAN_TAPS,progressKind:'cannon-cleaning'};
+   if(role==='loader'){
+     if(canLoad(s,index))return {color:'#a7d6aa',action:'장전',hint:name};
+     return {color:'#a7d6aa',action:'장전 대기',mode:'waiting',blocked:true,
+       hint:name+' · 적재칸에 포탄을 가져오세요'};
+   }
    const info={mode:'fuse',color:'#f4b46d'};
-   const accuracy={progress:cannonAim(s,p).accuracy,progressKind:'cannon-accuracy'};
-   if(s.fuse.end>0)return {...info,...accuracy,action:'점화 중',hint:'착탄점을 조정하세요',seconds:(s.fuse.end-s.tick)/HZ,blocked:true};
-   return {...info,...accuracy,action:'점화',hint:'왼쪽 스틱으로 착탄점을 맞추세요'};
+   const accuracy={progress:cannonAim(s,p,index).accuracy,progressKind:'cannon-accuracy'};
+   if(cannon.fuse.end>0)return {...info,...accuracy,action:'점화 중',hint:name+' · 착탄점을 조정하세요',seconds:(cannon.fuse.end-s.tick)/HZ,blocked:true};
+   return {...info,...accuracy,action:'점화',hint:name+' · 왼쪽 스틱으로 착탄점을 맞추세요'};
  }
  if(role==='carry'){
    const downstairs=playerFloor(p)===CELLAR_FLOOR;
@@ -152,11 +163,6 @@ export function workInfo(s,p,role){
      hint:downstairs?'간식을 들고 1층으로 올라가세요':'앉아 있는 아이에게 간식을 가져가세요'};
  }
  if(role==='catch')return {color:'#ffaf71',action:'포탄 붙잡기'};
- if(role==='loader'){
-   if(canLoad(s))return {color:'#a7d6aa',action:'장전'};
-   return {color:'#a7d6aa',action:'장전 대기',mode:'waiting',blocked:true,
-     hint:'적재칸에 포탄을 가져오세요'};
- }
  if(role==='royal-attention'){
    const royal=royalActionTarget(s,p,role);
    return {mode:'royal',color:'#d988a0',action:'하트 보내기',blocked:!canGiveRoyalAttention(s,royal)};

@@ -1,5 +1,5 @@
-import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, WHEEL_KNOCK_TICKS, BARREL, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, ENEMY_RECOVERY_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=nearest-wheel134';
-import {DRAFT_HORSES,DRAFT_HORSE_SCALE,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseOrigin,horseBoardPoint} from './horse-targets.mjs?v=whip-reach73';
+import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, LOOSE_WHEEL_HOP_TICKS, WHEEL_KNOCK_TICKS, HOOFPRINT_RANGE, BARREL, CANNON_IDS, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, cannonIndexFor, cannonPad, cannonMount, cannonState, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, activeCatapultRocks, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=wagon-sway172';
+import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseFrameOffset,draftHorseOrigin,horseBoardPoint} from './horse-targets.mjs?v=cavalry-hooves169';
 import {obstacleY, roadObstacleProfile, roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
 import {art,emoteArt,sprite,frame} from './pixel-art.mjs?v=crew-release107';
 const ink='#393933';
@@ -214,9 +214,24 @@ function landscape(scroll,stage){
   }
   if(!sceneryTile('upper-verge',scroll))drawVerge(scroll,upperVerge);
 }
+const hoofprintRows=[[2,4],[1,2],[0,2],[1,2],[2,4]];
+function drawHoofprints(s,prints){
+ if(!prints?.length)return;
+ c.save();
+ c.fillStyle='#765131';
+ for(const [road,footX,y] of prints){
+   const x=footX+s.road-road;
+   if(!inView(x,y,8))continue;
+   c.globalAlpha=.52*Math.min(1,Math.max(0,HOOFPRINT_RANGE-(s.road-road))/280);
+   for(const [row,[left,width]] of hoofprintRows.entries()){
+     c.fillRect(x+left*2-6,y+row*2-5,width*2,2);
+   }
+ }
+ c.restore();
+}
 function drawWheelTracks(s){
- const tracks=s.wheelTracks;
- if(!tracks||tracks.length<2)return;
+ const tracks=s.wheelTracks??[],looseTracks=s.looseWheelTracks??[];
+ if(tracks.length<2&&!looseTracks.length)return;
  c.save();
  c.beginPath();
  for(const [index,wheel] of WHEELS.entries()){
@@ -231,6 +246,12 @@ function drawWheelTracks(s){
      c.lineTo(endX,endY+trackY);
      drawing=true;
    }
+ }
+ for(const [fromX,fromY,toX,toY] of looseTracks){
+   const startX=fromX+s.road,endX=toX+s.road;
+   if(Math.max(startX,endX)<view.left-8||Math.min(startX,endX)>view.right+8)continue;
+   c.moveTo(startX,fromY+looseWheelTreadOffset);
+   c.lineTo(endX,toY+looseWheelTreadOffset);
  }
  // Stroke all wheels together so overlapping ruts have the same color as a single rut.
  c.lineCap='butt';c.lineJoin='bevel';
@@ -321,7 +342,7 @@ function horse(x,y,z,palette,t,showShadow=true){
     poly(HORSE_NECK_AND_HEAD,coat,ink,2.5);
     poly([[-28,-12],[-18,-14],[-9,-10],[-13,-3],[-21,-4],[-25,-7]],mane,ink,1.8);line([[-38,-8],[-37,5]],'#7b4c37',3);oval(-36,-4,1.8,1.8,ink);oval(-48,-1,1.25,1.25,ink);line([[-45,1],[-42,2]],light,1.5);});
 }
-function crewBody(color,ball,outline=0){
+function crewBody(color,outline=0){
   const edge=outline?'#ffffff':ink;
   box(-11,0,22,15,color,edge,5,2+outline);
   box(-10,10,7,5,'#685743',edge,2,1.6+outline);
@@ -334,10 +355,6 @@ function crewBody(color,ball,outline=0){
       line([[-8,-4],[-4,-3]],ink,2);line([[3,-3],[7,-4]],ink,2);box(-3,2,5,2,'#586147');
     }
   });
-  if(ball){
-    oval(-12,5,7,7,'#454e5b',edge,1.8+outline);
-    if(!outline)oval(-14,2,2,1.5,'#a5b1b2');
-  }
 }
 function snackPlate(x,y,scale=1){
  at(x,y,scale,()=>{
@@ -483,8 +500,8 @@ const stationArt={
  'wheel-pickup':['#c0a16d','#705635']
 };
 const occupiedPadStyle={fill:'#999c9b',edge:'#565a59'};
-function occupiedByAnother(role){
- const owner=view.stationOwners.get(role);
+function occupiedByAnother(station){
+ const owner=view.stationOwners.get(station);
  return owner!==undefined&&!view.localPlayers.includes(owner);
 }
 function spareWheel(x,y,scale,angle){
@@ -528,16 +545,16 @@ function drawRackPile(count){
    oval(shellX-1.5,shellY-1.8,2,1.35,'#9297a1');
  }
 }
-function floorStation(s,role){
+function floorStation(s,role,cannonIndex=null){
  const onRoute=(view.role==='carry'||view.role==='catch')&&role==='rack';
  const focused=view.role&&view.role!=='driver';
- const cannonPad=role===cannonStation(s);
- const cannonView=isCannonRole(view.role);
- const occupied=occupiedByAnother(role);
- if(focused&&view.role!==role&&!onRoute&&!occupied&&!(cannonPad&&cannonView))return;
- const {x,y}=STATIONS[role],[fill,edge,image]=stationArt[role];
+ const currentPad=cannonIndex===null?view.role===role:cannonIndex===view.cannonIndex;
+ const occupied=occupiedByAnother(cannonIndex??role);
+ if(focused&&!currentPad&&!onRoute&&!occupied)return;
+ const {x,y}=cannonIndex===null?STATIONS[role]:cannonPad(cannonIndex);
+ const [fill,edge,image]=stationArt[role];
  const hasSupply=s.testMode||s.ammo.stock>0;
- const inactive=(role==='loader'&&!canLoad(s))||(role==='wheel-pickup'&&!canTakeSpareWheel(s))||(role==='supply'&&!hasSupply);
+ const inactive=(role==='loader'&&!canLoad(s,cannonIndex))||(role==='wheel-pickup'&&!canTakeSpareWheel(s))||(role==='supply'&&!hasSupply);
  const border=occupied?occupiedPadStyle.edge:inactive?'#897961':edge;
  const padFill=occupied?occupiedPadStyle.fill:inactive?'#bda47e':fill;
  if(role==='supply'&&hasSupply)sprite(c,art['supply-pile'],SUPPLY_PILE.x,SUPPLY_PILE.y,SUPPLY_PILE.width);
@@ -570,6 +587,13 @@ const crewArt={
  p3:['#7aa5c5','bottom_blue',6],
  p4:['#d887b9','bottom_pink',9],
 };
+function drawCargoShell(x,y,selected=false){
+ at(x,y,2,()=>{
+   if(selected)oval(0,0,9,9,'#fff');
+   oval(0,0,7,7,'#454e5b',ink,1.8);
+   oval(-2,-3,2,1.5,'#a5b1b2');
+ });
+}
 function crewSprite(s,id,t,passenger,recordPosition){
  const p=s.players[id],[color,image,phase]=crewArt[id];
  const currentRole=stationAt(p,s);
@@ -589,16 +613,11 @@ function crewSprite(s,id,t,passenger,recordPosition){
    }
    const avatarDrawn=sprite(c,frame(art[image],animationTick,moving?4:13),0,-5,46);
    if(local)c.filter='none';
-   if(avatarDrawn){
-     if(p.ball){
-       if(local)oval(-15,6,9,9,'#fff');
-       oval(-15,6,7,7,'#454e5b',ink,1.8);
-       oval(-17,3,2,1.5,'#a5b1b2');
-     }
-   }else{
-     if(local)crewBody(color,p.ball,7/Math.sqrt(view.zoom));
-     crewBody(color,p.ball);
+   if(!avatarDrawn){
+     if(local)crewBody(color,7/Math.sqrt(view.zoom));
+     crewBody(color);
    }
+   if(p.ball)drawCargoShell(-22,4,local);
    c.restore();
    if(passenger){
      const rocking=currentRole==='royal-soothe'&&!passenger.bored&&moving&&!reducedMotion?.matches;
@@ -646,7 +665,7 @@ function drawActors(s,t,floor,offset,recordPosition,carriedRoyals,cavalryFrame){
  const showCrew=!view.role||view.role==='driver';
  for(const {enemy,strike,royal,id} of actorsOnFloor(s,floor,view.localPlayers)){
    if(enemy){
-     drawEnemy(enemy,s.tick,t,cavalryFrame,strike);
+     drawEnemy(enemy,s.tick,t,cavalryFrame,strike,s.mode==='run');
    }else if(royal){
      at(offset.x,offset.y,1,()=>drawRoyal(s,royal,t));
    }else{
@@ -694,7 +713,9 @@ function drawMountedWheel(x,y){
 }
 const wagonPixelScale=375/221;
 const wheelWidth=35*wagonPixelScale;
-const wheelTreadOffset=29*wagonPixelScale/2; // The 29-pixel wheel frames are centered vertically.
+const wheelTreadOffset=(29/2-1)*wagonPixelScale; // One source pixel up from the rim's lower edge.
+const looseWheelDrawRadius=LOOSE_WHEEL_RADIUS*1.5;
+const looseWheelTreadOffset=looseWheelDrawRadius-3;
 const wheelExitBounds=[[0,22,35,23],[20,0,43,35],[54,8,37,37],[90,16,35,29]];
 const wheelMountPlaybackRate=.85,wheelMountFrameTicks=2;
 
@@ -735,14 +756,14 @@ function wheelMounts(s,side){
 }
 function drawLooseWheel(wheel,tick){
  const {x,y,vx,vy,angle,bounceTick,launchTick}=wheel;
- const radius=LOOSE_WHEEL_RADIUS*1.5,margin=radius*1.5;
+ const radius=looseWheelDrawRadius,margin=radius*1.5;
  if(!inView(x,y,margin,margin+8,margin))return;
  const age=tick-(bounceTick??launchTick);
- const jolt=age>=0&&age<10&&!reducedMotion?.matches;
- const lift=jolt?Math.sin(age*Math.PI/10)*8:0;
+ const jolt=age>=0&&age<LOOSE_WHEEL_HOP_TICKS&&!reducedMotion?.matches;
+ const lift=jolt?Math.sin(age*Math.PI/LOOSE_WHEEL_HOP_TICKS)*8:0;
  if(jolt){
    const speed=Math.max(1,Math.hypot(vx,vy));
-   c.save();c.globalAlpha=(1-age/10)*.65;
+   c.save();c.globalAlpha=(1-age/LOOSE_WHEEL_HOP_TICKS)*.65;
    for(let i=0;i<4;i++){
      const reach=9+age*(.5+i*.35),side=i%2?1:-1;
      oval(x-reach*vx/speed+side*i*2,y-reach*vy/speed+4,3+i*1.5,2+i*.5,'#bc9062');
@@ -789,7 +810,6 @@ const draftHorseColors={
  right:['#b17b4d','#cf9960','#795139'],
  left:['#cba06d','#e3bb83','#835e42']
 };
-const draftHorseFrameWidth=128,draftHorseFrameHeight=84,draftHorseFrames=8,draftHorseFramesPerMeter=1.1;
 // Hoof bounds in each source frame: left, right, bottom.
 const draftHorseHooves=[[30,84,77],[29,87,82],[23,101,83],[20,103,82],[14,101,82],[19,105,82],[39,87,81],[39,87,81]];
 const draftHorseStillHooves=[25,97,76];
@@ -819,12 +839,40 @@ function drawHorseSpeedTrail(x,y,t){
 }
 
 function spriteReady(image){return image?.complete&&image.naturalWidth>0;}
-function drawHoofShadow(left,top,scale,[front,back,bottom],depth,color){
+let hoofDustTexture;
+function drawHoofDust(x,y,scale,tick,direction){
+ if(reducedMotion?.matches)return;
+ if(!hoofDustTexture){
+   const smoke=art['cannon-muzzle-smoke'];
+   if(!spriteReady(smoke))return;
+   const texture=document.createElement('canvas');
+   texture.width=smoke.naturalWidth;texture.height=smoke.naturalHeight;
+   const tint=texture.getContext('2d');
+   if(!tint)return;
+   tint.drawImage(smoke,0,0);
+   tint.globalCompositeOperation='source-atop';
+   tint.fillStyle='#8d5f40';tint.globalAlpha=.76;
+   tint.fillRect(0,0,texture.width,texture.height);
+   hoofDustTexture=texture;
+ }
+ const lifetime=21,spacing=7;
+ c.save();c.imageSmoothingEnabled=false;
+ for(let i=0;i<3;i++){
+   const progress=mod(tick+i*spacing,lifetime)/lifetime;
+   const width=(13+progress*17)*scale,height=width*hoofDustTexture.height/hoofDustTexture.width;
+   const drift=(3+progress*32)*scale*direction;
+   c.globalAlpha=.68*(1-progress)**1.45;
+   c.drawImage(hoofDustTexture,x+drift-width/2,y-progress*8*scale-height/2,width,height);
+ }
+ c.restore();
+}
+function drawHoofGround(left,top,scale,[front,back,bottom],depth,color,dustTick,dustDirection=1){
  const x=left+(front+back)*scale/2;
  const y=top+(bottom-1)*scale;
  const radius=(back-front)*scale/2+4;
  oval(x,y,radius,depth,color);
  oval(x,y,radius*.83,depth*.65,color);
+ if(dustTick!=null)drawHoofDust(left+(dustDirection>0?back:front)*scale,y,scale,dustTick,dustDirection);
 }
 
 const draftHorseHitchPixels=[[55,36],[55,37],[55,39],[55,40],[53,41],[54,39],[53,36],[53,37]];
@@ -855,31 +903,37 @@ function drawDraftHorses(s,t){
  const lastWhip=s.horseRage?.lastWhipTick;
  const sinceHit=lastWhip==null?Infinity:s.tick-lastWhip;
  // Distance keeps the gait continuous as rage changes the wagon speed.
- const gait=s.distance*draftHorseFramesPerMeter;
+ const {width:frameWidth,height:frameHeight,frames,framesPerMeter,offsetX,offsetY}=DRAFT_HORSE_WALK;
+ const gait=s.distance*framesPerMeter;
  const atlas=art['draft-horse-walk'],animated=spriteReady(atlas);
  const image=animated?atlas:art.horse1;
- const width=(animated?draftHorseFrameWidth:119)*DRAFT_HORSE_SCALE;
- const height=(animated?draftHorseFrameHeight:76)*DRAFT_HORSE_SCALE;
+ const width=(animated?frameWidth:119)*DRAFT_HORSE_SCALE;
+ const height=(animated?frameHeight:76)*DRAFT_HORSE_SCALE;
  for(const side of Object.keys(DRAFT_HORSES)){
    const {x,y}=draftHorseOrigin(s,side);
-   const frameOffset=side==='left'?2:0;
+   const frameOffset=draftHorseFrameOffset(side);
    if(phase==='boost'&&!reduced)drawHorseSpeedTrail(x,y,t+frameOffset);
-   const walkFrame=reduced||s.mode==='ready'?3:mod(Math.floor(gait)+frameOffset,draftHorseFrames);
-   const crop=animated?[walkFrame*draftHorseFrameWidth,0,draftHorseFrameWidth,draftHorseFrameHeight]:undefined;
-   const stride=(gait+frameOffset)*2*Math.PI/draftHorseFrames;
+   const walkFrame=reduced||s.mode==='ready'?3:mod(Math.floor(gait)+frameOffset,frames);
+   const crop=animated?[walkFrame*frameWidth,0,frameWidth,frameHeight]:undefined;
+   const stride=(gait+frameOffset)*2*Math.PI/frames;
    const bob=animated||reduced||s.mode!=='run'?0:Math.sin(stride)*2.2;
-   const drawnX=x+5,drawnY=y+4+bob;
+   const drawnX=x+offsetX,drawnY=y+offsetY+bob;
    if(spriteReady(image)){
      const hooves=animated?draftHorseHooves[walkFrame]:draftHorseStillHooves;
-     drawHoofShadow(drawnX-width/2,drawnY-height/2,DRAFT_HORSE_SCALE,hooves,8,'#715f482d');
+     const dustTick=s.mode==='run'?s.tick+frameOffset*3:null;
+     drawHoofGround(drawnX-width/2,drawnY-height/2,DRAFT_HORSE_SCALE,hooves,8,'#715f482d',dustTick);
    }else{
      oval(x+3,y+30,45,8,'#715f4850');
    }
+   const [hitchPixelX,hitchPixelY]=animated?draftHorseHitchPixels[walkFrame]:draftHorseStillHitchPixel;
+   const hitchX=drawnX-width/2+hitchPixelX*DRAFT_HORSE_SCALE;
+   const hitchY=drawnY-height/2+hitchPixelY*DRAFT_HORSE_SCALE;
+   const foreground=side==='left';
+   if(foreground)drawDraftHorseHitch(hitchX,hitchY,side);
    if(!sprite(c,image,drawnX,drawnY,width,height,crop)){
      horse(x,y,DRAFT_HORSE_SCALE,draftHorseColors[side],stride,false);
    }
-   const [hitchX,hitchY]=animated?draftHorseHitchPixels[walkFrame]:draftHorseStillHitchPixel;
-   drawDraftHorseHitch(drawnX-width/2+hitchX*DRAFT_HORSE_SCALE,drawnY-height/2+hitchY*DRAFT_HORSE_SCALE,side);
+   if(!foreground)drawDraftHorseHitch(hitchX,hitchY,side);
    if(sinceHit>=0&&sinceHit<whipEffectTicks){
      const impact=horseBoardPoint(s,side);
      drawWhip(STATIONS.driver,impact.x,impact.y,sinceHit);
@@ -892,10 +946,10 @@ const cannonRestScale={x:1,y:1};
 // The bore sits just inside the front edge of the barrel sprite.
 const cannonMouthX=BARREL.length-4;
 
-function cannonBarrelScale(s,recoilAge){
+function cannonBarrelScale(tick,fuse,recoilAge){
  if(reducedMotion?.matches)return cannonRestScale;
- if(s.fuse.end){
-   const elapsed=Math.max(0,Math.min(FUSE_TICKS,s.tick-s.fuse.end+FUSE_TICKS));
+ if(fuse.end){
+   const elapsed=Math.max(0,Math.min(FUSE_TICKS,tick-fuse.end+FUSE_TICKS));
    const charge=elapsed/FUSE_TICKS;
    const lateTicks=Math.max(0,elapsed-(FUSE_TICKS-cannonGatherTicks));
    const late=lateTicks/cannonGatherTicks;
@@ -912,11 +966,11 @@ function cannonBarrelScale(s,recoilAge){
  return cannonRestScale;
 }
 
-function renderedCannonMuzzle(carriage,angle,caliber,barrelScale){
+function renderedCannonMuzzle(mount,carriage,angle,caliber,barrelScale){
  const length=cannonMouthX*caliber*barrelScale.x;
  return {
-   x:BARREL.x+carriage.x+Math.cos(angle)*length,
-   y:BARREL.y+carriage.y+Math.sin(angle)*length,
+   x:mount.x+carriage.x+Math.cos(angle)*length,
+   y:mount.y+carriage.y+Math.sin(angle)*length,
  };
 }
 
@@ -925,25 +979,27 @@ function drawCannonFuseFlame(s,x,y){
  return sprite(c,flame,x,y-8,8,16);
 }
 
-function drawWagonCannon(s,barrelScale,recoilAge){
- const gunner=view.role==='gunner'?s.players[view.id]:Object.values(s.players).find(p=>stationAt(p,s)==='gunner');
- const justFired=recoilAge>=0&&recoilAge<cannonSettleTicks;
- const angle=justFired?s.cannonRecoil.angle:cannonAim(s,gunner).angle;
- at(BARREL.x,BARREL.y,cannonScale(s),()=>{
-   if(!sprite(c,art.bottom_cannonbar,-3,3,32))oval(-2,0,19,19,'#766b64',ink,2.8);
-   c.save();
-   c.rotate(angle);
-   c.scale(barrelScale.x,barrelScale.y);
-   const barrelWidth=78;
-   if(!sprite(c,art.bottom_cannonshot,BARREL.length-barrelWidth/2,0,barrelWidth)){
-     poly([[-14,-10],[27,-8],[31,-12],[BARREL.length,-12],[BARREL.length,12],[31,12],[27,8],[-14,10]],'#77818a',ink,3);
-     line([[-7,-5],[24,-4]],'#b9c0be',2.8);line([[34,-8],[34,8]],'#465561',2.5);
-     c.fillStyle='#202126';
-     c.fillRect(cannonMouthX-2,-5,4,10);
-     c.fillRect(cannonMouthX-1,-7,2,14);
-   }
-   c.restore();
-   if(s.fuse.end&&!drawCannonFuseFlame(s,-14,-18)){
+function drawCannonBody(angle,barrelScale){
+ if(!sprite(c,art.bottom_cannonbar,-3,3,32))oval(-2,0,19,19,'#766b64',ink,2.8);
+ c.save();
+ c.rotate(angle);
+ c.scale(barrelScale.x,barrelScale.y);
+ const barrelWidth=78;
+ if(!sprite(c,art.bottom_cannonshot,BARREL.length-barrelWidth/2,0,barrelWidth)){
+   poly([[-14,-10],[27,-8],[31,-12],[BARREL.length,-12],[BARREL.length,12],[31,12],[27,8],[-14,10]],'#77818a',ink,3);
+   line([[-7,-5],[24,-4]],'#b9c0be',2.8);line([[34,-8],[34,8]],'#465561',2.5);
+   c.fillStyle='#202126';
+   c.fillRect(cannonMouthX-2,-5,4,10);
+   c.fillRect(cannonMouthX-1,-7,2,14);
+ }
+ c.restore();
+}
+
+function drawWagonCannon(s,{mount,scale,age,recoil,aim,fuse},caliber){
+ const angle=age>=0&&age<cannonSettleTicks?recoil.angle:aim.angle;
+ at(mount.x,mount.y,caliber,()=>{
+   drawCannonBody(angle,scale);
+   if(fuse.end&&!drawCannonFuseFlame(s,-14,-18)){
      line([[-8,-9],[-14,-19]],'#6a4537',2);
      oval(-14,-20,4,4,s.tick%6<3?'#ffe29a':'#f0833e');
    }
@@ -954,7 +1010,51 @@ const wagonLampWidth=52;
 const lowerLampCrop=[0,0,37,32];
 // The lamp's foot is behind the inner edge of the lower wall at y=67.
 const lowerLampY=67-wagonLampWidth*lowerLampCrop[3]/lowerLampCrop[2]/2;
-function wagon(s,t,offset,barrelScale,recoilAge){
+const unlitLampGlass=new Map([
+ [0xffffff,0x625c53],[0xffe058,0x565047],[0xffd000,0x49443d],
+ [0xff8c00,0x3f3933],[0xff5100,0x332e29],[0x614c16,0x302b25],
+]);
+let unlitWagonLamp;
+function drawWagonLamp(image,x,y,crop){
+ if(image){
+   sprite(c,image,x,y,wagonLampWidth,undefined,crop);
+   return;
+ }
+ if(!unlitWagonLamp){
+   const neutral=art.bottom_light[3];
+   if(!spriteReady(neutral))return;
+   const texture=document.createElement('canvas');
+   texture.width=neutral.naturalWidth;texture.height=neutral.naturalHeight;
+   const lamp=texture.getContext('2d');
+   if(!lamp)return;
+   lamp.drawImage(neutral,0,0);
+   // Darken the glass on the halo-free frame and keep the metal housing intact.
+   const pixels=lamp.getImageData(0,0,texture.width,texture.height),data=pixels.data;
+   for(let i=0;i<data.length;i+=4){
+     const shade=unlitLampGlass.get(data[i]<<16|data[i+1]<<8|data[i+2]);
+     if(shade===undefined)continue;
+     data[i]=shade>>16;data[i+1]=(shade>>8)&255;data[i+2]=shade&255;
+   }
+   lamp.putImageData(pixels,0,0);
+   unlitWagonLamp=texture;
+ }
+ const [sx,sy,sw,sh]=crop??[0,0,unlitWagonLamp.width,unlitWagonLamp.height];
+ const height=wagonLampWidth*sh/sw;
+ c.save();c.imageSmoothingEnabled=false;
+ c.drawImage(unlitWagonLamp,sx,sy,sw,sh,x-wagonLampWidth/2,y-height/2,wagonLampWidth,height);
+ c.restore();
+}
+function drawWagonLamps(s){
+ const running=s.mode==='run';
+ const boosting=running&&horseRageStatus(s).phase==='boost';
+ const direction=running?s.wagonMoveY:0;
+ const startedAt=boosting?s.horseRage.lastWhipTick:s.wagonMoveSince;
+ const elapsed=Math.max(0,s.tick-(startedAt??0)),steady=reducedMotion?.matches;
+ const lit=steady?art.bottom_light[3]:elapsed%16<8?frame(art.bottom_light,elapsed,2):null;
+ drawWagonLamp(boosting||direction<0?lit:null,370,-89);
+ drawWagonLamp(boosting||direction>0?lit:null,373,lowerLampY,lowerLampCrop);
+}
+function wagon(s,t,offset,cannons,caliber){
  at(offset.x,offset.y,1,()=>{
    const phase=reducedMotion?.matches?0:s.mode==='ready'?t*12:s.tick;
    box(345,-89,376,204,'#715d484e',null,20);
@@ -962,13 +1062,13 @@ function wagon(s,t,offset,barrelScale,recoilAge){
    if(!sprite(c,art.bottom,527.5,.5,375,199))box(340,-99,375,199,'#cc9f66','#614b37',8,3);
    wheelMounts(s,1);
    sprite(c,art.bottom_paper,374,-62,28);
-   sprite(c,frame(art.bottom_light,phase,5),370,-89,wagonLampWidth);
-   sprite(c,frame(art.bottom_light,phase+8,5),373,lowerLampY,wagonLampWidth,undefined,lowerLampCrop);
+   drawWagonLamps(s);
    sprite(c,frame(art.bottom_flag,phase,5),614,-126,35*wagonPixelScale);
    const seatLift=royalSeatLift(s);
    if(!sprite(c,art.bottom_sofa,529.5,-86-seatLift,103))box(479,-108-seatLift,101,46,'#8b6c9b',ink,5,2.5);
    drawRackPile(s.ammo.rack);
-   for(const role of ['driver','rack',cannonStation(s)])floorStation(s,role);
+   for(const role of ['driver','rack'])floorStation(s,role);
+   for(const {index,role} of cannons)floorStation(s,role,index);
    telescopeMark(s);
    drawStairs(DECK_FLOOR);
    const deckPlayers=view.localPlayers.map(id=>s.players[id]).filter(p=>playerFloor(p)===DECK_FLOOR);
@@ -979,9 +1079,9 @@ function wagon(s,t,offset,barrelScale,recoilAge){
      if(royal.state==='carried'&&!royal.upset&&view.localPlayers.includes(royal.carrier))returnMark(ROYAL_SEATS[royal.id]);
      if(royal.state!=='seated')continue;
      if(feeders.length)feedMark(ROYAL_SEATS[royal.id],feeders.some(p=>feedTarget(s,p)===royal));
-     else attentionMark(royal,attentionTargets.includes(royal)&&canGiveRoyalAttention(s,royal));
+     else if(100-royal.attention>10)attentionMark(royal,attentionTargets.includes(royal)&&canGiveRoyalAttention(s,royal));
    }
-   drawWagonCannon(s,barrelScale,recoilAge);
+   for(let index=cannons.length-1;index>=0;index--)drawWagonCannon(s,cannons[index],caliber);
  });
 }
 function cellarLantern(x,y,t){
@@ -1002,8 +1102,8 @@ function drawFallingAmmo(s,floor,y){
    const x=below?Math.min(692,ball.x+14*progress):ball.x+35*progress;
    const drift=below?Math.min(10,81-Math.abs(ball.y)):123-Math.abs(ball.y);
    const base=y+ball.y+ball.side*drift*progress;
-   oval(x+2,base+4,7,3,below?'#352c294f':'#745a4945');
-   oval(x,base-16*Math.sin(progress*Math.PI),6,6,'#4e5661',ink,1.4);
+   oval(x+2,base+4,14,6,below?'#352c294f':'#745a4945');
+   drawCargoShell(x,base-16*Math.sin(progress*Math.PI));
  }
 }
 function drawCellar(s,t,offset){
@@ -1045,8 +1145,9 @@ function drawCellar(s,t,offset){
    drawFallingAmmo(s,CELLAR_FLOOR,0);
  });
 }
-const cavalryFrameWidth=200,cavalryFrameHeight=184,cavalryRunCount=8,cavalryRunFps=16;
-const cavalryLeft=-106,cavalryTop=-114,cavalryScale=.88*CAVALRY_SIZE_FACTOR;
+const {width:cavalryFrameWidth,height:cavalryFrameHeight,frames:cavalryRunCount,fps:cavalryRunFps,
+ left:cavalryLeft,top:cavalryTop,scale:cavalryArtScale}=CAVALRY_RUN;
+const cavalryScale=cavalryArtScale*CAVALRY_SIZE_FACTOR;
 const cavalryHooves=[[62,136,172],[49,131,175],[41,156,175],[41,156,175],[35,155,178],[37,174,177],[64,154,177],[64,154,177]];
 const cavalryStillHooves=[9,49,56];
 // The spear, fallback art, and marker offsets use the original half-scale as their baseline.
@@ -1117,12 +1218,12 @@ function drawKnight(x,y,kind,t,runFrame,tilt=0,strike=null){
     poly([[1,3],[11,1],[17,5],[15,13],[9,17],[2,13]],'#689eb1',ink,2);line([[8,4],[9,12]],'#d0d9c4',2.2);
   });
 }
-function drawCavalryShadow(x,y,runFrame=4){
+function drawCavalryShadow(x,y,runFrame=4,dustTick,dustDirection){
  const scale=cavalryDetailScale,depth=4.5*scale;
  if(spriteReady(cavalryRunSprite)){
-   drawHoofShadow(x+cavalryLeft*cavalryScale,y+cavalryTop*cavalryScale,cavalryScale,cavalryHooves[runFrame],depth,'#55402b25');
+   drawHoofGround(x+cavalryLeft*cavalryScale,y+cavalryTop*cavalryScale,cavalryScale,cavalryHooves[runFrame],depth,'#55402b25',dustTick,dustDirection);
  }else if(spriteReady(art.enemy)){
-   drawHoofShadow(x-5*scale-30*knightScale,y-11*scale-28*knightScale,knightScale,cavalryStillHooves,depth,'#55402b25');
+   drawHoofGround(x-5*scale-30*knightScale,y-11*scale-28*knightScale,knightScale,cavalryStillHooves,depth,'#55402b25',dustTick,dustDirection);
  }else{
    oval(x-3*scale,y+20*scale,31*scale,5*scale,'#55402b35');
  }
@@ -1152,7 +1253,7 @@ function drawCannonDefeat(enemy,knockback,tick){
  if(!drawCavalryFrame(sprite,x,y,frame))drawKnight(x,y,enemy.kind,0,0);
  c.restore();
 }
-function drawEnemy(enemy,tick,t,cavalryFrame,strike){
+function drawEnemy(enemy,tick,t,cavalryFrame,strike,running){
  const {y,kind,id}=enemy,x=enemy.x+CAVALRY_ART_X;
  const detailScale=cavalryDetailScale;
  const knockback=enemyKnockback(enemy);
@@ -1166,27 +1267,27 @@ function drawEnemy(enemy,tick,t,cavalryFrame,strike){
  if(!inView(x,y,124*detailScale,108*detailScale,65*detailScale))return;
  const sinceStrike=tick-(enemy.lastStrike??-Infinity);
  const dustSide=sinceStrike<=ENEMY_RETREAT_TICKS?-1:1;
- const dustCount=sinceStrike<=ENEMY_RETREAT_TICKS+ENEMY_RECOVERY_TICKS?2:4;
- const size=CAVALRY_SIZE_FACTOR;
- for(let i=0;i<dustCount;i++){
-   const q=mod(i*11+t*1.4,45);
-   oval(x+dustSide*(59+q)*size,y+(20+Math.sin(i*4)*7)*size,(4+q*.09)*size,3.2*size,'#f6dfb4');
- }
+ const dustTick=running?tick+id:null;
  const bodyX=x+(strike?.bodyX??0),bodyY=y+(strike?.bodyY??0);
  const runFrame=mod(cavalryFrame+id,cavalryRunCount);
  const nearMissLeft=(enemy.nearMissUntil??0)-tick;
  const startled=!enemy.spent&&nearMissLeft>0;
  const lean=startled&&!reducedMotion?.matches
    ? .14*Math.max(0,1-(CANNON_NEAR_MISS_TICKS-nearMissLeft)/8) : 0;
- drawCavalryShadow(bodyX,bodyY,runFrame);
+ drawCavalryShadow(bodyX,bodyY,runFrame,dustTick,dustSide);
  drawKnight(bodyX,bodyY,kind,t,runFrame,lean,strike);
  if(startled){
    c.save();
    c.textAlign='center';c.textBaseline='bottom';c.font='bold 22px '+pixelFont;
    c.strokeStyle='#ffefcf';c.lineWidth=3.5;
    c.fillStyle='#d5232d';
-   c.strokeText('!!',bodyX+8*detailScale,bodyY-54*detailScale);
-   c.fillText('!!',bodyX+8*detailScale,bodyY-54*detailScale);
+   const mark=c.measureText('!');
+   const halfSpacing=(mark.actualBoundingBoxLeft+mark.actualBoundingBoxRight+2)/2;
+   const markX=bodyX+8*detailScale,markY=bodyY-54*detailScale;
+   c.strokeText('!',markX-halfSpacing,markY);
+   c.strokeText('!',markX+halfSpacing,markY);
+   c.fillText('!',markX-halfSpacing,markY);
+   c.fillText('!',markX+halfSpacing,markY);
    c.restore();
  }
 }
@@ -1224,11 +1325,11 @@ const muzzleSmokePuffs=[
  {delay:4,travel:44,rise:22,side:-5,size:25},
  {delay:6,travel:32,rise:12,side:6,size:20},
 ];
-function drawCannonBurst(s,age,carriage,barrelScale){
+function drawCannonBurst({age,mount,recoil,scale},carriage,caliber){
  if(!(age>=0&&age<cannonExhaustTicks))return;
- const {angle}=s.cannonRecoil,caliber=cannonScale(s);
+ const {angle}=recoil;
  const settling=age<cannonSettleTicks;
- const muzzle=renderedCannonMuzzle(carriage,angle,caliber,settling?barrelScale:cannonRestScale);
+ const muzzle=renderedCannonMuzzle(mount,carriage,angle,caliber,settling?scale:cannonRestScale);
  const dx=Math.cos(angle),dy=Math.sin(angle);
  at(muzzle.x,muzzle.y,caliber,()=>{
    for(const {delay,travel,rise,side,size} of muzzleSmokePuffs){
@@ -1365,16 +1466,16 @@ function drawCannonImpact(impact,x,age){
  }
  c.restore();
 }
-function drawCannonAimFuse(s,x,y){
+function drawCannonAimFuse(s,fuse,x,y){
  const scale=2.5,width=32*scale;
  // The circle is two source pixels below the center of the sprite with its loose tip.
  const spriteY=y-2*scale,radius=13.5*scale;
- if(!s.fuse.end){
+ if(!fuse.end){
    sprite(c,art.bottom_cannon_aim_count,x,spriteY,width);
    return;
  }
 
- const remaining=Math.max(0,Math.min(1,(s.fuse.end-s.tick)/FUSE_TICKS));
+ const remaining=Math.max(0,Math.min(1,(fuse.end-s.tick)/FUSE_TICKS));
  sprite(c,art.bottom_cannon_aim_count_bar,x,spriteY,width);
  if(!remaining)return;
 
@@ -1391,10 +1492,10 @@ function drawCannonAimFuse(s,x,y){
  drawCannonFuseFlame(s,x+Math.cos(burnAngle)*radius,y+Math.sin(burnAngle)*radius);
 }
 
-function drawCannonAim(s,carriage,aim,barrelScale){
+function drawCannonAim(s,carriage,{mount,aim,scale,fuse},caliber){
  const {x,y,angle}=aim;
- const muzzle=renderedCannonMuzzle(carriage,angle,cannonScale(s),barrelScale);
- const col=s.fuse.end?'#ffba76':'#fff1c9',rim='#513a35';
+ const muzzle=renderedCannonMuzzle(mount,carriage,angle,caliber,scale);
+ const col=fuse.end?'#ffba76':'#fff1c9',rim='#513a35';
  c.save();
  c.setLineDash([5,7]);line([[muzzle.x,muzzle.y],[x,y]],rim,1.5);c.setLineDash([]);
  if(inView(x,y,0)){
@@ -1408,7 +1509,7 @@ function drawCannonAim(s,carriage,aim,barrelScale){
      }
      oval(x,y,1.7,1.7,col);
    }
-   drawCannonAimFuse(s,x,y);
+   drawCannonAimFuse(s,fuse,x,y);
  }else{
    const edgeX=Math.max(view.left+12,Math.min(view.right-12,x));
    const edgeY=Math.max(view.top+12,Math.min(view.bottom-12,y));
@@ -1482,20 +1583,19 @@ function drawImpactDust(x,y,age,seed){
  }
 }
 
-function drawCatapult(s,impactAge){
- const rock=s.catapult;
- if(!rock)return;
+function drawCatapult(s,rock){
+ if(s.tick<rock.launchedAt)return;
  const untilLanding=rock.landAt-s.tick;
  let warning;
  c.save();
  if(untilLanding>0){
    const locked=s.tick>=rock.lockAt;
    const approach=Math.min(1,(s.tick-rock.launchedAt)/(rock.lockAt-rock.launchedAt));
-   const x=catapultAirX(s);
+   const x=catapultAirX(s,rock);
    const rx=landingMarkerScale*(22+(CATAPULT_RADIUS.x-22)*approach);
    const ry=landingMarkerScale*(13+(CATAPULT_RADIUS.y-13)*approach);
    c.globalAlpha=.28+.24*approach;
-   const hitsWagon=locked&&catapultHitsWagon(s,x);
+   const hitsWagon=locked&&catapultHitsWagon(s,x,rock);
    const landingArt=art[hitsWagon?'catapult-landing-danger':'catapult-landing-safe'];
    if(!sprite(c,landingArt,x,rock.y,rx*2.2,ry*2.2))oval(x,rock.y,rx,ry,'#47342b');
    if(locked){
@@ -1507,8 +1607,8 @@ function drawCatapult(s,impactAge){
        drawBoulder(x,rock.y-boulderDropHeight*(1-fall*fall),angle);
      }
    }
- }else if(impactAge>=0){
-   const x=catapultX(s),age=Math.min(1,impactAge/(HZ*.7));
+ }else if(rock.hit!==undefined){
+   const x=catapultX(s,rock),age=Math.min(1,-untilLanding/(HZ*.7));
    const frameIndex=Math.min(10,Math.floor(age*11));
    const impactFrame=[frameIndex%3*928,Math.floor(frameIndex/3)*606,928,606];
    c.globalAlpha=Math.min(1,(1-age)*3);
@@ -1615,7 +1715,7 @@ function drawRoyalRequestBubbles(left,right,bottom,cssX,cssY,avoid){
  }
  c.restore();
 }
-function drawApproachWarning(warning,tick,left,right,bottom,cssX,cssY,edge,tools){
+function drawApproachWarning(warning,left,right,bottom,cssX,cssY,edge,tools){
  if(!warning)return;
  const radius=2*Math.max(14,Math.min(22,bottom*.05));
  const width=right-left;
@@ -1628,11 +1728,9 @@ function drawApproachWarning(warning,tick,left,right,bottom,cssX,cssY,edge,tools
  const x=fromRight?right-offset:left+offset;
  const minY=tools&&x+inset>tools.left?Math.min(bottom-inset,tools.bottom+inset):inset;
  const y=Math.max(minY,Math.min(bottom-inset,roadY));
- const pulse=reducedMotion?.matches?0:(1+Math.sin(tick*.19))/2;
  c.save();
  c.setTransform(1/cssX,0,0,1/cssY,0,0);
  at(x,y,radius/20,()=>{
-   oval(0,1,23+5*pulse,22+5*pulse,'#b92f3c38');
    if(sprite(c,art.RoadWarning,0,0,43))return;
    poly([[0,-20],[20,14],[-20,14]],'#fff3d7','#ab2835',3);
    box(-2.1,-9,4.2,12,'#ad2533',null,1.8);
@@ -1640,7 +1738,66 @@ function drawApproachWarning(warning,tick,left,right,bottom,cssX,cssY,edge,tools
  });
  c.restore();
 }
-export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBoundingClientRect(),sceneScale=1,playToolsBounds=null,royalRequestAvoid=[]){
+const comboTilt=20*Math.PI/180,comboSize=2.5,comboGap=8;
+function drawCannonCombo(s,width,height,cssX,cssY,avoid,ranking){
+ const combo=s.cannonCombo;
+ if(!ranking||!(combo?.count>=2)||(s.mode!=='run'&&s.mode!=='paused'))return;
+ const count='×'+combo.count;
+ const age=Math.max(0,s.tick-combo.tick);
+ const burst=reducedMotion?.matches?0:Math.max(0,1-age/(HZ*.42));
+ c.save();
+ c.setTransform(1/cssX,0,0,1/cssY,0,0);
+ c.textAlign='left';c.textBaseline='middle';c.lineJoin='bevel';
+ c.font=`bold 17px ${pixelFont}`;
+ const labelWidth=c.measureText('COMBO').width;
+ c.font=`bold 33px ${pixelFont}`;
+ const countWidth=c.measureText(count).width;
+ const half=(labelWidth+countWidth+35)/2;
+ const sin=Math.sin(comboTilt),cos=Math.cos(comboTilt);
+ const halfX=(half+9)*cos+28*sin,halfY=(half+9)*sin+28*cos;
+ const pulse=1+.18*burst*burst;
+ const left=Math.max(comboGap,ranking.left);
+ const requested=comboSize*Math.min(1,width/(2*half+56),height/320);
+ const maxWidth=(width-left-comboGap)/(2*halfX);
+ const maxHeight=top=>(height-top-comboGap)/(2*halfY);
+ let top=ranking.bottom+comboGap;
+ for(const area of avoid){
+   const room=Math.min(requested*pulse,maxWidth,maxHeight(top));
+   if(area.right>left&&area.left<left+2*halfX*room&&area.bottom>top&&area.top<top+2*halfY*room
+     &&maxHeight(area.bottom+comboGap)>.45)top=area.bottom+comboGap;
+ }
+ const scale=Math.min(requested*pulse,maxWidth,maxHeight(top));
+ if(scale<=0){c.restore();return;}
+ at(left+halfX*scale,top+halfY*scale,scale,()=>{
+   c.rotate(-comboTilt);
+   const shape=[[-half+12,-22],[half+6,-22],[half+6,-13],[half-8,22],[-half-6,22],[-half-6,13]];
+   if(burst){
+     c.save();c.globalAlpha=burst;
+     const travel=(1-burst)*4;
+     for(const side of [-1,1]){
+       const x=side*(half+9+travel),y=-side*(13+travel*.45);
+       c.fillStyle='#ffd782';c.fillRect(x-5,y-1,10,2);c.fillRect(x-1,y-5,2,10);
+       c.fillStyle='#ffab76';c.fillRect(x+side*5-1,y+side*9-1,3,3);
+     }
+     c.restore();
+   }
+   poly(shape.map(([x,y])=>[x,y+4]),'#291726',null);
+   poly(shape,'#392341','#231728',4);
+   c.strokeStyle=burst?'#ffe6a2':'#c98959';c.lineWidth=1.6;c.stroke();
+   line([[-half+16,-17],[half-4,-17]],'#fabb73',1.6);
+   line([[-half+2,16],[half-12,16]],'#9d5366',1.6);
+   c.font=`bold 17px ${pixelFont}`;
+   c.fillStyle='#ffdb9b';c.fillText('COMBO',-half+13,1);
+   c.font=`bold 33px ${pixelFont}`;
+   c.lineWidth=2.8;c.strokeStyle='#3b1f31';
+   const x=half-countWidth-10;
+   c.fillStyle='#9d4e40';c.fillText(count,x,4);
+   c.strokeText(count,x,0);
+   c.fillStyle='#fff0ae';c.fillText(count,x,0);
+ });
+ c.restore();
+}
+export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBoundingClientRect(),sceneScale=1,playToolsBounds=null,royalRequestAvoid=[],crewRankingBounds=null){
  // Bound only the game canvas backing buffer; DOM controls keep native screen resolution.
  const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/Math.max(1,rect.width*rect.height));
  const dpr=Math.min(2,window.devicePixelRatio||1,pixelScale)*sceneScale;
@@ -1652,18 +1809,30 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  const viewCssX=rect.width/views[0].screenWidth,viewCssY=rect.height/views[0].height;
  const t=s.mode==='ready'?wall/470:s.tick*.37;
  const cavalryFrame=reducedMotion?.matches?0:Math.floor(s.tick*cavalryRunFps/HZ);
- const rock=s.catapult;
- const impactAge=rock?.hit===undefined?-1:s.tick-rock.landAt;
- const recoil=s.cannonRecoil,recoilAge=recoil?s.tick-recoil.tick:-1;
- const barrelScale=cannonBarrelScale(s,recoilAge);
- const kick=cannonKick(recoil,recoilAge);
- const carriage={x:kick.x,y:s.y+s.shake*Math.sin(t*3)*3+kick.y};
+ const catapultRocks=activeCatapultRocks(s);
+ const lastImpact=catapultRocks.reduce((tick,rock)=>rock.hit===undefined?tick:Math.max(tick,rock.landAt),-Infinity);
+ const impactAge=Number.isFinite(lastImpact)?s.tick-lastImpact:-1;
  const carriedRoyals=s.royals.filter(royal=>royal.state==='carried');
  const stationOwners=new Map();
  for(const [id,p] of Object.entries(s.players)){
    const role=occupiedStation(p,s);
-   if(role)stationOwners.set(role,id);
+   if(role)stationOwners.set(isCannonRole(role)?cannonIndexFor(s,p):role,id);
  }
+ const caliber=cannonScale(s);
+ const cannons=CANNON_IDS.map(index=>{
+   const {ammo,fuse,cannonRecoil:recoil}=cannonState(s,index);
+   const age=recoil?s.tick-recoil.tick:-1;
+   const role=cannonStation(s,index);
+   const gunner=role==='gunner'?s.players[stationOwners.get(index)]:null;
+   return {index,role,fuse,recoil,age,loaded:ammo.loaded,mount:cannonMount(s,index),
+     aim:cannonAim(s,gunner,index),scale:cannonBarrelScale(s.tick,fuse,age)};
+ });
+ const kick={x:0,y:0};
+ for(const {recoil,age} of cannons){
+   const offset=cannonKick(recoil,age);
+   kick.x+=offset.x;kick.y+=offset.y;
+ }
+ const carriage={x:kick.x,y:s.y+s.shake*Math.sin(t*3)*3+kick.y};
  const blasts=s.cannonImpacts?.length?s.cannonImpacts.map(impact=>({
    impact,x:impact.x+s.road-(impact.road??s.road),age:s.tick-impact.tick,
  })):null;
@@ -1708,6 +1877,8 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
    continue;
  }
  landscape(s.road,s.stage);
+ drawHoofprints(s,s.hoofprints);
+ drawHoofprints(s,s.cavalryHoofprints);
  drawWheelTracks(s);
  roadside??=roadsideTrees(s.road,ROAD_TOP,ROAD_BOTTOM);
  for(const tree of roadside)if(tree.y<LANES[1])drawRoadsideTree(tree);
@@ -1716,7 +1887,7 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonScorch(impact,x,age);
  }
  for(const wheel of s.looseWheels??[])drawLooseWheel(wheel,s.tick);
- wagon(s,t,carriage,barrelScale,recoilAge);
+ wagon(s,t,carriage,cannons,caliber);
  drawActors(s,t,DECK_FLOOR,carriage,recordPosition,carriedRoyals,cavalryFrame);
  at(carriage.x,carriage.y,1,()=>drawDraftHorses(s,t));
 
@@ -1725,7 +1896,7 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  if(!sceneryTile('lower-verge',s.road))drawVerge(s.road,lowerVerge);
  for(const tree of roadside)if(tree.y>LANES[1])drawRoadsideTree(tree);
 
- drawCannonBurst(s,recoilAge,carriage,barrelScale);
+ for(const cannon of cannons)drawCannonBurst(cannon,carriage,caliber);
  for(const shot of s.shots)drawShot(shot,s.tick);
  if(blasts)for(const {impact,x,age} of blasts){
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonImpact(impact,x,age);
@@ -1733,20 +1904,23 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  drawParticles(s.particles);
  drawRoyalAttentionHearts(s,carriage);
  drawFallingAmmo(s,DECK_FLOOR,s.y);
- const warning=drawCatapult(s,impactAge);
- if(warning){
+ for(const rock of catapultRocks){
+   const warning=drawCatapult(s,rock);
+   if(!warning)continue;
    const x=(warning.x-view.left)*steadyScaleX,y=(warning.y-view.top)*steadyScaleY;
    if(x>=0&&x<=right-left&&y>=0&&y<=bottom)catapultAlerts.push({left,width:right-left,x,y});
  }
- if(view.role==='gunner'&&s.ammo.loaded&&!cannonAfterShot(s,s.players[view.id]))drawCannonAim(s,carriage,cannonAim(s,s.players[view.id]),barrelScale);
- drawApproachWarning(roadApproachWarning(s,camera),s.tick,left,right,bottom,cssX,cssY,'left');
+ const focusedCannon=cannons[view.cannonIndex];
+ if(view.role==='gunner'&&focusedCannon?.loaded&&!cannonAfterShot(s,s.players[view.id]))drawCannonAim(s,carriage,focusedCannon,caliber);
+ drawApproachWarning(roadApproachWarning(s,camera),left,right,bottom,cssX,cssY,'left');
  if(!view.role||view.role==='driver'||view.role==='gunner'){
-   drawApproachWarning(incomingPursuit(s,view),s.tick,left,right,bottom,cssX,cssY,'right',playToolsBounds);
+   drawApproachWarning(incomingPursuit(s,view),left,right,bottom,cssX,cssY,'right',playToolsBounds);
  }
  drawEmoteBubbles(bubbles,left,right,bottom,cssX,cssY);
  drawRoyalRequestBubbles(left,right,bottom,cssX,cssY,royalRequestAvoid);
  c.restore();
  }
  if(views.length===2){box(views[0].span-1.5,0,3,views[0].height,'#34382d');}
+ drawCannonCombo(s,rect.width,rect.height,cssX,cssY,royalRequestAvoid,crewRankingBounds);
  return {anchors,catapultAlerts};
 }

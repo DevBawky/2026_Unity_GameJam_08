@@ -4,7 +4,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import test from 'node:test';
 import {main} from './cli.mjs';
-import {begin, CANNON_CLEAN_TAPS, hit, initial, leaveStation, operate, setHumanSlots,
+import {addRackShell, begin, CANNON_CLEAN_TAPS, cannonAfterShot, cannonIndexFor, cannonPad,
+  cannonState, ensureDeck, hit, initial, leaveStation, operate, setHumanSlots, setInput,
   stationAt, STATIONS, step} from '../../goblin-getaway/public/sim.mjs';
 
 const wait = {kind: 'wait', x: 0, y: 0, ticks: 30, target: null};
@@ -66,6 +67,70 @@ test('one cannon pad switches steps without releasing its operator', () => {
   assert.equal(stationAt(p2, state), 'cleaner');
 });
 
+test('two operators load and fire independently from a shared rack', () => {
+  const state = initial();
+  setHumanSlots(state, ['p1', 'p2', 'p3', 'p4']);
+  begin(state);
+  state.ammo.rack = 1;
+  const {p1, p2} = state.players;
+  const lower = cannonState(state, 0), upper = cannonState(state, 1);
+  Object.assign(p1, cannonPad(0));
+  Object.assign(p2, cannonPad(1));
+  step(state);
+
+  assert.equal(stationAt(p1, state), 'cleaner');
+  assert.equal(stationAt(p2, state), 'cleaner');
+  assert.equal(cannonIndexFor(state, p1), 0);
+  assert.equal(cannonIndexFor(state, p2), 1);
+  assert.equal(leaveStation(state, 'p2', 'cleaner', 0), false);
+  assert.equal(operate(state, 'p1', state.tick, CANNON_CLEAN_TAPS), true);
+  assert.equal(upper.ammo.cleaning, 0);
+  assert.equal(operate(state, 'p2', state.tick, CANNON_CLEAN_TAPS), true);
+  for (let i = 0; i < 60 && !hit(state, 'loader'); i++) step(state);
+  assert.equal(hit(state, 'loader'), true);
+  assert.equal(operate(state, 'p1'), true);
+  assert.equal(operate(state, 'p2'), false);
+  assert.equal(lower.ammo.loaded, true);
+  assert.equal(upper.ammo.loaded, false);
+  assert.equal(state.ammo.rack, 0);
+  assert.equal(addRackShell(state), true);
+  assert.equal(operate(state, 'p2'), true);
+  assert.equal(state.ammo.rack, 0);
+  assert.equal(stationAt(p1, state), 'gunner');
+  assert.equal(stationAt(p2, state), 'gunner');
+
+  const aim = (id, aimCannon, ay) => setInput(state, id, {
+    mx: 0, my: 0, ax: 0, ay, aimRole: 'gunner', aimCannon, aimCursor: true,
+  });
+  aim('p1', 0, .4);
+  aim('p2', 1, -.4);
+  aim('p2', 0, .9);
+  assert.equal(p2.ay, -.4);
+  assert.equal(operate(state, 'p1'), true);
+  assert.equal(upper.fuse.end, 0);
+  assert.equal(operate(state, 'p2'), true);
+  assert.equal(lower.fuse.end, upper.fuse.end);
+  const restored = ensureDeck(JSON.parse(JSON.stringify(state)));
+  const fireTick = lower.fuse.end;
+  while (restored.tick < fireTick) step(restored);
+
+  assert.equal(restored.shots.length, 2);
+  const lowerShot = restored.shots.find(shot => shot.shooter?.id === 'p1');
+  const upperShot = restored.shots.find(shot => shot.shooter?.id === 'p2');
+  assert.ok(lowerShot && upperShot);
+  assert.ok(upperShot.y < lowerShot.y);
+  assert.ok(upperShot.landing.y < lowerShot.landing.y);
+  for (const [index, id] of ['p1', 'p2'].entries()) {
+    const cannon = cannonState(restored, index);
+    const player = restored.players[id];
+    assert.equal(cannon.fuse.end, 0);
+    assert.equal(cannon.ammo.cleaning, 0);
+    assert.equal(cannonAfterShot(restored, player)?.tick, fireTick);
+    assert.equal(cannonIndexFor(restored, player), index);
+    assert.equal(stationAt(player, restored), 'cleaner');
+  }
+});
+
 test('runs with Responses input, reads the evidence, replays without API, and reruns with saved settings', async t => {
   const {run, output, savedRuns, directory} = await testWorkspace(t);
   const requests = [];
@@ -122,12 +187,20 @@ test('records a partial result when OpenAI stops returning playable inputs', asy
 
 test('replays a shell recovered from cannon recoil through delivery, loading, and its next shot', async t => {
   const {run, savedRuns, output} = await testWorkspace(t);
-  // Catch the shell again when the wheel comes off during the slower trip to the rack.
-  const inputs = [...untilCatch, longWait, press, approach('rack'), longWait, press, approach('rack')];
+  const inputs = [...untilCatch, longWait, press, approach('rack')];
   let next = 0;
-  const request = async () => apiAction(inputs[next++] ?? longWait);
+  const request = async (_url, options) => {
+    const scripted = inputs[next++];
+    if (scripted) return apiAction(scripted);
+    // A human can load the last shell that bots keep in reserve.
+    const {role, work, timing, waypoints} = JSON.parse(JSON.parse(options.body).input).observation;
+    if (role === 'loader' && timing?.ready) return apiAction(press);
+    if ((role === 'cleaner' || role === 'gunner') && work?.enabled) return apiAction(press);
+    const cannon = waypoints.find(spot => ['cleaner', 'loader', 'gunner'].includes(spot.id));
+    return apiAction(!role && cannon ? {...approach(cannon.id), ticks: 18} : longWait);
+  };
 
-  assert.equal(await run(['run'], {request}), 0);
+  assert.equal(await run(['run', '--max-calls', '120'], {request}), 0);
   const [saved] = await savedRuns();
   const recoil = saved.events.find(event => event.type === 'catch_started' && event.actor === 'p1' && event.source === 'cannon');
   assert.equal(saved.status, 'completed');
@@ -138,6 +211,7 @@ test('replays a shell recovered from cannon recoil through delivery, loading, an
   const reload = saved.events.find(event => event.type === 'ammo_loaded' && event.recoveredDeliveryConfirmed);
   const fired = saved.events.find(event => event.type === 'cannon_fired' && event.recoveredDeliveryConfirmed);
   assert.ok(delivery && reload && fired);
+  assert.equal(fired.actor, 'p1');
   assert.ok(recoil.tick < recovery.tick && recovery.tick < delivery.tick && delivery.tick < reload.tick && reload.tick < fired.tick);
   assert.equal(fired.provenance, 'fifo_assumed');
   assert.equal(fired.deliveryEventId, undefined);

@@ -29,6 +29,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}button:disabled{cu
   --campaign-width:min(560px,calc(100% - 2 * var(--campaign-gutter)));
   --campaign-font:clamp(11px,1.6vmin,16px);
   --campaign-marker:clamp(20px,3.25vmin,35px);
+  --campaign-health-height:clamp(14px,2.8vmin,20px);
   --ranking-width:min(494px,calc(100% - var(--safe-l) - var(--safe-r) - var(--play-tools-width) - 8px));
   --ranking-card-height:min(calc(clamp(54px,8.8vmin,70px) * 1.8),32dvh);
   --ranking-leader-scale:1.5;
@@ -62,7 +63,8 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}button:disabled{cu
 .play-tools #start[data-mode=ready]{min-height:84px;padding:0 28px;gap:14px;font-size:28px;white-space:nowrap}
 .play-tools #start[data-mode=ready] svg{width:30px;height:30px;flex:none}
 .play-tools .test-start{min-height:84px;padding:0 clamp(16px,3vw,28px);font-size:clamp(18px,2.7vw,25px);color:#403328;background:#edd6b0;white-space:nowrap}
-.monitor:has(.campaign-hud:not([hidden])){--campaign-notice-offset:calc(var(--campaign-top-offset) + var(--campaign-marker) + 10px)}
+.monitor:has(.campaign-hud:not([hidden])){--campaign-notice-offset:calc(var(--campaign-top-offset) + var(--campaign-marker) + var(--campaign-health-offset,0px) + 10px)}
+.monitor:has(.campaign-health:not([hidden])){--campaign-health-offset:var(--campaign-health-height)}
 .campaign-hud{
   position:absolute;z-index:3;left:50%;top:calc(var(--safe-t) + var(--campaign-top-offset));transform:translateX(-50%);
   display:grid;width:var(--campaign-width);padding:4px clamp(6px,1.5vw,14px);
@@ -70,15 +72,22 @@ button,input{font:inherit;color:inherit}button{cursor:pointer}button:disabled{cu
   pointer-events:none;
 }
 .campaign-hud .test-mode-label{justify-self:center;padding:1px 5px;border-radius:4px;background:#edd6b0;color:#403328;font-size:var(--campaign-font);font-weight:750;line-height:1.25;white-space:nowrap}
-.campaign-hud:has(.campaign-route[hidden]):has(.royal-watch[hidden]){width:max-content}
+.campaign-hud:has(.campaign-route[hidden]):has(.campaign-health[hidden]):has(.royal-watch[hidden]){width:max-content}
 .campaign-route{position:relative;display:grid;align-items:center;height:var(--campaign-marker);margin-inline:var(--campaign-marker) calc(var(--campaign-marker) / 2)}
-.campaign-progress{appearance:none;direction:ltr;width:100%;height:clamp(6px,1.3vmin,10px);border:0;border-radius:999px;overflow:hidden;background:#18251f;accent-color:#efb977}
-.campaign-progress::-webkit-progress-bar{background:#18251f}
-.campaign-progress::-webkit-progress-value{background:#efb977}
-.campaign-progress::-moz-progress-bar{background:#efb977}
+.campaign-progress{
+  --progress-track:#18251f;--progress-fill:#efb977;
+  appearance:none;direction:ltr;width:100%;height:clamp(6px,1.3vmin,10px);border:0;border-radius:999px;overflow:hidden;
+  background:var(--progress-track);accent-color:var(--progress-fill);
+}
+.campaign-progress::-webkit-progress-bar{background:var(--progress-track)}
+.campaign-progress::-webkit-progress-value{background:var(--progress-fill)}
+.campaign-progress::-moz-progress-bar{background:var(--progress-fill)}
 .campaign-goal,.campaign-wagon{position:absolute;top:50%;transform:translate(-50%,-50%)}
 .campaign-goal{left:calc(var(--campaign-marker) * -.74);width:calc(var(--campaign-marker) * .52);height:auto;color:#fff2cd}
 .campaign-wagon{left:var(--route-remaining,100%);width:var(--campaign-marker);height:var(--campaign-marker);transform:translate(-50%,-50%) scaleX(-1);filter:drop-shadow(0 1px 1px #121914)}
+.campaign-health{display:grid;grid-template-columns:var(--campaign-marker) minmax(0,1fr);align-items:center;height:var(--campaign-health-height);margin-inline-end:calc(var(--campaign-marker) / 2)}
+.campaign-health-icon{justify-self:center;width:clamp(11px,2.4vmin,17px);height:auto;color:#ffd2be}
+.campaign-health-progress{--progress-track:#292226;--progress-fill:#ee8074;border:1px solid #9b7168}
 .royal-watch{
   display:flex;justify-content:center;gap:5px;min-width:0;margin:3px 0 1px;padding:0;
   list-style:none;color:#fff9e9;font-size:clamp(11px,1.65vmin,14px);line-height:1.2;

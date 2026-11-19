@@ -1,8 +1,11 @@
 export const DRAFT_HORSES = {
  right:{x:228,y:-41},
- left:{x:215,y:41}
+ left:{x:215,y:29}
 };
 export const DRAFT_HORSE_SCALE=1.58;
+export const DRAFT_HORSE_WALK={width:128,height:84,frames:8,framesPerMeter:1.1,offsetX:5,offsetY:4};
+export const CAVALRY_RUN={width:200,height:184,frames:8,fps:16,left:-106,top:-114,scale:.88};
+export const draftHorseFrameOffset=side=>side==='left'?2:0;
 export const HORSE_BODY=[[-22,-10],[-12,-14],[13,-14],[30,-10],[36,-4],[36,5],[27,11],[6,14],[-13,11],[-21,6]];
 export const HORSE_NECK_AND_HEAD=[[-17,-11],[-28,-16],[-29,-19],[-34,-18],[-31,-10],[-43,-8],[-51,-4],[-51,1],[-47,5],[-37,3],[-25,10],[-20,6],[-13,2]];
 export const HORSE_ZONE_NAMES={rump:'엉덩이',waist:'허리',neck:'목',head:'머리'};
@@ -58,7 +61,8 @@ function containsPoint(polygon,x,y){
 }
 
 export function horseWhipTarget(s,aim){
- const {x,y}=whipAimPoint(s,aim),side=y<0?'right':'left';
+ const {x,y}=whipAimPoint(s,aim);
+ const side=y<(DRAFT_HORSES.right.y+DRAFT_HORSES.left.y)/2?'right':'left';
  const mount=draftHorseOrigin(s,side);
  const local={x:(x-mount.x)/DRAFT_HORSE_SCALE,y:(y-mount.y)/DRAFT_HORSE_SCALE};
  if(!containsPoint(HORSE_BODY,local.x,local.y)&&!containsPoint(HORSE_NECK_AND_HEAD,local.x,local.y))return null;

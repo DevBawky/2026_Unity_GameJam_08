@@ -1,13 +1,14 @@
 // The prototype waves use variations of the existing cavalry until the roster is supplied.
 export const ENEMY_PROFILES = {
  cavalry:{kind:0,speed:20,damage:14},
- scout:{kind:1,speed:22,damage:10},
+ scout:{kind:1,speed:26.4,damage:10},
  guard:{kind:2,speed:19,damage:18}
 };
 
+export const WAVE_ENEMY_MULTIPLIER=3;
 const wave=(at,groups)=>({
  at,
- groups:Object.entries(groups).map(([enemy,count])=>({enemy,count}))
+ groups:Object.entries(groups).map(([enemy,count])=>({enemy,count:count*WAVE_ENEMY_MULTIPLIER}))
 });
 
 export const CHAPTERS = [
@@ -16,7 +17,8 @@ export const CHAPTERS = [
   stages:[
    {
     title:'가시숲 고갯길',
-    goal:1000,
+    goal:3000,
+    catapultFastFromWave:3,
     waves:[
      wave(4,{cavalry:2}),
      wave(16,{cavalry:2,scout:1}),

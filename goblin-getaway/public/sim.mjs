@@ -1,7 +1,7 @@
-import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES} from './campaign.mjs';
+import {CHAPTERS,chapterSpec,stageSpec,nextStagePosition,ENEMY_PROFILES,WAVE_ENEMY_MULTIPLIER} from './campaign.mjs?v=wave-density163';
 import {ROAD_OBSTACLE_TYPES,obstacleY,roadObstacleProfile,roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
 import {finishCare,maxDurability,newCare,pruneVotes,recordCare,recordFeeding,recordReseat,UPGRADE_CARDS} from './intermission.mjs?v=wheel-axle83';
-import {DRAFT_HORSE_SCALE} from './horse-targets.mjs?v=whip-reach73';
+import {DRAFT_HORSES,DRAFT_HORSE_SCALE,DRAFT_HORSE_WALK,CAVALRY_RUN,draftHorseFrameOffset,draftHorseOrigin} from './horse-targets.mjs?v=cavalry-hooves169';
 export {obstacleY} from './road-obstacles.mjs?v=loose-wheels34';
 
 export const HZ = 30;
@@ -19,18 +19,23 @@ export const STAIRS={x:502,y:40,r:18};
 export const TELESCOPE_POINT={x:436,y:-69,rx:24,ry:14.25};
 export const SUPPLY_PILE={x:665,y:-1,width:72};
 export const playerFloor=p=>p?.floor===CELLAR_FLOOR?CELLAR_FLOOR:DECK_FLOOR;
-const cannonPad={x:641,y:0,r:26};
+export const CANNON_IDS=[0,1];
+const cannonPads=[{x:641,y:0,r:26},{x:641,y:-68,r:26}];
+export const cannonPad=(index=0)=>cannonPads[index];
 export const STATIONS = {
  driver:{x:385,y:0,r:26},rack:{x:648,y:56,r:19},
- cleaner:cannonPad,loader:cannonPad,gunner:cannonPad,
+ cleaner:cannonPad(),loader:cannonPad(),gunner:cannonPad(),
  supply:{x:617,y:0,r:23},cook:{x:383,y:-21,r:24},'wheel-pickup':{x:528,y:-62,r:24}
 };
+const rackDeliverySpot={...STATIONS.rack,r:30};
 const CANNON_ROLES=['cleaner','loader','gunner'];
+const BOT_AMMO_RESERVE=2;
 export const isCannonRole=role=>CANNON_ROLES.includes(role);
 const formerCannonPads={cleaner:{x:674,y:-41,r:20},loader:{x:622,y:-39,r:21},gunner:{x:658,y:3,r:26}};
 const formerSupplyPad={x:SUPPLY_PILE.x,y:STATIONS.supply.y,r:STATIONS.supply.r};
 const DECK_WORK_ROLES=['driver',...CANNON_ROLES];
-const canTakeBotStation=role=>role==='driver'||!DECK_WORK_ROLES.includes(role);
+const canTakeBotStation=(role,humanCount)=>role==='driver'||!DECK_WORK_ROLES.includes(role)||
+  (humanCount>1&&isCannonRole(role));
 const WORK_ROLES=['repair',...DECK_WORK_ROLES,'supply','cook','wheel-pickup'];
 export const ROYAL_SEATS={
  prince:{x:510,y:-74,dropY:-34},
@@ -41,7 +46,7 @@ const ROYAL_STATUS_REACH=52;
 export const ROYAL_CRY_THRESHOLD=70;
 const ROYAL_REQUEST_THRESHOLD=60;
 const ROYAL_INITIAL_HUNGER={prince:14,princess:22};
-const ROYAL_HUNGER_RATE=.4125, SNACK_HUNGER_RELIEF=75;
+const ROYAL_HUNGER_RATE=.495, SNACK_HUNGER_RELIEF=75;
 const ROYAL_FALL_CHANCE={cannon:.0625,rock:.13,obstacle:.085};
 const ROYAL_FALL_CRY_CHANCE=.85;
 const ROYAL_SEAT_BOUNCE_SHAKE=.9, ROYAL_SEAT_BOUNCE_TICKS=12;
@@ -56,6 +61,8 @@ export const ENEMY_RECOVERY_TICKS=126;
 const ENEMY_RETURN_TICKS=HZ;
 export const CATAPULT_RADIUS={x:35,y:24};
 const CATAPULT_FIRST=6*HZ, CATAPULT_APPROACH=33, CATAPULT_FLIGHT=144, CATAPULT_LINGER=21;
+const CATAPULT_FIRE_RATE=1.3;
+const CATAPULT_SALVO_WAVE=3,CATAPULT_SALVO_GAP=24,CATAPULT_SALVO_SPACING=22,CATAPULT_PATTERN=[2,1,3,1];
 const CART_HULL={left:340,right:715,halfHeight:100};
 // World X 180 projects to about 30% of the standard 16:9 overview.
 const CATAPULT_TARGET_X=718, CATAPULT_FORWARD_X=180;
@@ -64,6 +71,7 @@ const ROAD_SCROLL_UNITS_PER_METER=ROAD_UNITS_PER_METER*8;
 const ROAD_FIRST_WARNING_METERS=42, ROAD_WARNING_TICKS=4*HZ, ROAD_OBSTACLE_ENTRY_X=ROAD_CAMERA_MIN_X-100;
 const ROAD_OBSTACLE_HIT_START=287, ROAD_OBSTACLE_HIT_END=344, ROAD_STRIKE_MARGIN=HZ;
 const WALK_SPEED=165, CARRY_SPEED=50, WHEEL_CARRY_SPEED=110, WAGON_STEER_SPEED=140;
+const WAGON_IDLE_SWAY=7,WAGON_IDLE_SWAY_TICKS=5*HZ;
 const PORTER_SPEED_PER_LEVEL=10;
 const ENEMY_RETREAT_SPEED=54, ENEMY_RECOVERY_SPEED=.4;
 const ENEMY_TRACK_X=1040, ENEMY_TRACK_SPEED=30, ENEMY_STRIKE_REACH=26;
@@ -83,12 +91,12 @@ const CAVALRY_BODY={
 };
 export const WAVE_ENTRY_X=1280;
 const WAVE_SPACING=56;
-const TEST_ENEMY_LIMIT=16, TEST_ENEMY_ENGAGEMENT=14*HZ;
-const WHIP_COOLDOWN=3, HORSE_RAGE_PER_WHIP=1/8, HORSE_RAGE_DECAY=.10;
-const HORSE_RAGE_REST_TICKS=2*HZ, HORSE_BOOST_TICKS=5*HZ, HORSE_SLOW_TICKS=12*HZ;
+const TEST_ENEMY_LIMIT=16*WAVE_ENEMY_MULTIPLIER, TEST_ENEMY_ENGAGEMENT=14*HZ;
+const WHIP_COOLDOWN=3, HORSE_RAGE_PER_WHIP=1/8, HORSE_RAGE_DECAY=.09;
+const HORSE_RAGE_REST_TICKS=HZ, HORSE_BOOST_TICKS=5*HZ, HORSE_SLOW_TICKS=12*HZ;
 const HORSE_RAGE_PACE=.35, HORSE_BOOST_PACE=2.20, HORSE_SLOW_PACE=.55;
 const ROYAL_BODY=22, ROYAL_WALK=56, ROYAL_CARRY=125;
-const ROYAL_ATTENTION_LOW=20, ROYAL_ATTENTION_DECAY=1.05, ROYAL_ATTENTION_GAIN=20;
+const ROYAL_ATTENTION_LOW=20, ROYAL_ATTENTION_DECAY=1.26, ROYAL_ATTENTION_GAIN=20;
 const ROYAL_REST=7*HZ, ROYAL_BOT_GRACE=9*HZ, ROYAL_HEART_TICKS=18;
 const ROYAL_PREFERENCES={
  prince:{stairs:.72,snacks:.7,shells:.1,hungerScale:.75,attentionScale:.5},
@@ -127,6 +135,7 @@ const freshHorseRage=()=>({value:0,lastWhipTick:null,boostUntil:0,slowUntil:0});
 
 export const BARREL = {x:704,y:0,length:44};
 const CANNON_SHOT_SPEED=1750, CANNON_SHOT_RADIUS=28, LEGACY_CANNON_RADIUS=6;
+const CANNON_PATH_DAMAGE_SCALE=1.4, CANNON_BLAST_LENGTH_SCALE=2, CANNON_BLAST_WIDTH_SCALE=1.125;
 const CANNON_NEAR_MISS_MARGIN=30, CANNON_NEAR_MISS_PACE=.75;
 export const CANNON_NEAR_MISS_TICKS=2*HZ;
 // Leave room beyond the farthest aim point for scatter and the full shockwave.
@@ -140,14 +149,21 @@ const CANNON_FULL_ACCURACY_RANGE=310, CANNON_MAX_RANGE_PENALTY=.72;
 const cannonAimSpan=offset=>offset<0?CANNON_AIM_CENTER-CANNON_AIM_MIN_X:CANNON_AIM_MAX_X-CANNON_AIM_CENTER;
 const cannonAimX=ax=>CANNON_AIM_CENTER+ax*cannonAimSpan(ax);
 export const cannonScale=s=>1+.17*(s.traits?.barrel??0);
+export const cannonMount=(s,index=0)=>index===0?BARREL:{...BARREL,y:BARREL.y-70*cannonScale(s)};
 export const cannonShotRadius=shot=>shot.radius??LEGACY_CANNON_RADIUS*(shot.caliber??1);
 export const WHEELS = [
  {x:405,y:-72,name:'앞쪽 위 바퀴'}, {x:650,y:-72,name:'뒤쪽 위 바퀴'},
  {x:405,y:72,name:'앞쪽 아래 바퀴'}, {x:650,y:72,name:'뒤쪽 아래 바퀴'}
 ];
-export const WHEEL_MOUNT_OFFSET=103, LOOSE_WHEEL_RADIUS=20, WHEEL_KNOCK_TICKS=24;
+export const WHEEL_MOUNT_OFFSET=103, LOOSE_WHEEL_RADIUS=20, WHEEL_KNOCK_TICKS=24, LOOSE_WHEEL_HOP_TICKS=10;
 const LOOSE_WHEEL_EXIT_X=WAVE_ENTRY_X+100;
 const WHEEL_TRACK_SPACING=16, WHEEL_TRACK_RANGE=2400, MAX_WHEEL_TRACK_POINTS=180;
+const MAX_LOOSE_WHEEL_TRACK_SEGMENTS=360;
+export const HOOFPRINT_RANGE=960;
+const MAX_CAVALRY_HOOFPRINTS=320;
+// Source pixels at the bottom of each newly planted hoof in the gallop cycle.
+const DRAFT_HORSE_FOOTFALLS=[null,[71,82],[93,83],null,[33,82],[24.5,81],null,null];
+const CAVALRY_FOOTFALLS=[null,null,[[54,175]],null,[[110,174],[142,177]],[[45,173]],null,null];
 const CAVALRY_WHEEL_DAMAGE=25, DAMAGED_WHEEL_PACE=.57, BROKEN_AXLE_PACE=.18;
 export const repairLabels=['바퀴 끼우기','차축 핀 고정'];
 function wheelState(){return {broken:-1,pending:[],progress:0,since:0,first:true,eligible:110,cavalryDamage:0};}
@@ -170,6 +186,31 @@ function recordWheelTracks(s){
  let remove=Math.max(0,tracks.length-MAX_WHEEL_TRACK_POINTS);
  while(remove<tracks.length&&s.road-tracks[remove][0]>WHEEL_TRACK_RANGE)remove++;
  if(remove)tracks.splice(0,remove);
+}
+function recordHoofprints(s,previousDistance,previousY,roadTravel){
+ const prints=s.hoofprints??=[];
+ const {width,height,frames,framesPerMeter,offsetX,offsetY}=DRAFT_HORSE_WALK;
+ const first=Math.floor(previousDistance*framesPerMeter)+1;
+ const last=Math.floor(s.distance*framesPerMeter);
+ for(let gait=first;gait<=last;gait++){
+   const progress=(gait/framesPerMeter-previousDistance)/(s.distance-previousDistance);
+   const road=Math.round(s.road-roadTravel*(1-progress));
+   const wagonY=previousY+(s.y-previousY)*progress;
+   for(const side of Object.keys(DRAFT_HORSES)){
+     const foot=DRAFT_HORSE_FOOTFALLS[(gait+draftHorseFrameOffset(side))%frames];
+     if(!foot)continue;
+     const mount=draftHorseOrigin(s,side);
+     const x=mount.x+offsetX+(foot[0]-width/2)*DRAFT_HORSE_SCALE;
+     const y=wagonY+mount.y+offsetY+(foot[1]-height/2)*DRAFT_HORSE_SCALE;
+     prints.push([road,Math.round(x),Math.round(y)]);
+   }
+ }
+ trimHoofprints(prints,s.road);
+}
+function trimHoofprints(prints,road,limit=Infinity){
+ let remove=Math.max(0,prints.length-limit);
+ while(remove<prints.length&&road-prints[remove][0]>=HOOFPRINT_RANGE)remove++;
+ if(remove)prints.splice(0,remove);
 }
 export function hasBrokenAxle(s){
  return (wheelNeedsRepair(s,0)&&wheelNeedsRepair(s,2))||
@@ -214,6 +255,7 @@ function crewScoreCheckpoint(s){
 }
 function resetCooking(p){p.cookHeld=false;p.cookTicks=0;}
 export function stopStationInputs(s){
+ s.wagonMoveY=0;
  for(const [id,p] of Object.entries(s.players)){
    if(p.cookHeld)queueSfx(s,'cook-stop',id);
    p.cookHeld=false;
@@ -225,25 +267,37 @@ export function setHumanSlots(s,slots){
  for(const id of PLAYER_IDS){
    if(previous.includes(id)===slots.includes(id))continue;
    const p=s.players[id];p.mx=0;p.my=0;p.until=0;p.job=null;resetCooking(p);
+   delete p.refillAfterShot;
    p.score=0;p.scoreOwnerVersion=(p.scoreOwnerVersion??0)+1;
  }
  s.humanSlots=[...slots];s.humans=slots.length;
- if(s.cannonExit&&!slots.includes(s.cannonExit.id))s.cannonExit=null;
+ for(const index of CANNON_IDS){
+   const cannon=cannonState(s,index);
+   if(cannon.cannonExit&&!slots.includes(cannon.cannonExit.id))cannon.cannonExit=null;
+ }
  pruneVotes(s,slots);
 }
 export function ensureDeck(s){
- if(s.chapter===undefined||s.wave===undefined){
-   Object.assign(s,campaignLocation(s.chapter,s.stage));
-   const stage=stageSpec(s.chapter,s.stage);
+ const legacyCampaign=s.chapter===undefined||s.wave===undefined;
+ if(legacyCampaign)Object.assign(s,campaignLocation(s.chapter,s.stage));
+ const stage=stageSpec(s.chapter,s.stage);
+ if(legacyCampaign){
    // Keep live legacy enemies, but skip waves that would already have launched.
    const {waves}=stage;
    const loopTicks=waveLoopTicks(waves);
    const loops=s.testMode&&waves.length?Math.floor(Math.max(0,s.tick-waves[0].at*HZ)/loopTicks):0;
    s.wave=loops*waves.length+waves.filter(wave=>wave.at*HZ<=s.tick-loops*loopTicks).length;
-   s.goal=stage.goal;
-   if(!s.testMode)s.distance=s.mode==='clear'?s.goal:Math.min(s.distance,s.goal);
    if(s.mode==='ready')s.enemies=[];
    delete s.nextEnemy;
+ }
+ const finished=s.mode==='clear'||s.mode==='lost';
+ if(!finished&&s.goal<stage.goal){
+   if(s.wave>=stage.catapultFastFromWave)shortenCatapultWait(s);
+   s.goal=stage.goal;
+ }
+ if(legacyCampaign){
+   if(!finished||!(s.goal>0))s.goal=stage.goal;
+   if(!s.testMode)s.distance=s.mode==='clear'?s.goal:Math.min(s.distance,s.goal);
  }
  if(!s.players)s.players=crew();
  if(!s.players.p3){const fresh=crew();s.players.p3=fresh.p3;s.players.p4=fresh.p4;}
@@ -300,6 +354,9 @@ export function ensureDeck(s){
  if(!Array.isArray(s.wheel.pending))s.wheel.pending=[];
  s.wheel.cavalryDamage??=0;
  if(!Array.isArray(s.looseWheels))s.looseWheels=[];
+ if(!Array.isArray(s.looseWheelTracks))s.looseWheelTracks=[];
+ if(!Array.isArray(s.hoofprints))s.hoofprints=[];
+ if(!Array.isArray(s.cavalryHoofprints))s.cavalryHoofprints=[];
  if(!Array.isArray(s.obstacles))s.obstacles=[];
  if(!Number.isFinite(s.nextRock))s.nextRock=s.distance+ROAD_FIRST_WARNING_METERS;
  if(s.roadWarning===undefined){
@@ -319,16 +376,29 @@ export function ensureDeck(s){
  for(const p of Object.values(s.players)){
    if(p.station==='supply'&&reachesSpot(p,formerSupplyPad,'supply')){
      p.x+=STATIONS.supply.x-formerSupplyPad.x;
-   }else if(isCannonRole(p.station)&&playerFloor(p)===DECK_FLOOR&&!onSpot(p,cannonPad)&&onSpot(p,formerCannonPads[p.station])){
-     p.x=cannonPad.x;p.y=cannonPad.y;
+   }else if(isCannonRole(p.station)&&p.cannonIndex==null&&playerFloor(p)===DECK_FLOOR&&
+       !onSpot(p,cannonPad())&&onSpot(p,formerCannonPads[p.station])){
+     const {x,y}=cannonPad();p.x=x;p.y=y;
    }
  }
- const previousGunner=s.players[s.cannonExit?.id];
- if(previousGunner?.station==='gunner'&&cannonStation(s)==='cleaner'&&reachesSpot(previousGunner,cannonPad,'cleaner')){
-   advanceCannonWork(s,previousGunner);
+ for(const index of CANNON_IDS){
+   const previousGunner=s.players[cannonState(s,index).cannonExit?.id];
+   if(previousGunner?.station==='gunner'&&cannonIndexFor(s,previousGunner)===index&&
+       cannonStation(s,index)==='cleaner'&&reachesSpot(previousGunner,cannonPad(index),'cleaner')){
+     advanceCannonWork(s,previousGunner,index);
+   }
  }
- s.catapult??=null;
+ if(!Array.isArray(s.catapults))s.catapults=s.catapult?[s.catapult]:[];
+ s.catapult=activeCatapultRocks(s)[0]??null;
+ s.catapultPattern??=0;
  s.nextCatapult??=Math.max(CATAPULT_FIRST,s.tick+2*HZ);
+ if(Number.isFinite(s.catapult?.launchedAt)){
+   const interval=catapultInterval(s.stage,s.wave>=stage.catapultFastFromWave);
+   s.nextCatapult=Math.min(s.nextCatapult,s.catapult.launchedAt+interval);
+ }
+ s.wagonMoveY??=0;s.wagonMoveSince??=s.tick;
+ s.wagonIdleY??=s.y;s.wagonIdleSince??=s.tick;
+ s.cannonCombo??={count:0,tick:0};
  s.traits??={};
  for(const [trait,level] of Object.entries(DEFAULT_TRAITS))s.traits[trait]??=level;
  s.affection??=0;
@@ -344,8 +414,22 @@ export function atTelescope(p){
  const {x,y,rx,ry}=TELESCOPE_POINT;
  return Math.hypot((p.x-x)/rx,(p.y-y)/ry)<=1;
 }
-export const cannonStation=s=>Number.isInteger(s.ammo.cleaning)?'cleaner':s.ammo.loaded?'gunner':'loader';
-export const canLoad=s=>cannonStation(s)==='loader'&&s.ammo.rack>0;
+function newCannon(){
+ return {ammo:{loaded:false,cleaning:0},fuse:{end:0,owner:null},gunAngle:0,cannonRecoil:null,cannonExit:null};
+}
+export function cannonState(s,index=0){
+ return index===1?(s.upperCannon??=newCannon()):s;
+}
+export function cannonIndexFor(s,p){
+ if(!p||playerFloor(p)!==DECK_FLOOR)return null;
+ if(isCannonRole(p.station))return p.cannonIndex===1?1:0;
+ return CANNON_IDS.find(index=>onSpot(p,cannonPad(index)))??null;
+}
+export function cannonStation(s,index=0){
+ const {loaded,cleaning}=cannonState(s,index).ammo;
+ return Number.isInteger(cleaning)?'cleaner':loaded?'gunner':'loader';
+}
+export const canLoad=(s,index=0)=>cannonStation(s,index)==='loader'&&s.ammo.rack>0;
 export function addRackShell(s){
  if(s.mode!=='run')return false;
  s.ammo.rack++;
@@ -359,14 +443,14 @@ function botJobFloor(p,role,spot){
  return jobFloor(role);
 }
 const reachesSpot=(p,spot,role)=>spot&&playerFloor(p)===jobFloor(role)&&onSpot(p,spot);
-function workSpot(s,role){
+function workSpot(s,role,index=0){
  if(role==='repair'){
    const wheel=WHEELS[s.wheel.broken];
    return wheel?{...wheel,r:28}:null;
  }
  if(role==='supply'&&s.ammo.stock===0)return null;
  if(role==='wheel-pickup'&&!canTakeSpareWheel(s))return null;
- if(isCannonRole(role)&&role!==cannonStation(s))return null;
+ if(isCannonRole(role))return role===cannonStation(s,index)?cannonPad(index):null;
  return WORK_ROLES.includes(role)?STATIONS[role]:null;
 }
 function canWork(p,s,role){
@@ -374,73 +458,86 @@ function canWork(p,s,role){
  return role==='repair'?(p.spareWheel||s.wheel?.progress===1):!p.spareWheel;
 }
 export function cannonAfterShot(s,p){
- const shot=s.cannonExit;
+ if(!p)return null;
+ const shot=cannonState(s,cannonIndexFor(s,p)??0).cannonExit;
  return shot&&s.players[shot.id]===p?shot:null;
 }
 export function occupiedStation(p,s){
  if(!p?.station||!canWork(p,s,p.station))return null;
- const spot=workSpot(s,p.station);
+ const spot=workSpot(s,p.station,p.cannonIndex??0);
  return reachesSpot(p,spot,p.station)?p.station:null;
 }
 export function cookingProgress(s,p){return occupiedStation(p,s)==='cook'?(p.cookTicks??0)/COOK_TICKS:0;}
 function releaseStation(p,blockEntry=false){
- if(blockEntry)p.exitedStation=p.station;
- p.station=null;p.mx=0;p.my=0;
+ if(blockEntry){
+   p.exitedStation=p.station;
+   if(isCannonRole(p.station))p.exitedCannonIndex=p.cannonIndex??0;
+ }
+ p.station=null;p.cannonIndex=null;p.mx=0;p.my=0;
  resetCooking(p);
 }
-function enterStation(s,p,role){
+function enterStation(s,p,role,index=0){
  p.station=role;p.mx=0;p.my=0;
+ p.cannonIndex=isCannonRole(role)?index:null;
  if(role==='driver')p.facing=-1;
  if(role==='gunner'){
-   Object.assign(p,cannonAimCursor(s));
+   Object.assign(p,cannonAimCursor(s,null,index));
    p.cannonCursor=true;
  }
 }
-function advanceCannonWork(s,p){
- const role=cannonStation(s);
+function advanceCannonWork(s,p,index){
+ const role=cannonStation(s,index);
  if(isCannonRole(p.job))p.job=role;
- enterStation(s,p,role);
+ enterStation(s,p,role,index);
 }
-export function leaveStation(s,id,expectedRole){
+export function leaveStation(s,id,expectedRole,expectedCannonIndex){
  const p=s.players[id],role=occupiedStation(p,s);
  if(s.mode!=='run'||!role)return false;
  if(expectedRole&&role!==expectedRole&&!(isCannonRole(expectedRole)&&isCannonRole(role)))return false;
- if(cannonAfterShot(s,p))s.cannonExit=null;
+ const index=cannonIndexFor(s,p)??0;
+ if(expectedCannonIndex!==undefined&&(!isCannonRole(role)||index!==expectedCannonIndex))return false;
+ if(cannonAfterShot(s,p))cannonState(s,index).cannonExit=null;
  if(p.cookHeld)queueSfx(s,'cook-stop',id);
  releaseStation(p,true);
  queueSfx(s,'station-exit',id);
  return true;
 }
+const stationKey=(role,index)=>isCannonRole(role)?`cannon-${index}`:role;
 function claimStations(s,humans){
  const owners=new Map();
  const ids=[...humans,...PLAYER_IDS.filter(id=>!humans.has(id))];
  for(const id of ids){
    const p=s.players[id],role=occupiedStation(p,s);
-   if(role&&!owners.has(role)&&(humans.has(id)||p.job===role))owners.set(role,id);
+   const key=stationKey(role,p.cannonIndex??0);
+   if(role&&!owners.has(key)&&(humans.has(id)||p.job===role&&p.cannonIndex!==1))owners.set(key,id);
     else if(p.station){
       if(p.cookHeld)queueSfx(s,'cook-stop',id);
       releaseStation(p);
       queueSfx(s,'station-exit',id);
     }
    if(p.exitedStation){
-     const spot=isCannonRole(p.exitedStation)?cannonPad:workSpot(s,p.exitedStation);
-     if(!reachesSpot(p,spot,p.exitedStation))p.exitedStation=null;
+     const spot=isCannonRole(p.exitedStation)?cannonPad(p.exitedCannonIndex??0):workSpot(s,p.exitedStation);
+     if(!reachesSpot(p,spot,p.exitedStation)){
+       p.exitedStation=null;p.exitedCannonIndex=null;
+     }
    }
  }
  for(const id of ids){
    const p=s.players[id],human=humans.has(id);
    if(p.station||p.exitedStation||p.ball||p.food||p.royal)continue;
+   const index=human?cannonIndexFor(s,p)??0:0;
    for(const role of human?WORK_ROLES:[p.job]){
-     const spot=workSpot(s,role),owner=owners.get(role);
+     if(!human&&isCannonRole(role)&&s.ammo.rack<BOT_AMMO_RESERVE)continue;
+     const key=stationKey(role,index),spot=workSpot(s,role,index),owner=owners.get(key);
      if(!canWork(p,s,role)||!reachesSpot(p,spot,role)||
-        (owner&&(!human||humans.has(owner)||!canTakeBotStation(role))))continue;
+        (owner&&(!human||humans.has(owner)||!canTakeBotStation(role,humans.size))))continue;
      if(owner){
        const bot=s.players[owner];
        releaseStation(bot);bot.job=null;
      }
-     enterStation(s,p,role);
+     enterStation(s,p,role,index);
       queueSfx(s,'station-enter',id);
-     owners.set(role,id);
+     owners.set(key,id);
      break;
    }
  }
@@ -534,6 +631,7 @@ export function setInput(s,id,input){
    }
    if((input.aimRole!==undefined&&input.aimRole!==role)||(input.aimRole===undefined&&move>0))return;
    if(role==='gunner'){
+     if(input.aimCannon!==undefined&&input.aimCannon!==cannonIndexFor(s,p))return;
      if(input.aimCursor===true){
        p.ax=clamp(input.ax,-1,1);p.ay=clamp(input.ay,-1,1);
        p.cannonCursor=true;
@@ -549,6 +647,8 @@ export function setInput(s,id,input){
 }
 export function operate(s,id,atTick=s.tick,taps=1){
  const p=s.players[id],role=stationAt(p,s);if(!role||s.mode!=='run')return false;
+ const index=isCannonRole(role)?cannonIndexFor(s,p):0;
+ const cannon=cannonState(s,index);
  if(role==='carry'||role==='royal-carry'||role==='royal-soothe'||role==='food-carry'||role==='cook'||role==='wheel-carry'||role==='wheel-missing')return false;
  if(role==='wheel-pickup'){
    releaseStation(p,true);
@@ -570,24 +670,24 @@ export function operate(s,id,atTick=s.tick,taps=1){
  if(role==='driver')return whipHorse(s,id);
  if(role==='cleaner'){
    if(!Number.isInteger(taps)||taps<1||taps>CANNON_CLEAN_TAPS)return false;
-   s.ammo.cleaning+=taps;
-   if(s.ammo.cleaning>=CANNON_CLEAN_TAPS){
-     s.ammo.cleaning=null;
+   cannon.ammo.cleaning+=taps;
+   if(cannon.ammo.cleaning>=CANNON_CLEAN_TAPS){
+     cannon.ammo.cleaning=null;
      awardScore(s,id,SCORE.cannonClean);
-     if(cannonAfterShot(s,p))s.cannonExit=null;
-     advanceCannonWork(s,p);
+     if(cannonAfterShot(s,p))cannon.cannonExit=null;
+     advanceCannonWork(s,p,index);
      message(p,s,'포신 청소 완료 · 장전하세요');
      queueSfx(s,'cannon-ready');
    }else queueSfx(s,'cannon-clean',id);
    return true;
  }
  if(role==='gunner'){
-   if(s.fuse.end)return false;
+   if(cannon.fuse.end)return false;
    // The station may change hands during the fuse. The shot still belongs to whoever lit it.
    const shooter={id,ownerVersion:p.scoreOwnerVersion??0};
-   s.fuse={end:s.tick+FUSE_TICKS,owner:id,shooter};saveCannonAim(s,p);
-   queueSfx(s,'cannon-fuse');
-   feedback(s,'gunner','점화! 왼쪽 스틱으로 조준');return true;
+   cannon.fuse={end:s.tick+FUSE_TICKS,owner:id,shooter};saveCannonAim(s,p,index);
+   queueSfx(s,'cannon-fuse',undefined,{cannonIndex:index});
+   feedback(s,'gunner','점화! 왼쪽 스틱으로 조준',index);return true;
  }
  if(role==='catch'){
    if(atTick<p.slipUntil-CATCH_TICKS)return false;
@@ -597,19 +697,20 @@ export function operate(s,id,atTick=s.tick,taps=1){
    }else dropBall(s,p,true,id);
    return true;
  }
- if((role==='loader'&&!canLoad(s))||(role==='supply'&&!s.ammo.stock)||s[feedbackKey(role)+'Cd']>s.tick)return false;
- action(s,role,phase({...s,tick:atTick},role),id);
+ if((role==='loader'&&!canLoad(s,index))||(role==='supply'&&!s.ammo.stock)||cannon[feedbackKey(role)+'Cd']>s.tick)return false;
+ action(s,role,phase({...s,tick:atTick},role),id,index);
  if(p.station&&!occupiedStation(p,s))releaseStation(p,true);
  return true;
 }
 export const stageTitle = (stage,chapter=1)=>stageSpec(chapter,stage).title;
 export const TRAITS=UPGRADE_CARDS.filter(card=>card.id!=='repair');
 export const catchPhase=(p,tick)=>clamp((tick-p.slipUntil+CATCH_TICKS)/CATCH_TICKS,0,1);
-function cannonMotion(s){
+function cannonMotion(s,index=0){
+ const {fuse}=cannonState(s,index);
  let roll=.017*Math.sin(s.tick*.28)+.012*Math.sin(s.tick*.53);
- if(s.fuse.end){
-   const litTicks=s.tick-s.fuse.end+FUSE_TICKS;
-   const shotPhase=s.fuse.end*.618;
+ if(fuse.end){
+   const litTicks=s.tick-fuse.end+FUSE_TICKS;
+   const shotPhase=fuse.end*.618;
    const buildUp=clamp(litTicks/8,0,1);
    roll+=buildUp*(.23*Math.sin(litTicks*.31+shotPhase)+.085*Math.sin(litTicks*.67-shotPhase));
  }
@@ -619,37 +720,41 @@ function cannonMotion(s){
 export function firingAngle(s,base=s.gunAngle,motion=cannonMotion(s)){
  return clamp(base+motion,-1.1,1.1);
 }
-export function cannonAimInput(s,x,y){
+export function cannonAimInput(s,x,y,index=0){
  const offset=x-CANNON_AIM_CENTER;
  return {
    ax:clamp(offset/cannonAimSpan(offset),-1,1),
-   ay:clamp((y-s.y-BARREL.y)/CANNON_AIM_Y,-1,1),
+   ay:clamp((y-s.y-cannonMount(s,index).y)/CANNON_AIM_Y,-1,1),
  };
 }
-export function cannonAimCursor(s,p){
+export function cannonAimCursor(s,p,index=cannonIndexFor(s,p)??0){
  if(p?.cannonCursor)return {ax:p.ax,ay:p.ay};
- if(!p&&s.gunAim)return {...s.gunAim};
- const angle=p?aimAngle(p):s.gunAngle;
- return cannonAimInput(s,CANNON_AIM_CENTER,s.y+BARREL.y+Math.tan(angle??0)*(CANNON_AIM_CENTER-BARREL.x));
+ const {gunAim,gunAngle}=cannonState(s,index);
+ if(!p&&gunAim)return {...gunAim};
+ const angle=p?aimAngle(p):gunAngle;
+ const mount=cannonMount(s,index);
+ return cannonAimInput(s,CANNON_AIM_CENTER,s.y+mount.y+Math.tan(angle??0)*(CANNON_AIM_CENTER-mount.x),index);
 }
-function saveCannonAim(s,p){
- s.gunAim=cannonAimCursor(s,p);
- s.gunAngle=Math.atan2(s.gunAim.ay*CANNON_AIM_Y,cannonAimX(s.gunAim.ax)-BARREL.x);
+function saveCannonAim(s,p,index=0){
+ const cannon=cannonState(s,index);
+ cannon.gunAim=cannonAimCursor(s,p,index);
+ cannon.gunAngle=Math.atan2(cannon.gunAim.ay*CANNON_AIM_Y,cannonAimX(cannon.gunAim.ax)-cannonMount(s,index).x);
 }
-function cannonOriginY(s){
- return s.y+BARREL.y+s.shake*Math.sin(s.tick*.37*3)*3;
+function cannonOriginY(s,mount){
+ return s.y+mount.y+s.shake*Math.sin(s.tick*.37*3)*3;
 }
-export function cannonAim(s,p){
- const {ax,ay}=cannonAimCursor(s,p);
+export function cannonAim(s,p,index=cannonIndexFor(s,p)??0){
+ const mount=cannonMount(s,index);
+ const {ax,ay}=cannonAimCursor(s,p,index);
  const x=cannonAimX(ax);
- const originY=cannonOriginY(s);
- const forward=x-BARREL.x,targetY=ay*CANNON_AIM_Y;
- const base=Math.atan2(s.y+BARREL.y+targetY-originY,forward);
- const motion=cannonMotion(s);
+ const originY=cannonOriginY(s,mount);
+ const forward=x-mount.x,targetY=ay*CANNON_AIM_Y;
+ const base=Math.atan2(s.y+mount.y+targetY-originY,forward);
+ const motion=cannonMotion(s,index);
  const wave=.105*Math.sin(s.tick*.105)+.045*Math.sin(s.tick*.21+.9);
  const baseAccuracy=clamp(.86+wave-Math.abs(motion)*.60-s.shake*.20,.32,.98);
  const falloff=clamp((Math.hypot(forward,targetY)-CANNON_FULL_ACCURACY_RANGE)/
-   (CANNON_AIM_MAX_X-BARREL.x-CANNON_FULL_ACCURACY_RANGE),0,1);
+   (CANNON_AIM_MAX_X-mount.x-CANNON_FULL_ACCURACY_RANGE),0,1);
  const accuracy=baseAccuracy*(1-CANNON_MAX_RANGE_PENALTY*falloff**1.5);
  const miss=(1-accuracy)/.68;
  const spreadX=12+38*miss,spreadY=9+34*miss;
@@ -731,51 +836,66 @@ function dropBall(s,p,carried,id){
  const msg=carried?'포탄을 놓쳤습니다 · 1발 손실':'장전 실패 · 포탄 1발 손실';
  message(p,s,msg);s.event=msg;s.eventUntil=s.tick+45;
 }
-function cannonStep(s){
- if(!s.fuse.end)return;
- const holder=PLAYER_IDS.find(id=>occupiedStation(s.players[id],s)==='gunner');
+function cannonStep(s,index){
+ const cannon=cannonState(s,index);
+ if(!cannon.fuse.end)return;
+ const holder=PLAYER_IDS.find(id=>{
+   const player=s.players[id];
+   return occupiedStation(player,s)==='gunner'&&cannonIndexFor(s,player)===index;
+ });
  const p=s.players[holder];
  if(p){
-   s.fuse.owner=holder;
-   saveCannonAim(s,p);
+   cannon.fuse.owner=holder;
+   saveCannonAim(s,p,index);
  }
- if(s.tick===s.fuse.end-FUSE_WARNING_TICKS)queueSfx(s,'cannon-imminent');
- if(s.tick<s.fuse.end)return;
- fireCannon(s,p);
+ if(s.tick===cannon.fuse.end-FUSE_WARNING_TICKS)queueSfx(s,'cannon-imminent',undefined,{cannonIndex:index});
+ if(s.tick<cannon.fuse.end)return;
+ fireCannon(s,p,index);
 }
-function fireCannon(s,p=null){
- const gunner=p??Object.values(s.players).find(player=>occupiedStation(player,s)==='gunner');
+function fireCannon(s,p=null,index=0){
+ const cannon=cannonState(s,index),mount=cannonMount(s,index);
+ const gunner=p??Object.values(s.players).find(player=>occupiedStation(player,s)==='gunner'&&cannonIndexFor(s,player)===index);
  const viewer=gunner&&humanIds(s).find(id=>s.players[id]===gunner);
- const aim=cannonAim(s,p);
+ const {owner:firingId,shooter=null}=cannon.fuse;
+ const owner=s.players[firingId];
+ const sameController=owner&&(owner===gunner||shooter?.id===firingId&&shooter.ownerVersion===owner.scoreOwnerVersion);
+ const refillBot=sameController&&!humanIds(s).includes(firingId)?owner:null;
+ const aim=cannonAim(s,p,index);
  // Sample the displayed ellipse with a separate seed so firing does not perturb other events.
- let seed=(s.seed^Math.imul(s.tick+1,1597334677))>>>0;
+ let seed=(s.seed^Math.imul(s.tick+1,1597334677)^Math.imul(index,0x9e3779b9))>>>0;
  seed=(Math.imul(seed,1664525)+1013904223)>>>0;
  const scatterAngle=seed/4294967296*TAU;
  seed=(Math.imul(seed,1664525)+1013904223)>>>0;
  const scatterRadius=Math.sqrt(seed/4294967296);
  const landing={x:aim.x+Math.cos(scatterAngle)*scatterRadius*aim.spreadX,
    y:aim.y+Math.sin(scatterAngle)*scatterRadius*aim.spreadY};
- const originY=cannonOriginY(s);
- const angle=Math.atan2(landing.y-originY,landing.x-BARREL.x);
+ const originY=cannonOriginY(s,mount);
+ const angle=Math.atan2(landing.y-originY,landing.x-mount.x);
  const dx=Math.cos(angle),dy=Math.sin(angle),caliber=cannonScale(s);
- const muzzle=BARREL.length*caliber;
- const x=BARREL.x+muzzle*dx,y=originY+muzzle*dy;
- const {shooter=null}=s.fuse;
- s.shots.push({x,y,vx:CANNON_SHOT_SPEED*dx,vy:CANNON_SHOT_SPEED*dy,caliber,radius:CANNON_SHOT_RADIUS*caliber,landing,shooter});
- s.cannonRecoil={tick:s.tick,x,y,angle,caliber};
- s.ammo.loaded=false;s.ammo.cleaning=0;s.fuse={end:0,owner:null};
- s.cannonExit=viewer?{id:viewer,tick:s.tick}:null;
- if(gunner){
-   advanceCannonWork(s,gunner);
+ const muzzle=mount.length*caliber;
+ const x=mount.x+muzzle*dx,y=originY+muzzle*dy;
+ s.shots.push({x,y,vx:CANNON_SHOT_SPEED*dx,vy:CANNON_SHOT_SPEED*dy,caliber,radius:CANNON_SHOT_RADIUS*caliber,landing,shooter,cannonIndex:index});
+ cannon.cannonRecoil={tick:s.tick,x,y,angle,caliber,cannonIndex:index};
+ cannon.ammo.loaded=false;cannon.ammo.cleaning=0;cannon.fuse={end:0,owner:null};
+ cannon.cannonExit=viewer?{id:viewer,tick:s.tick,cannonIndex:index}:null;
+ if(refillBot){
+   refillBot.refillAfterShot=true;
+   if(isCannonRole(refillBot.station))releaseStation(refillBot,true);
+   if(canWork(refillBot,s,'supply'))refillBot.job=s.ammo.stock>0?'supply':null;
+ }
+ if(gunner&&gunner!==refillBot){
+   advanceCannonWork(s,gunner,index);
    message(gunner,s,'포탄 발사 · 포신을 청소하세요');
  }
- feedback(s,'gunner','포탄 자동 발사!');impact(s,1.45,'대포 반동',ROYAL_FALL_CHANCE.cannon);
- queueSfx(s,'cannon-fire',undefined,{rate:1/Math.sqrt(caliber)});
+ feedback(s,'gunner','포탄 자동 발사!',index);impact(s,1.45,'대포 반동',ROYAL_FALL_CHANCE.cannon);
+ queueSfx(s,'cannon-fire',undefined,{rate:1/Math.sqrt(caliber),cannonIndex:index});
 }
 export const enemyKnockback=enemy=>enemy.cannonKnock??enemy.wheelKnock;
 const activeEnemy=enemy=>!enemy.spent&&!enemyKnockback(enemy);
+const cannonShotKills=shot=>shot.kills??(shot.sfxHit?1:0);
 function defeatWithCannon(s,enemy,motion,x,y,shot){
  const {shooter}=shot;
+ shot.kills=cannonShotKills(shot)+1;
  enemy.cannonKnock={tick:s.tick,...motion};
  enemy.x+=CAVALRY_DEATH_BACKSTEP;
  s.kill++;
@@ -809,8 +929,9 @@ export function incomingPursuit(s,view){
 }
 function landCannonShot(s,shot){
  const caliber=shot.caliber??1,upgrade=Math.min(.5,caliber-1);
- const impact={...shot.landing,road:s.road,tick:s.tick,id:s.nextId++,caliber,
-   length:200+70*upgrade,halfWidth:87+40*upgrade};
+ const impact={...shot.landing,road:s.road,tick:s.tick,id:s.nextId++,caliber,cannonIndex:shot.cannonIndex??0,
+   length:(200+70*upgrade)*CANNON_BLAST_LENGTH_SCALE,
+   halfWidth:(87+40*upgrade)*CANNON_BLAST_WIDTH_SCALE};
  (s.cannonImpacts??=[]).push(impact);
  queueSfx(s,'cannon-ground',undefined,{rate:1/Math.sqrt(caliber)});
  for(const enemy of s.enemies){
@@ -830,6 +951,17 @@ function landCannonShot(s,shot){
       enemy.x+CAVALRY_BODY.x,enemy.y+CAVALRY_BODY.y,shot);
  }
 }
+function resolveCannonCombo(s,shot){
+ const kills=cannonShotKills(shot);
+ const combo=s.cannonCombo??={count:0,tick:0};
+ if(kills===0){
+   combo.count=0;
+   combo.tick=s.tick;
+ }else if(kills>=2||combo.count>0){
+   combo.count+=kills;
+   combo.tick=s.tick;
+ }
+}
 function advanceShots(s){
  for(const shot of s.shots){
    if(shot.spent)continue;
@@ -844,7 +976,8 @@ function advanceShots(s){
    }
    // Sweep the shell against the mounted body, with extra clearance from the barrel upgrade.
    const upgrade=(shot.caliber??1)-1,radius=cannonShotRadius(shot);
-   const hitX=CAVALRY_BODY.rx+radius+22*upgrade,hitY=CAVALRY_BODY.ry+radius+30*upgrade;
+   const hitX=(CAVALRY_BODY.rx+radius+22*upgrade)*CANNON_PATH_DAMAGE_SCALE;
+   const hitY=(CAVALRY_BODY.ry+radius+30*upgrade)*CANNON_PATH_DAMAGE_SCALE;
    for(const enemy of s.enemies){
      if(!activeEnemy(enemy))continue;
      const offsetX=x-enemy.x-CAVALRY_BODY.x,offsetY=y-enemy.y-CAVALRY_BODY.y;
@@ -867,7 +1000,11 @@ function advanceShots(s){
      shot.spent=true;
    }
  }
- s.shots=s.shots.filter(shot=>!shot.spent&&(shot.landing||shot.x<1280)&&shot.y>ROAD_TOP-32&&shot.y<ROAD_BOTTOM+32);
+ s.shots=s.shots.filter(shot=>{
+   const active=!shot.spent&&(shot.landing||shot.x<1280)&&shot.y>ROAD_TOP-32&&shot.y<ROAD_BOTTOM+32;
+   if(!active&&!shot.enemy)resolveCannonCombo(s,shot);
+   return active;
+ });
  s.enemies=s.enemies.filter(enemy=>!enemy.spent);
  if(s.cannonImpacts?.length)s.cannonImpacts=s.cannonImpacts.filter(impact=>s.tick-impact.tick<CANNON_IMPACT_TICKS);
 }
@@ -875,8 +1012,9 @@ function finishCarry(s,p,id){
  if(!p.ball)return;
  if(p.slipUntil){
    if(s.tick>=p.slipUntil)dropBall(s,p,true,id);
- }else if(reachesSpot(p,STATIONS.rack,'deliver')){
+ }else if(reachesSpot(p,rackDeliverySpot,'deliver')){
    p.ball=false;s.ammo.rack++;message(p,s,'적재칸에 포탄을 내려놓았습니다');
+   delete p.refillAfterShot;
    awardScore(s,id,SCORE.shellDelivery);
    queueSfx(s,'shell-deposit');
  }
@@ -1123,21 +1261,23 @@ function advanceRoyals(s){
    setRoyalDestination(s,royal,{x:seat.x+(royal.id==='prince'?26:0),y:seat.dropY});
  }
 }
-export function catapultX(s){
- if(!s.catapult)return null;
- return CATAPULT_TARGET_X+(s.distance-s.catapult.distance)*ROAD_UNITS_PER_METER;
+const catapultRocks=s=>s.catapults??(s.catapult?[s.catapult]:[]);
+export const activeCatapultRocks=s=>catapultRocks(s).filter(rock=>rock.launchedAt<=s.tick);
+export function catapultX(s,rock=activeCatapultRocks(s)[0]){
+ if(!rock)return null;
+ return CATAPULT_TARGET_X+(s.distance-rock.distance)*ROAD_UNITS_PER_METER;
 }
-export function catapultHitsWagon(s,x=catapultX(s)){
- const rock=s.catapult;
+export function catapultHitsWagon(s,x,rock=activeCatapultRocks(s)[0]){
  if(!rock)return false;
+ x??=catapultX(s,rock);
  const dx=x-clamp(x,CART_HULL.left,CART_HULL.right);
  const dy=rock.y-clamp(rock.y,s.y-CART_HULL.halfHeight,s.y+CART_HULL.halfHeight);
  return Math.hypot(dx/CATAPULT_RADIUS.x,dy/CATAPULT_RADIUS.y)<=1;
 }
-export function catapultAirX(s){
- const x=catapultX(s);
- if(!s.catapult||s.tick>=s.catapult.lockAt)return x;
- const remaining=s.catapult.lockAt-s.tick;
+export function catapultAirX(s,rock=activeCatapultRocks(s)[0]){
+ const x=catapultX(s,rock);
+ if(!rock||s.tick>=rock.lockAt)return x;
+ const remaining=rock.lockAt-s.tick;
  // As the rock closes in, its forward speed eases toward the wagon's base pace.
  return x+baseSpeed(s)*ROAD_UNITS_PER_METER*remaining*STEP+340*(remaining/CATAPULT_APPROACH)**2;
 }
@@ -1146,11 +1286,11 @@ export function initial(stage=1,upgrades=DEFAULT_TRAITS,seed=718,chapter=1){
   const goal=stageSpec(location.chapter,location.stage).goal;
   const traits={...DEFAULT_TRAITS,...upgrades};
   const hp=maxDurability({traits}),wheel=wheelState();
-  return {mode:'ready',...location,wave:0,traits,seed,tick:0,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
-    obstacles:[],roadWarning:null,wheelTracks:[],sfxSequence:0,sfxEvents:[],
-    enemies:[],shots:[],particles:[],cannonImpacts:[],
-    nextRock:ROAD_FIRST_WARNING_METERS,catapult:null,nextCatapult:CATAPULT_FIRST,driveCd:0,gunCd:0,driveMsg:'',gunMsg:'',driveUntil:0,gunUntil:0,event:'',eventUntil:0,serial:0,road:0,players:crew(),humans:1,horses:{right:0,left:0},horseRage:freshHorseRage(),ammo:supplies(),royals:passengers(),gunAngle:0,wheel,looseWheels:[],fixCd:0,fixMsg:'',fixUntil:0,
-    affection:0,care:newCare(),intermission:null,stageEntry:{hp,wheel:{...wheel}}};
+  return {mode:'ready',...location,wave:0,traits,seed,tick:0,distance:0,goal,speed:13+traits.rein*3,hp,boost:0,lane:1,y:CART_CENTER,wagonMoveY:0,wagonMoveSince:0,wagonIdleY:CART_CENTER,wagonIdleSince:0,shake:0,shakeSign:1,fuse:{end:0,owner:null},cannonRecoil:null,falling:[],kill:0,nextId:10,
+    obstacles:[],roadWarning:null,wheelTracks:[],looseWheelTracks:[],hoofprints:[],cavalryHoofprints:[],sfxSequence:0,sfxEvents:[],
+    enemies:[],shots:[],particles:[],cannonImpacts:[],cannonCombo:{count:0,tick:0},
+    nextRock:ROAD_FIRST_WARNING_METERS,catapult:null,catapults:[],catapultPattern:0,nextCatapult:CATAPULT_FIRST,driveCd:0,gunCd:0,driveMsg:'',gunMsg:'',driveUntil:0,gunUntil:0,event:'',eventUntil:0,serial:0,road:0,players:crew(),humans:1,horses:{right:0,left:0},horseRage:freshHorseRage(),ammo:supplies(),royals:passengers(),gunAngle:0,wheel,looseWheels:[],fixCd:0,fixMsg:'',fixUntil:0,
+    upperCannon:newCannon(),affection:0,care:newCare(),intermission:null,stageEntry:{hp,wheel:{...wheel}}};
 }
 export function begin(s,{testMode=false}={}){
  if(s.mode!=='ready')return;
@@ -1218,7 +1358,10 @@ function impact(s,power,msg,royalFallChance=0){
    }
  }
 }
-function feedback(s,role,msg){const key=feedbackKey(role);s[key+'Msg']=msg;s[key+'Until']=s.tick+26;s[key+'Cd']=s.tick+8;}
+function feedback(s,role,msg,index=0){
+ const key=feedbackKey(role),workState=cannonState(s,index);
+ workState[key+'Msg']=msg;workState[key+'Until']=s.tick+26;workState[key+'Cd']=s.tick+8;
+}
 function loseWheel(s,{cavalry=false,contact}={}){
  const wheel=s.wheel;
  if(!cavalry&&!contact&&(wheel.broken>=0||s.distance<wheel.eligible))return;
@@ -1297,7 +1440,22 @@ function nextWheelBounce(wheel,dx,dy,travel,solids){
   }
   return bounce;
 }
-function rollWheelSegment(s,wheel,dx,dy,from,to,pursuerStarts){
+function recordLooseWheelSegment(s,wheel,dx,dy,from,to,travel){
+  if(s.tick-(wheel.bounceTick??wheel.launchTick)<LOOSE_WHEEL_HOP_TICKS)return;
+  // Each endpoint uses the scrolling road position at that fraction of the tick.
+  const fromX=Math.round(wheel.x-s.road+travel*(1-from)),fromY=Math.round(wheel.y);
+  const toX=Math.round(wheel.x+dx-s.road+travel*(1-to)),toY=Math.round(wheel.y+dy);
+  if(fromX!==toX||fromY!==toY)(s.looseWheelTracks??=[]).push([fromX,fromY,toX,toY,Math.round(s.road)]);
+}
+function trimLooseWheelTracks(s){
+  const tracks=s.looseWheelTracks;
+  if(!tracks?.length)return;
+  let remove=Math.max(0,tracks.length-MAX_LOOSE_WHEEL_TRACK_SEGMENTS);
+  while(remove<tracks.length&&s.road-tracks[remove][4]>WHEEL_TRACK_RANGE)remove++;
+  if(remove)tracks.splice(0,remove);
+}
+function rollWheelSegment(s,wheel,dx,dy,from,to,travel,pursuerStarts){
+  recordLooseWheelSegment(s,wheel,dx,dy,from,to,travel);
   for(const enemy of s.enemies){
     if(!activeEnemy(enemy))continue;
     const start=pursuerStarts?.get(enemy.id)??enemy;
@@ -1323,7 +1481,7 @@ function advanceLooseWheels(s,travel,pursuerStarts){
     const dx=wheel.vx*STEP,dy=wheel.vy*STEP;
     const bounce=nextWheelBounce(wheel,dx,dy,travel,solids);
     const fraction=bounce?.at??1;
-    rollWheelSegment(s,wheel,dx*fraction,dy*fraction,0,fraction,pursuerStarts);
+    rollWheelSegment(s,wheel,dx*fraction,dy*fraction,0,fraction,travel,pursuerStarts);
     if(bounce){
       const {nx,ny,approach}=bounce;
       const rebound=1.72*approach/STEP;
@@ -1331,7 +1489,7 @@ function advanceLooseWheels(s,travel,pursuerStarts){
       wheel.x+=nx*.65;wheel.y+=ny*.65;
       wheel.bounceTick=s.tick;
       burst(s,wheel.x,wheel.y,'dust');
-      rollWheelSegment(s,wheel,wheel.vx*STEP*(1-fraction),wheel.vy*STEP*(1-fraction),fraction,1,pursuerStarts);
+      rollWheelSegment(s,wheel,wheel.vx*STEP*(1-fraction),wheel.vy*STEP*(1-fraction),fraction,1,travel,pursuerStarts);
     }
     const rollingX=wheel.vx-groundSpeed;
     wheel.angle+=Math.sign(rollingX||wheel.vx)*Math.hypot(rollingX,wheel.vy)*STEP/LOOSE_WHEEL_RADIUS;
@@ -1368,7 +1526,7 @@ function roadStrikeNear(s,x,landIn,spawnIn=0){
   const clear=spawnIn+(ROAD_OBSTACLE_HIT_END-x)*ticksPerUnit;
   return landIn>=contact-ROAD_STRIKE_MARGIN&&landIn<=clear+ROAD_STRIKE_MARGIN;
 }
-const roadLaneClear=(y,obstacle)=>Math.abs(y-obstacleY(obstacle))>=roadObstacleProfile(obstacle.type).halfWidth+6;
+const roadLaneClear=(y,obstacle,margin=6)=>Math.abs(y-obstacleY(obstacle))>=roadObstacleProfile(obstacle.type).halfWidth+margin;
 function sharedEscapeLane(s,rockY){
   const rockClearance=CART_HULL.halfHeight+CATAPULT_RADIUS.y+8;
   return LANES.some(y=>Math.abs(y-rockY)>=rockClearance&&
@@ -1379,8 +1537,7 @@ function scheduleRoadObstacle(s){
   const warning=s.roadWarning;
   if(warning){
     if(s.tick<warning.spawnAt)return;
-    const rock=s.catapult;
-    if(rock&&s.tick<rock.landAt&&roadStrikeNear(s,warning.x,rock.landAt-s.tick)){
+    if(catapultRocks(s).some(rock=>s.tick<rock.landAt&&roadStrikeNear(s,warning.x,rock.landAt-s.tick))){
       // Keep the announced lane if an airborne rock would land during this approach.
       warning.spawnAt=s.tick+ROAD_STRIKE_MARGIN;
       return;
@@ -1424,47 +1581,90 @@ function advanceObstacles(s,travel){
   s.obstacles=s.obstacles.filter(obstacle=>obstacle.x<1260);
   scheduleRoadObstacle(s);
 }
-function advanceCatapult(s){
-  const rock=s.catapult;
-  if(!rock){
-    if(s.tick<s.nextCatapult)return;
-    const warning=s.roadWarning;
-    if((warning&&roadStrikeNear(s,warning.x,CATAPULT_FLIGHT,warning.spawnAt-s.tick))
-        ||s.obstacles.some(obstacle=>roadObstacleAhead(obstacle)&&roadStrikeNear(s,obstacle.x,CATAPULT_FLIGHT)))return;
-    const rolls={seed:s.seed};
-    const offset=76+rand(rolls)*8;
-    const clearance=CART_HULL.halfHeight+CATAPULT_RADIUS.y-offset+8;
-    let side=rand(rolls)<.5?'right':'left';
-    if(s.y-CART_TOP<clearance)side='right';
-    else if(CART_BOTTOM-s.y<clearance)side='left';
-    if(warning||s.obstacles.some(roadObstacleAhead)){
-      // A speed change can invalidate the overlap estimate. Always preserve a shared escape lane.
-      const rockY=s.y+offset*(side==='right'?-1:1);
-      if(!sharedEscapeLane(s,rockY)){
-        if(!sharedEscapeLane(s,2*s.y-rockY))return;
-        side=side==='right'?'left':'right';
-      }
+function catapultInterval(stage,fast=false){
+  const interval=Math.max(9*HZ,13*HZ-(stage-1)*15);
+  return Math.round(interval/(CATAPULT_FIRE_RATE*(fast?1.5:1)));
+}
+function shortenCatapultWait(s){
+  if(s.nextCatapult<=s.tick||!Number.isFinite(s.nextCatapult))return;
+  const saved=catapultInterval(s.stage)-catapultInterval(s.stage,true);
+  s.nextCatapult=Math.max(s.tick,s.nextCatapult-saved);
+}
+function catapultRoadConflict(s,landIn){
+  const warning=s.roadWarning;
+  return (warning&&roadStrikeNear(s,warning.x,landIn,warning.spawnAt-s.tick))
+    ||s.obstacles.some(obstacle=>roadObstacleAhead(obstacle)&&roadStrikeNear(s,obstacle.x,landIn));
+}
+function singleCatapultRock(s){
+  const warning=s.roadWarning;
+  const rolls={seed:s.seed};
+  const offset=76+rand(rolls)*8;
+  const clearance=CART_HULL.halfHeight+CATAPULT_RADIUS.y-offset+8;
+  let side=rand(rolls)<.5?'right':'left';
+  if(s.y-CART_TOP<clearance)side='right';
+  else if(CART_BOTTOM-s.y<clearance)side='left';
+  if(warning||s.obstacles.some(roadObstacleAhead)){
+    // A speed change can invalidate the overlap estimate. Always preserve a shared escape lane.
+    const rockY=s.y+offset*(side==='right'?-1:1);
+    if(!sharedEscapeLane(s,rockY)){
+      if(!sharedEscapeLane(s,2*s.y-rockY))return;
+      side=side==='right'?'left':'right';
     }
-    s.seed=rolls.seed;
-    const flight=CATAPULT_FLIGHT*STEP,pace=baseSpeed(s);
-    const forwardRange=(CATAPULT_TARGET_X-CATAPULT_FORWARD_X)/ROAD_UNITS_PER_METER;
-    // Account for existing slowdowns at the forward end of the range.
-    const forward=Math.max(0,forwardRange-Math.max(0,pace-s.speed)*flight);
-    const landingDistance=s.distance+pace*flight+forward*rand({seed:s.seed});
-    s.catapult={
-      launchedAt:s.tick,lockAt:s.tick+CATAPULT_APPROACH,landAt:s.tick+CATAPULT_FLIGHT,
-      distance:landingDistance,
-      y:s.y+offset*(side==='right'?-1:1),side
-    };
-    s.nextCatapult=s.tick+Math.max(9*HZ,13*HZ-(s.stage-1)*15);
-    queueSfx(s,'catapult-launch');
-    return;
   }
+  s.seed=rolls.seed;
+  const flight=CATAPULT_FLIGHT*STEP,pace=baseSpeed(s);
+  const forwardRange=(CATAPULT_TARGET_X-CATAPULT_FORWARD_X)/ROAD_UNITS_PER_METER;
+  // Account for existing slowdowns at the forward end of the range.
+  const forward=Math.max(0,forwardRange-Math.max(0,pace-s.speed)*flight);
+  const landingDistance=s.distance+pace*flight+forward*rand({seed:s.seed});
+  return {
+    launchedAt:s.tick,lockAt:s.tick+CATAPULT_APPROACH,landAt:s.tick+CATAPULT_FLIGHT,
+    distance:landingDistance,
+    y:s.y+offset*(side==='right'?-1:1),side
+  };
+}
+const canLaunchCatapultSalvo=s=>horseRageStatus(s).phase==='normal'&&!hasBrokenAxle(s)&&!s.obstacleSlow;
+function startCatapultAttack(s){
+  const pattern=s.catapultPattern??0;
+  const scheduled=s.wave>=CATAPULT_SALVO_WAVE?CATAPULT_PATTERN[pattern]:1;
+  const count=canLaunchCatapultSalvo(s)?scheduled:1;
+  const timings=Array.from({length:count},(_,index)=>CATAPULT_FLIGHT+index*CATAPULT_SALVO_GAP);
+  if(timings.some(landIn=>catapultRoadConflict(s,landIn)))return;
+  if(count===1){
+    const rock=singleCatapultRock(s);
+    if(!rock)return;
+    s.catapults=[rock];
+  }else{
+    // Aim at the fastest unboosted wagon. Only a boost moves it past the stones in time.
+    const normalPace=baseSpeed(s)*wheelPace(s)*(1+HORSE_RAGE_PACE);
+    s.catapults=timings.map((landIn,index)=>{
+      const launchedAt=s.tick+index*CATAPULT_SALVO_GAP;
+      const targetX=724+index*6;
+      const y=CART_CENTER+(index-(count-1)/2)*CATAPULT_SALVO_SPACING;
+      const distance=s.distance+normalPace*landIn*STEP+(CATAPULT_TARGET_X-targetX)/ROAD_UNITS_PER_METER;
+      return {launchedAt,lockAt:launchedAt+CATAPULT_APPROACH,landAt:s.tick+landIn,
+        distance,y,side:y<CART_CENTER?'right':'left',salvo:count,salvoIndex:index};
+    });
+  }
+  if(s.wave>=CATAPULT_SALVO_WAVE&&count===scheduled)s.catapultPattern=(pattern+1)%CATAPULT_PATTERN.length;
+  const {catapultFastFromWave}=stageSpec(s.chapter,s.stage);
+  s.nextCatapult=s.tick+catapultInterval(s.stage,s.wave>=catapultFastFromWave);
+}
+function advanceCatapult(s){
+  s.catapults=catapultRocks(s).filter(rock=>s.tick<rock.landAt+CATAPULT_LINGER);
+  if(!s.catapults.length&&s.tick>=s.nextCatapult)startCatapultAttack(s);
+  const active=activeCatapultRocks(s);
+  s.catapult=active[0]??null;
+  for(const rock of active){
+    if(s.tick===rock.launchedAt)queueSfx(s,'catapult-launch');
+    landCatapultRock(s,rock);
+  }
+}
+function landCatapultRock(s,rock){
   if(s.tick===rock.lockAt)queueSfx(s,'catapult-lock',undefined,{pan:rock.y<s.y?-.35:.35});
-  if(s.tick>=rock.landAt+CATAPULT_LINGER){s.catapult=null;return;}
   if(s.tick<rock.landAt||rock.hit!==undefined)return;
-  const x=catapultX(s);
-  rock.hit=catapultHitsWagon(s,x);
+  const x=catapultX(s,rock);
+  rock.hit=catapultHitsWagon(s,x,rock);
   queueSfx(s,rock.hit?'catapult-hit':'catapult-ground');
   if(rock.hit){
     damageWagon(s,22);
@@ -1483,7 +1683,7 @@ function waveLoopTicks(waves){
   return (last-waves[0].at+gap)*HZ;
 }
 function advanceWaves(s){
-  const {waves}=stageSpec(s.chapter,s.stage);
+  const {waves,catapultFastFromWave}=stageSpec(s.chapter,s.stage);
   if(!waves.length)return;
   const loopTicks=s.testMode?waveLoopTicks(waves):0;
   while(s.testMode||s.wave<waves.length){
@@ -1491,6 +1691,7 @@ function advanceWaves(s){
     const startsAt=at*HZ+Math.floor(s.wave/waves.length)*loopTicks;
     if(s.tick<startsAt)break;
     s.wave++;
+    if(s.wave===catapultFastFromWave)shortenCatapultWait(s);
     queueSfx(s,'pursuit-wave',undefined,{pan:.4});
     if(s.testMode){
       const incoming=groups.reduce((total,{count})=>total+count,0);
@@ -1529,6 +1730,9 @@ function advanceWaves(s){
 function advancePursuers(s,base,roadTravel){
   if(!s.enemies.length)return;
   const ahead=[];
+  const {fps,frames,left,top,scale}=CAVALRY_RUN;
+  const gait=Math.floor(s.tick*fps/HZ),footfallTick=gait!==Math.floor((s.tick-1)*fps/HZ);
+  const artScale=scale*CAVALRY_SIZE_FACTOR;
   // Run the nearest enemy in each lane first so reinforcements can keep their spacing.
   for(const enemy of [...s.enemies].sort((a,b)=>a.x-b.x)){
     if(enemy.spent)continue;
@@ -1567,6 +1771,7 @@ function advancePursuers(s,base,roadTravel){
     }
     const profile=ENEMY_PROFILES[enemy.profile];
     const pace=pursuitPace(s,profile,base,startledScale);
+    const previousX=enemy.x;
     const nextX=enemy.x-pace*paceScale*STEP;
     const stopX=leaderX===undefined?slot.strikeX:Math.max(slot.strikeX,
       Math.min(enemy.x+retreatStep,leaderX+PURSUIT_GAP));
@@ -1577,7 +1782,18 @@ function advancePursuers(s,base,roadTravel){
       s.sfxPursuitWave=wave;
       queueSfx(s,'pursuit-warning',undefined,{pan:.4});
     }
-    if(leaderX!==undefined||recovering||nextX>=slot.strikeX||Math.abs(targetY-enemy.y)>ENEMY_STRIKE_REACH)continue;
+    if(leaderX!==undefined||recovering||nextX>=slot.strikeX||Math.abs(targetY-enemy.y)>ENEMY_STRIKE_REACH){
+      const leaning=s.tick<(enemy.nearMissUntil??0)-CANNON_NEAR_MISS_TICKS+8;
+      if(footfallTick&&!leaning&&enemy.x<=WAVE_ENTRY_X+HOOFPRINT_RANGE&&roadTravel+previousX>enemy.x){
+        const feet=CAVALRY_FOOTFALLS[(gait+enemy.id)%frames];
+        if(feet){
+          const prints=s.cavalryHoofprints??=[];
+          for(const [x,y] of feet)prints.push([Math.round(s.road),
+            Math.round(enemy.x+CAVALRY_ART_X+(left+x)*artScale),Math.round(enemy.y+(top+y)*artScale)]);
+        }
+      }
+      continue;
+    }
     enemy.lastStrike=s.tick;
     enemy.strikeTarget={x:slot.hitX,y:targetY};
     if(s.testMode)enemy.testLeavesAt??=s.tick+TEST_ENEMY_ENGAGEMENT;
@@ -1592,21 +1808,22 @@ function advancePursuers(s,base,roadTravel){
     }
   }
 }
-function action(s,role,p,id){
-  if(s.mode!=='run'||s[feedbackKey(role)+'Cd']>s.tick)return;
+function action(s,role,p,id,index=0){
+  const cannon=cannonState(s,index);
+  if(s.mode!=='run'||cannon[feedbackKey(role)+'Cd']>s.tick)return;
   const operator=s.players[id];
-  const tell=msg=>{feedback(s,role,msg);message(operator,s,msg);};
+  const tell=msg=>{feedback(s,role,msg,index);message(operator,s,msg);};
   if(role==='supply'&&s.ammo.stock<1){tell('포탄 더미가 비었습니다');return;}
   if(role==='loader'){
-    if(!canLoad(s))return;
+    if(!canLoad(s,index))return;
     s.ammo.rack--;
     if(hit(s,role,p)){
-      s.ammo.loaded=true;
+      cannon.ammo.loaded=true;
       awardScore(s,id,SCORE.shellReload);
-      advanceCannonWork(s,operator);
+      advanceCannonWork(s,operator,index);
       tell('장전 완료 · 조준하고 점화하세요');
       queueSfx(s,'shell-load',id);
-    }else {dropBall(s,operator,false,id);feedback(s,role,operator.note);}
+    }else {dropBall(s,operator,false,id);feedback(s,role,operator.note,index);}
     if(!s.ammo.rack)queueSfx(s,'shell-empty');
     return;
   }
@@ -1648,11 +1865,22 @@ function action(s,role,p,id){
     return;
   }
 }
+function idleWagonY(s){
+ const anchor=s.wagonIdleY??=s.y;
+ const elapsed=s.tick-(s.wagonIdleSince??=s.tick);
+ const settle=clamp(elapsed/(.75*HZ),0,1);
+ const center=clamp(anchor,CART_TOP+WAGON_IDLE_SWAY,CART_BOTTOM-WAGON_IDLE_SWAY);
+ const direction=anchor>CART_CENTER?-1:1;
+ const sway=Math.sin(elapsed*TAU/WAGON_IDLE_SWAY_TICKS)*WAGON_IDLE_SWAY*direction;
+ return anchor+(center+sway-anchor)*settle*settle*(3-2*settle);
+}
 export function step(s){
   if(s.mode!=='run')return;
   s.tick++;
-  const afterShot=s.cannonExit;
-  if(afterShot&&s.tick>=afterShot.tick+CANNON_VIEW_HOLD_TICKS+CANNON_VIEW_RETURN_TICKS)s.cannonExit=null;
+  for(const index of CANNON_IDS){
+    const cannon=cannonState(s,index),afterShot=cannon.cannonExit;
+    if(afterShot&&s.tick>=afterShot.tick+CANNON_VIEW_HOLD_TICKS+CANNON_VIEW_RETURN_TICKS)cannon.cannonExit=null;
+  }
   if(s.testMode&&s.ammo.stock<=0)s.ammo.stock=AMMO_STOCK;
   // A single collision can also knock off a wheel in this tick.
   s.cookShake=0;
@@ -1681,8 +1909,8 @@ export function step(s){
         const other=s.players[otherId];
         if(playerFloor(other)!==floor)return false;
         const role=occupiedStation(other,s);
-        if(!role||(humans.has(id)&&!humans.has(otherId)&&canTakeBotStation(role)))return false;
-        const spot=workSpot(s,role);
+        if(!role||(humans.has(id)&&!humans.has(otherId)&&canTakeBotStation(role,humans.size)))return false;
+        const spot=workSpot(s,role,other.cannonIndex??0);
         return spot&&blocksStep(p,spot,nextX,nextY,spot.r);
       }));
     if(p.x!==startX)p.facing=Math.sign(p.x-startX);
@@ -1708,17 +1936,26 @@ export function step(s){
   const driverId=PLAYER_IDS.find(id=>occupiedStation(s.players[id],s)==='driver');
   const driver=s.players[driverId];
   const steer=driver?.until>=s.tick?(driver.my??0)*WAGON_STEER_SPEED:0;
-  const previousY=s.y;
-  s.distance+=travel;s.road+=roadTravel;s.y=clamp(s.y+steer*STEP,CART_TOP,CART_BOTTOM);
+  const previousDistance=s.distance,previousY=s.y;
+  s.distance+=travel;s.road+=roadTravel;
+  if(steer){
+    s.y=clamp(s.y+steer*STEP,CART_TOP,CART_BOTTOM);
+    s.wagonIdleY=s.y;s.wagonIdleSince=s.tick;
+  }else s.y=idleWagonY(s);
+  const moveY=steer?Math.sign(s.y-previousY):0;
+  if(moveY!==s.wagonMoveY){s.wagonMoveY=moveY;s.wagonMoveSince=s.tick;}
   if(roadTravel||s.y!==previousY)recordWheelTracks(s);
-  cannonStep(s);
+  if(roadTravel>0)recordHoofprints(s,previousDistance,previousY,roadTravel);
+  for(const index of CANNON_IDS)cannonStep(s,index);
   s.falling=s.falling.filter(b=>s.tick-b.tick<32);
   s.lane=s.y<(CART_TOP+CART_CENTER)/2?0:s.y>(CART_CENTER+CART_BOTTOM)/2?2:1;
   advanceObstacles(s,roadTravel);
   advanceCatapult(s);
   const pursuerStarts=s.looseWheels?.length?new Map(s.enemies.map(({id,x,y})=>[id,{x,y}])):null;
   advancePursuers(s,base,roadTravel);
+  trimHoofprints(s.cavalryHoofprints??=[],s.road,MAX_CAVALRY_HOOFPRINTS);
   advanceLooseWheels(s,roadTravel,pursuerStarts);
+  trimLooseWheelTracks(s);
   advanceCooking(s);
   advanceShots(s);
   advanceWaves(s);
@@ -1726,14 +1963,14 @@ export function step(s){
   if(s.testMode)return;
   if(s.hp<=0){s.hp=0;s.mode='lost';}
   else if(s.distance>=s.goal-1e-8){s.distance=s.goal;s.mode='clear';finishCare(s);}
-  if(s.mode!=='run')s.cannonExit=null;
+  if(s.mode!=='run')for(const index of CANNON_IDS)cannonState(s,index).cannonExit=null;
 }
 export function advance(s,ticks){for(let i=0;i<Math.min(7200,ticks)&&s.mode==='run';i++)step(s);}
 
 const royalCarryJob=(s,p)=>royalTarget(s,p)?.upset?'royal-soothe':'royal-seat';
 function spotFor(s,job,p){
  if(isCannonRole(job)&&isCannonRole(p?.exitedStation)){
-   const {x,y,r}=cannonPad;
+   const {x,y,r}=cannonPad(p.exitedCannonIndex??0);
    return {x:x-r-8,y};
  }
  if(job==='royal-pickup'){
@@ -1759,15 +1996,34 @@ function spotFor(s,job,p){
  return job==='repair'?WHEELS[s.wheel.broken]:STATIONS[job==='deliver'?'rack':job];
 }
 function roadThreat(s){
- return s.obstacles.find(obstacle=>roadObstacleAhead(obstacle)&&!roadLaneClear(s.y,obstacle))||
-   (s.roadWarning&&!roadLaneClear(s.y,s.roadWarning)?s.roadWarning:null);
+ const idleCenter=clamp(s.wagonIdleY??s.y,CART_TOP+WAGON_IDLE_SWAY,CART_BOTTOM-WAGON_IDLE_SWAY);
+ const blocksLane=obstacle=>!roadLaneClear(idleCenter,obstacle,6+WAGON_IDLE_SWAY);
+ return s.obstacles.find(obstacle=>roadObstacleAhead(obstacle)&&blocksLane(obstacle))||
+   (s.roadWarning&&blocksLane(s.roadWarning)?s.roadWarning:null);
 }
 function catapultThreat(s){
- const rock=s.catapult;
- if(!rock||s.tick>=rock.landAt)return null;
- const travel=Math.max(baseSpeed(s),s.speed)*(rock.landAt-s.tick)*STEP;
- const landingX=catapultX(s)+travel*ROAD_UNITS_PER_METER;
- return landingX>=CART_HULL.left-CATAPULT_RADIUS.x?rock:null;
+ return activeCatapultRocks(s).find(rock=>{
+   if(s.tick>=rock.landAt)return false;
+   const travel=Math.max(baseSpeed(s),s.speed)*(rock.landAt-s.tick)*STEP;
+   const landingX=catapultX(s,rock)+travel*ROAD_UNITS_PER_METER;
+   return landingX>=CART_HULL.left-CATAPULT_RADIUS.x&&landingX<=CART_HULL.right+CATAPULT_RADIUS.x;
+ });
+}
+const incomingSalvo=s=>catapultRocks(s).some(rock=>rock.salvo&&s.tick<rock.landAt);
+function botDriverNeeded(s){
+ if(roadThreat(s))return true;
+ if(incomingSalvo(s))return horseRageStatus(s).phase==='normal';
+ const rock=catapultThreat(s);
+ if(rock&&Math.abs(s.y-rock.y)<CART_HULL.halfHeight+CATAPULT_RADIUS.y+8)return true;
+ const salvoSize=CATAPULT_PATTERN[s.catapultPattern??0];
+ if(s.wave<CATAPULT_SALVO_WAVE||salvoSize<2||!canLaunchCatapultSalvo(s))return false;
+ const next=Math.max(s.nextCatapult,...catapultRocks(s).map(rock=>rock.landAt+CATAPULT_LINGER));
+ const wait=Math.max(0,next-s.tick);
+ if(wait>HZ*2.5)return false;
+ for(let index=0;index<salvoSize;index++){
+   if(catapultRoadConflict(s,wait+CATAPULT_FLIGHT+index*CATAPULT_SALVO_GAP))return false;
+ }
+ return true;
 }
 function botSteering(s,threat,rock){
  const avoidsRock=y=>!rock||Math.abs(y-rock.y)>=CART_HULL.halfHeight+CATAPULT_RADIUS.y+8;
@@ -1779,9 +2035,15 @@ function botSteering(s,threat,rock){
  return target===null?0:clamp((target-s.y)/(WAGON_STEER_SPEED*STEP),-1,1);
 }
 function assignBots(s,ids){
- const held=new Set(humanIds(s).map(id=>s.players[id]).map(p=>stationAt(p,s)).filter(Boolean));
+ const held=new Set(humanIds(s).map(id=>s.players[id]).flatMap(p=>{
+   const role=stationAt(p,s);
+   return role&&(!isCannonRole(role)||cannonIndexFor(s,p)===0)?[role]:[];
+ }));
  held.delete('royal-pickup');
  const free=ids.slice();
+ function reserve(id,job){
+   s.players[id].job=job;free.splice(free.indexOf(id),1);held.add(job);
+ }
  function assign(job,pick=true){
    if(!pick||held.has(job)||!free.length)return;
    const spot=spotFor(s,job);if(!spot)return;
@@ -1792,7 +2054,7 @@ function assignBots(s,ids){
      return distance-(p.job===job?72:0);
    };
    const id=free.reduce((best,id)=>cost(id)<cost(best)?id:best);
-   s.players[id].job=job;free.splice(free.indexOf(id),1);held.add(job);
+   reserve(id,job);
  }
  for(const id of ids){
    if(s.players[id].ball){
@@ -1807,21 +2069,24 @@ function assignBots(s,ids){
    }
  }
  const cannonJob=cannonStation(s);
- if(cannonJob==='gunner'&&s.fuse.owner&&!held.has('gunner')&&free.includes(s.fuse.owner)){
-   s.players[s.fuse.owner].job='gunner';free.splice(free.indexOf(s.fuse.owner),1);held.add('gunner');
+ const hasTarget=s.enemies.some(activeEnemy);
+ const seatedGunner=free.find(id=>occupiedStation(s.players[id],s)==='gunner');
+ if(cannonJob==='gunner'&&(s.fuse.end||hasTarget)&&!held.has('gunner')&&seatedGunner)reserve(seatedGunner,'gunner');
+ if(s.ammo.stock>0){
+   for(const id of [...free])if(s.players[id].refillAfterShot)reserve(id,'supply');
+   const inTransit=Object.values(s.players).filter(player=>player.ball).length;
+   assign('supply',s.ammo.rack+inTransit<BOT_AMMO_RESERVE);
  }
+ assign('driver',botDriverNeeded(s));
  if(s.wheel.broken>=0&&s.tick-s.wheel.since>HZ*3){
    if(s.wheel.progress===1)assign('repair');
    else assign('wheel-pickup',!Object.values(s.players).some(player=>player.spareWheel));
  }
- assign('cleaner',cannonJob==='cleaner');
- assign('loader',canLoad(s));
+ const cannonStocked=s.ammo.rack>=BOT_AMMO_RESERVE;
+ assign('cleaner',cannonStocked&&cannonJob==='cleaner');
+ assign('loader',cannonStocked&&canLoad(s));
  assign('royal-pickup');
- assign('gunner',cannonJob==='gunner'&&(s.enemies.some(activeEnemy)||!!s.fuse.end));
- const needSupply=s.ammo.stock>0&&!Object.values(s.players).some(p=>p.ball);
- assign('supply',s.ammo.rack===0&&needSupply);
- assign('driver');
- assign('supply',s.ammo.rack<3&&needSupply);
+ assign('gunner',cannonStocked&&cannonJob==='gunner'&&(hasTarget||!!s.fuse.end));
  assign('cook',s.royals.some(royal=>royal.state==='seated'&&royal.crying)&&!Object.values(s.players).some(p=>p.food));
  for(const id of free)s.players[id].job=null;
 }
@@ -1830,8 +2095,8 @@ function runBots(s){
  if(!ids.length)return;
  if(s.tick%8===1)assignBots(s,ids);
  for(const id of ids){
-   const p=s.players[id],job=p.royal?royalCarryJob(s,p):p.job,spot=spotFor(s,job,p);
-   if(p.royal)p.job=job;
+   const p=s.players[id],job=p.ball?'deliver':p.royal?royalCarryJob(s,p):p.job,spot=spotFor(s,job,p);
+   p.job=job;
    if(p.station&&p.station!==job)releaseStation(p);
    const floor=playerFloor(p),crossFloor=floor!==botJobFloor(p,spot?job:null,spot);
    const destination=crossFloor?(p.stairLocked?{x:STAIRS.x,y:STAIRS.y-STAIRS.r-8}:STAIRS):spot;
@@ -1843,7 +2108,8 @@ function runBots(s){
    const driving=job==='driver'&&occupiedStation(p,s)==='driver';
    const threat=driving?roadThreat(s):null;
    const rock=driving?catapultThreat(s):null;
-   const steer=driving?botSteering(s,threat,rock):0;
+   const salvo=driving&&incomingSalvo(s);
+   const steer=driving?botSteering(s,threat,salvo?null:rock):0;
    if(job==='gunner'){
      const e=s.enemies.reduce((a,b)=>activeEnemy(b)&&(!a||b.x<a.x)?b:a,null);
      if(e){
@@ -1863,13 +2129,14 @@ function runBots(s){
      continue;
    }
    if(stationAt(p,s)!==job||s.tick%3!==0)continue;
+   if(job==='loader'&&s.ammo.rack<BOT_AMMO_RESERVE)continue;
    if(job==='gunner'){
      if(s.tick<HZ*5||s.fuse.end||!s.enemies.some(activeEnemy))continue;
    }else if(job==='cleaner'){
      if(s.tick%6!==0)continue;
    }else if(job==='driver'){
      const {progress,phase}=horseRageStatus(s);
-     const rush=rock&&!steer&&Math.abs(s.y-rock.y)<CART_HULL.halfHeight+CATAPULT_RADIUS.y+8;
+     const rush=salvo||rock&&!steer&&Math.abs(s.y-rock.y)<CART_HULL.halfHeight+CATAPULT_RADIUS.y+8;
      if(phase!=='normal'||(!rush&&(progress>=.6||s.tick-(s.horseRage.lastWhipTick??-Infinity)<HZ)))continue;
    }else if(job==='royal-pickup'){
      if(royalTarget(s,p)!==spot)continue;
