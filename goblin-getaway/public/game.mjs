@@ -8,6 +8,7 @@ import {createControls} from './controls.mjs?v=nearest-wheel134';
 import {EMOTES,EMOTE_BUBBLE_MS,EMOTE_COOLDOWN_MS,emoteByKey,addEmote,recentEmotes} from './emotes.mjs';
 import {createCrewRanking,crewName,normalizeCrewNickname} from './crew-ranking.mjs?v=integer-scores133';
 import {createSfxPlayer} from './sfx.mjs?v=suno-sfx141';
+import {createMusicPlayer} from './music.mjs?v=bgm148';
 const $=id=>document.getElementById(id), all=q=>Array.from(document.querySelectorAll(q));
 const dlg=$('dialog'),body=$('dialog-body'),canvas=$('world');
 const paintInterval=1000/HZ,paintTolerance=.5;
@@ -17,10 +18,16 @@ let lastCannonLanding='';
 let nextWhimper=0;
 let sound=false;try{sound=localStorage.getItem('gg-sound')==='on';}catch{}
 let timingSound=false;try{timingSound=localStorage.getItem('gg-timing-sound')==='on';}catch{}
+let musicEnabled=true;try{musicEnabled=localStorage.getItem('gg-music')!=='off';}catch{}
 const sfx=createSfxPlayer();
+const music=createMusicPlayer({enabled:musicEnabled});
 sfx.setEnabled(sound);
-for(const type of ['pointerdown','keydown']){
- document.addEventListener(type,event=>{if(sound&&event.isTrusted)sfx.unlock();},{capture:true});
+for(const type of ['pointerdown','keydown','click']){
+ document.addEventListener(type,event=>{
+   if(!event.isTrusted)return;
+   if(sound)sfx.unlock();
+   music.unlock();
+ },{capture:true});
 }
 let nickname='';try{nickname=normalizeCrewNickname(localStorage.getItem('gg-nickname'));}catch{}
 const linkCode=new URL(location.href).searchParams.get('room')?.trim().toUpperCase()||'';
@@ -174,6 +181,30 @@ function toggleTimingSound(){
 }
 $('timing-sound')?.addEventListener('click',toggleTimingSound);
 soundUI();
+const musicButton=$('music');
+function musicUI(){
+ if(!musicButton)return;
+ musicButton.setAttribute('aria-label',musicEnabled?'배경음악 끄기':'배경음악 켜기');
+ musicButton.setAttribute('aria-pressed',String(musicEnabled));
+ label($('music-state'),musicEnabled?'켜짐':'꺼짐');
+}
+musicButton?.addEventListener('click',event=>{
+ musicEnabled=!musicEnabled;
+ try{localStorage.setItem('gg-music',musicEnabled?'on':'off');}catch{}
+ music.setEnabled(musicEnabled);
+ if(musicEnabled&&event.isTrusted)music.unlock();
+ musicUI();
+});
+musicUI();
+const musicPhases={ready:'waiting',run:'chase',paused:'chase',clear:'stage-clear',lost:'game-over'};
+function syncMusic(){
+ const gameMode=mode==='online'?(room?.audioSnapshot?.mode??'ready'):s.mode;
+ const phase=musicPhases[gameMode]??'waiting';
+ music.setState(phase,{
+   paused:phase==='chase'&&(gameMode==='paused'||dlg.open||netFailed>=2),
+   hidden:document.hidden,
+ });
+}
 let simulationSfxCursor=0,cookingLoopActive=false,terminalAudioSeen='';
 let previousTimingReady=new Map(),previousTelescopeUsers=new Set();
 function localCuePlayer(id){return id===myPlayer||mode==='local'&&id==='p2';}
@@ -1228,12 +1259,17 @@ function frame(now){
  const terminal=terminalKey(s);
  if(terminal&&terminal!==terminalSeen)openScreen('result');
  terminalSeen=terminal;
+ syncMusic();
  requestAnimationFrame(frame);
 }
 // Browsers suspend animation in background tabs. Keep an open room seat alive.
-document.addEventListener('visibilitychange',()=>{if(document.hidden)stopSustainedSfx();});
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden)stopSustainedSfx();
+ syncMusic();
+});
 setInterval(()=>{if(room&&document.hidden&&performance.now()-lastSync>8000)sync();},10_000);
 lastPaint=performance.now();
 paint(lastPaint);requestAnimationFrame(frame);
 let saved;try{saved=JSON.parse(sessionStorage.getItem('gg-room'));}catch{}
 if(saved&&(isRoomNumber(saved.code)||isLegacyRoomCode(saved.code))&&(!invitation||invitation===saved.code))connect('join',saved.code,saved);else if(invitation)openScreen('crew');
+syncMusic();

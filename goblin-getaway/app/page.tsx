@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import GameRuntime from "./game-runtime";
-import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, MoveVertical, Play, Settings, Shield, Smile, Sparkles, Timer, TriangleAlert, Users, Volume2, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, MoveVertical, Music, Play, Settings, Shield, Smile, Sparkles, Timer, TriangleAlert, Users, Volume2, X } from 'lucide-react';
 
 function WorkNotice({slot}:{slot:string}){
  return <div className="work-notice hud-bubble hud-notice" id={'work-notice-'+slot} hidden>
@@ -75,6 +75,7 @@ function SettingsMenu(){
    <h2 className="modal-title">환경설정</h2>
    <div className="menu-list">
      <button id="expand"><Maximize/><span>전체화면</span><small id="full-state">켜기</small></button>
+     <button type="button" id="music" aria-pressed="true"><Music aria-hidden="true"/><span>배경음악</span><small id="music-state">켜짐</small></button>
      <button id="sound"><Volume2/><span>효과음</span><small id="sound-state">꺼짐</small></button>
      <button id="timing-sound" disabled><Timer/><span>타이밍 안내음</span><small id="timing-sound-state">꺼짐</small></button>
      <button data-view="crew"><Users/><span>협동 플레이</span><ChevronRight/></button>
