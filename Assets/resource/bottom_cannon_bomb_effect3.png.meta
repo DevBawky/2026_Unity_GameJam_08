@@ -1,0 +1,468 @@
+fileFormatVersion: 2
+guid: 8eb04934306295f4e99776d59db78f6e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3956652872307746728
+    second: bottom_cannon_bomb_effect3_0
+  - first:
+      213: 8398642387425387639
+    second: bottom_cannon_bomb_effect3_1
+  - first:
+      213: -2493380521669917173
+    second: bottom_cannon_bomb_effect3_2
+  - first:
+      213: -8202183187899684420
+    second: bottom_cannon_bomb_effect3_3
+  - first:
+      213: -6420389361671295593
+    second: bottom_cannon_bomb_effect3_4
+  - first:
+      213: 2822390062580376452
+    second: bottom_cannon_bomb_effect3_5
+  - first:
+      213: 7964666657434752028
+    second: bottom_cannon_bomb_effect3_6
+  - first:
+      213: -7374550693112002210
+    second: bottom_cannon_bomb_effect3_7
+  - first:
+      213: -378331418007522504
+    second: bottom_cannon_bomb_effect3_8
+  - first:
+      213: -474277518920993980
+    second: bottom_cannon_bomb_effect3_9
+  - first:
+      213: 5804250473365999826
+    second: bottom_cannon_bomb_effect3_10
+  - first:
+      213: -1356836094787774320
+    second: bottom_cannon_bomb_effect3_11
+  - first:
+      213: -7629001215481983589
+    second: bottom_cannon_bomb_effect3_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_0
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 47
+        width: 11
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a7ae69f2dad8e630800000000000000
+      internalID: 3956652872307746728
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_1
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 58
+        width: 8
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7746702e0c8fd8470800000000000000
+      internalID: 8398642387425387639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_2
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 10
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b068cf340abb56dd0800000000000000
+      internalID: -2493380521669917173
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_3
+      rect:
+        serializedVersion: 2
+        x: 47
+        y: 32
+        width: 12
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb9ee8ef8ddfb2e80800000000000000
+      internalID: -8202183187899684420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_4
+      rect:
+        serializedVersion: 2
+        x: 55
+        y: 22
+        width: 17
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79da2e964e136e6a0800000000000000
+      internalID: -6420389361671295593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_5
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 15
+        width: 15
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48322b9eec42b2720800000000000000
+      internalID: 2822390062580376452
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_6
+      rect:
+        serializedVersion: 2
+        x: 70
+        y: 10
+        width: 34
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c14dbc6502e288e60800000000000000
+      internalID: 7964666657434752028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_7
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 25
+        width: 10
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e59c2f6773558a990800000000000000
+      internalID: -7374550693112002210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_8
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 26
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 833ba4e6495efbaf0800000000000000
+      internalID: -378331418007522504
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_9
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 23
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 443b2cffb170b69f0800000000000000
+      internalID: -474277518920993980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_10
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 14
+        width: 12
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d09f54ad07dc8050800000000000000
+      internalID: 5804250473365999826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_11
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 6
+        width: 28
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0981fb7b2cc8b2de0800000000000000
+      internalID: -1356836094787774320
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bottom_cannon_bomb_effect3_12
+      rect:
+        serializedVersion: 2
+        x: 67
+        y: 3
+        width: 21
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9d4c2090d7502690800000000000000
+      internalID: -7629001215481983589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      bottom_cannon_bomb_effect3_0: 3956652872307746728
+      bottom_cannon_bomb_effect3_1: 8398642387425387639
+      bottom_cannon_bomb_effect3_10: 5804250473365999826
+      bottom_cannon_bomb_effect3_11: -1356836094787774320
+      bottom_cannon_bomb_effect3_12: -7629001215481983589
+      bottom_cannon_bomb_effect3_2: -2493380521669917173
+      bottom_cannon_bomb_effect3_3: -8202183187899684420
+      bottom_cannon_bomb_effect3_4: -6420389361671295593
+      bottom_cannon_bomb_effect3_5: 2822390062580376452
+      bottom_cannon_bomb_effect3_6: 7964666657434752028
+      bottom_cannon_bomb_effect3_7: -7374550693112002210
+      bottom_cannon_bomb_effect3_8: -378331418007522504
+      bottom_cannon_bomb_effect3_9: -474277518920993980
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
