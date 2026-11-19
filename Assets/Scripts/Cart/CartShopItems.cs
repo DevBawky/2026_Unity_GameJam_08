@@ -56,11 +56,25 @@ public sealed partial class CartStations
 
     public ShopCatalog Catalog => shopCatalog;
 
-    // 추후 변경점: 기여도 1등만 살 수 있게 바뀔 예정. 지금은 임시로 방장만 산다.
-    // 방장이 아닌 사람이 사게 되면 NetworkPlayer에 구매 Rpc를 추가해 BuyShopItem을 서버에서 부르게 한다.
-    public bool CanBuyShopItems(NetworkPlayer actor) => actor != null && actor.OwnerClientId == NetworkManager.ServerClientId;
+    // 구매권: 개인 점수 1등(봇 제외). 동점이면 랭킹 HUD처럼 슬롯 번호가 앞선 사람.
+    public bool CanBuyShopItems(NetworkPlayer actor) => actor != null && actor == ShopBuyer;
 
-    // 추후 변경점: 재화는 행동별 포인트로 바뀔 예정. 지금은 기존 공동 AP를 쓴다.
+    public NetworkPlayer ShopBuyer
+    {
+        get
+        {
+            NetworkPlayer best = null;
+            foreach (var crew in Crew)
+            {
+                if (crew == null || !crew.IsSpawned || !crew.Assigned.Value || crew.Bot.Value) continue;
+                if (best == null || crew.Score.Value > best.Score.Value
+                    || crew.Score.Value == best.Score.Value && crew.Slot.Value < best.Slot.Value) best = crew;
+            }
+            return best;
+        }
+    }
+
+    // 공용 AP: 모두의 개인 점수가 합산돼 쌓인다(NetworkPlayer.AwardScore).
     public int ShopPoints => Affection.Value;
 
     // 영구 상품을 가졌는지. 목록이 바뀔 때만(늘어날 때만) 비트마스크를 다시 만든다.

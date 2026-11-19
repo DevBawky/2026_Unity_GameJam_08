@@ -448,8 +448,8 @@ MonoBehaviour:
     english: '{0} AP'
   - korean: "\uC0C1\uD488\uC744 \uACE8\uB77C \uC8FC\uC138\uC694."
     english: Pick an item.
-  - korean: "\uBC29\uC7A5\uB9CC \uAD6C\uB9E4"
-    english: Host only
+  - korean: "1\uB4F1\uB9CC \uAD6C\uB9E4"
+    english: Top scorer buys
   - korean: "AP \uBD80\uC871"
     english: Not enough AP
   - korean: "\uAD6C\uB9E4"
@@ -751,32 +751,33 @@ MonoBehaviour:
   - korean: "{0}\uBC88 \uBC14\uD034 \uACE0\uC7A5 \xB7 \uC218\uB9AC {1}/{2}\uB2E8\uACC4"
     english: "Wheel {0} broken \xB7 Repair step {1}/{2}"
   - korean: "\uBAA8\uC158 \uAC10\uC18C"
-    english: "Reduced motion"
+    english: Reduced motion
   - korean: "\uBAA8\uC158 \uAC10\uC18C \uCF1C\uC9D0"
-    english: "Reduced motion on"
+    english: Reduced motion on
   - korean: "\uBAA8\uC158 \uAC10\uC18C \uAEBC\uC9D0"
-    english: "Reduced motion off"
+    english: Reduced motion off
   - korean: "\uAD00\uC2EC \uD544\uC694"
-    english: "Needs attention"
+    english: Needs attention
   - korean: "\uBC30\uACE0\uD514"
     english: Hunger
   - korean: "\uAD00\uC2EC \uC8FC\uAE30"
-    english: "Give attention"
+    english: Give attention
   - korean: "\uC655\uC790\uC5D0\uAC8C \uAD00\uC2EC\uC744 \uC8FC\uC138\uC694"
-    english: "Give the prince attention"
+    english: Give the prince attention
   - korean: "\uACF5\uC8FC\uC5D0\uAC8C \uAD00\uC2EC\uC744 \uC8FC\uC138\uC694"
-    english: "Give the princess attention"
+    english: Give the princess attention
   - korean: "\uD3EC\uC2E0\uC744 \uCCAD\uC18C\uD558\uC138\uC694"
-    english: "Clean the cannon"
-  - korean: "\uB9D0 \uD3ED\uC8FC \u00B7 \uAC00\uC18D \uC911"
-    english: "Horse frenzy · Speeding up"
-  - korean: "\uB9D0 \uC9C0\uCE68 \u00B7 \uD68C\uBCF5 \uC911"
-    english: "Horse tired · Recovering"
-  - korean: "\uC2A4\uD2F1 \uC704\uC544\uB798\uB85C \uC870\uD5A5 \u00B7 \uD589\uB3D9\uC73C\uB85C \uCC44\uCC0D\uC9C8"
-    english: "Steer up and down · Action to whip"
+    english: Clean the cannon
+  - korean: "\uB9D0 \uD3ED\uC8FC \xB7 \uAC00\uC18D \uC911"
+    english: "Horse frenzy \xB7 Speeding up"
+  - korean: "\uB9D0 \uC9C0\uCE68 \xB7 \uD68C\uBCF5 \uC911"
+    english: "Horse tired \xB7 Recovering"
+  - korean: "\uC2A4\uD2F1 \uC704\uC544\uB798\uB85C \uC870\uD5A5 \xB7 \uD589\uB3D9\uC73C\uB85C
+      \uCC44\uCC0D\uC9C8"
+    english: "Steer up and down \xB7 Action to whip"
   - korean: "\uBD84\uB178 \uAC8C\uC774\uC9C0"
-    english: "Rage meter"
+    english: Rage meter
   - korean: "\uC9C0\uB8E8\uD574\uC11C \uC6B0\uB294 \uC911"
-    english: "Crying from boredom"
+    english: Crying from boredom
   - korean: "\uCD08"
-    english: "s"
+    english: s

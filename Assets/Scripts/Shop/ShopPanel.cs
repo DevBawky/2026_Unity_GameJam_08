@@ -59,7 +59,7 @@ public sealed class ShopPanel : MonoBehaviour
         if (item == null) selected = -1;
         descriptionLabel.text = item != null ? LocalizationTable.T(item.description) : LocalizationTable.T("상품을 골라 주세요.");
         buyButton.interactable = item != null && canBuy && stations.ShopPoints >= item.price;
-        buyLabel.text = LocalizationTable.T(!canBuy ? "방장만 구매" : item != null && stations.ShopPoints < item.price ? "AP 부족" : "구매");
+        buyLabel.text = LocalizationTable.T(!canBuy ? "1등만 구매" : item != null && stations.ShopPoints < item.price ? "AP 부족" : "구매");
     }
 
     private ShopItem ItemAt(int slot) =>
@@ -71,11 +71,9 @@ public sealed class ShopPanel : MonoBehaviour
         shownKey = 0;
     }
 
-    // 추후 변경점: 방장만 사므로 서버 메서드를 바로 부른다. 다른 사람이 사게 되면 Rpc로 보낸다.
     public void Buy()
     {
-        if (selected < 0) return;
-        stations.BuyShopItem(NetworkPlayer.LocalPlayer, selected);
+        if (selected >= 0) NetworkPlayer.LocalPlayer?.SendShopBuy(selected);
     }
 
     public void Depart() => stations.ChooseUpgrade(CartStations.Departure);

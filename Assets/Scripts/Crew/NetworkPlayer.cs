@@ -219,7 +219,10 @@ public sealed class NetworkPlayer : NetworkBehaviour
 
     internal void AwardScore(int points)
     {
-        if (IsServer && Assigned.Value) Score.Value = (int)System.Math.Min(int.MaxValue, (long)Score.Value + points);
+        if (!IsServer || !Assigned.Value) return;
+        Score.Value = (int)System.Math.Min(int.MaxValue, (long)Score.Value + points);
+        // 개인 점수는 그대로 공용 AP에도 쌓인다.
+        if (CartStations.Instance != null) CartStations.Instance.Affection.Value += points;
     }
 
     public void Release()
@@ -255,6 +258,14 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public void SendShopHeart(int slot) { if (Local && CartStations.Instance != null) ShopHeartRpc(slot, CartStations.Instance.ShopRound.Value); }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     private void ShopHeartRpc(int slot, int round) => CartStations.Instance?.AddShopHeart(this, slot, round);
+
+    public void SendShopBuy(int slot) { if (Local && CartStations.Instance != null) ShopBuyRpc(slot, CartStations.Instance.ShopRound.Value); }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ShopBuyRpc(int slot, int round)
+    {
+        var game = CartStations.Instance;
+        if (game != null && round == game.ShopRound.Value) game.BuyShopItem(this, slot);
+    }
 
     public void SendEmote(int id) { if(Local) EmoteRpc(id); }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
