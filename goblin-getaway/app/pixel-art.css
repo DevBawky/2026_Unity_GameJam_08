@@ -1,0 +1,83 @@
+@font-face {
+  font-family: NeoDunggeunmo;
+  src: url('/pixel-art/neodgm.ttf') format('truetype');
+  font-display: swap;
+}
+
+:root {
+  --mono: NeoDunggeunmo, ui-monospace, monospace;
+  font-family: NeoDunggeunmo, 'Malgun Gothic', system-ui, sans-serif;
+}
+
+.campaign-goal,
+.campaign-wagon,
+.catapult-alert-pane > svg,
+.station-exit > svg,
+.emote-toggle > svg,
+.stick svg,
+.emote-icon[data-emote] {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+.campaign-goal { background-image: url('/pixel-art/Destination.png'); }
+.campaign-wagon { background-image: url('/pixel-art/WagonMarker.png'); }
+.catapult-alert-pane > svg { background-image: url('/pixel-art/Warning.png'); }
+.station-exit > svg { background-image: url('/pixel-art/ExitStation.png'); }
+.emote-toggle > svg { background-image: url('/pixel-art/EmoteMenu.png'); }
+.stick .move-glyph { background-image: url('/pixel-art/Move.png'); }
+.stick .aim-glyph { background-image: url('/pixel-art/Aim.png'); }
+
+:is(.campaign-goal, .campaign-wagon, .catapult-alert-pane > svg, .station-exit > svg,
+  .emote-toggle > svg, .stick svg) > * { visibility: hidden; }
+
+.stick i {
+  background: url('/pixel-art/ControlDisc.png') center / contain no-repeat;
+  background-blend-mode: multiply;
+  border-color: transparent;
+  image-rendering: pixelated;
+}
+
+.stick[data-mode=aim] i { background-color: #eed2a8f2; }
+.stick i svg { filter: brightness(.34); }
+
+.emote-icon[data-emote] { display: inline-block; width: 1.4em; height: 1.4em; color: transparent; }
+.emote-icon[data-emote=ammo] { background-image: url('/pixel-art/EmoteAmmo.png'); }
+.emote-icon[data-emote=load] { background-image: url('/pixel-art/EmoteLoad.png'); }
+.emote-icon[data-emote=repair] { background-image: url('/pixel-art/EmoteRepair.png'); }
+.emote-icon[data-emote=drive] { background-image: url('/pixel-art/EmoteDrive.png'); }
+.emote-icon[data-emote=care] { background-image: url('/pixel-art/EmoteCare.png'); }
+.emote-icon[data-emote=good] { background-image: url('/pixel-art/EmoteGood.png'); }
+.emote-icon[data-emote=surprised] { background-image: url('/pixel-art/EmoteSurprised.png'); }
+.emote-icon[data-emote] { overflow: hidden; text-indent: 140%; white-space: nowrap; }
+
+.emote-menu, .emote-option, .emote-close, .hud-bubble,
+.campaign-hud, .test-mode-label, .timing-feedback, .room-ticket,
+.room-seat, .metric-heading, .card, .option, .trait-item { border-radius: 3px; }
+
+.play-tools #start[data-mode=ready],
+.play-tools .test-start,
+.play-tools .gear,
+.join-form input,
+dialog {
+  border-radius: 3px;
+  image-rendering: pixelated;
+}
+
+.play-tools #start[data-mode=ready], .play-tools .test-start {
+  border-image: url('/pixel-art/LobbyButton.png') 6 fill / 9px;
+  color: #352416;
+  background: none;
+}
+
+.play-tools .gear {
+  border-image: url('/pixel-art/LobbySecondary.png') 6 fill / 9px;
+  background: none;
+}
+
+.join-form input { border-image: url('/pixel-art/LobbyInput.png') 6 fill / 6px; }
+.join-form input[aria-invalid=true] { outline: 2px solid #a44e44; }
+dialog { border-image: url('/pixel-art/Panel.png') 6 / 6px; }
+.timing-ring { shape-rendering: crispEdges; }

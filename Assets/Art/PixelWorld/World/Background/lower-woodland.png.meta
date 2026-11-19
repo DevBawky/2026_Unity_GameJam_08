@@ -1,0 +1,741 @@
+fileFormatVersion: 2
+guid: 8bbdab86f9c70dd75bd7e428321bbeb8
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5578621491691726364
+    second: lower-woodland_0
+  - first:
+      213: -2607539456839833034
+    second: lower-woodland_1
+  - first:
+      213: 4379072761562858624
+    second: lower-woodland_2
+  - first:
+      213: -3425908827523292853
+    second: lower-woodland_3
+  - first:
+      213: 4878635097159200619
+    second: lower-woodland_4
+  - first:
+      213: 3532612604114484603
+    second: lower-woodland_5
+  - first:
+      213: 5000832178685501539
+    second: lower-woodland_6
+  - first:
+      213: -2513038614740782544
+    second: lower-woodland_7
+  - first:
+      213: -3964798967031472221
+    second: lower-woodland_8
+  - first:
+      213: 4816248729286053273
+    second: lower-woodland_9
+  - first:
+      213: -955048881517540055
+    second: lower-woodland_10
+  - first:
+      213: -12887680861898509
+    second: lower-woodland_11
+  - first:
+      213: -4000838298486199088
+    second: lower-woodland_12
+  - first:
+      213: -7827714660241437861
+    second: lower-woodland_13
+  - first:
+      213: -4070720112344822198
+    second: lower-woodland_14
+  - first:
+      213: 3446891222240004798
+    second: lower-woodland_15
+  - first:
+      213: 8324039791768922888
+    second: lower-woodland_16
+  - first:
+      213: 8807192791326928790
+    second: lower-woodland_17
+  - first:
+      213: -8839092996932967269
+    second: lower-woodland_18
+  - first:
+      213: -7645396913564533417
+    second: lower-woodland_19
+  - first:
+      213: 8379498574126523944
+    second: lower-woodland_20
+  - first:
+      213: -3123312487931760695
+    second: lower-woodland_21
+  - first:
+      213: 7840433613549292034
+    second: lower-woodland_22
+  - first:
+      213: 695961756132538767
+    second: lower-woodland_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: lower-woodland_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 140
+        width: 41
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1625ac90be3b6d40800000000000000
+      internalID: 5578621491691726364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_1
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 131
+        width: 83
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 63a2f39eda820dbd0800000000000000
+      internalID: -2607539456839833034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_2
+      rect:
+        serializedVersion: 2
+        x: 153
+        y: 59
+        width: 121
+        height: 119
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0840b8ea97795cc30800000000000000
+      internalID: 4379072761562858624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_3
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 111
+        width: 175
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b416996921ab470d0800000000000000
+      internalID: -3425908827523292853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_4
+      rect:
+        serializedVersion: 2
+        x: 501
+        y: 59
+        width: 264
+        height: 130
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6f6de2d5c464b340800000000000000
+      internalID: 4878635097159200619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_5
+      rect:
+        serializedVersion: 2
+        x: 778
+        y: 0
+        width: 206
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b7dbf45627c560130800000000000000
+      internalID: 3532612604114484603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_6
+      rect:
+        serializedVersion: 2
+        x: 967
+        y: 0
+        width: 272
+        height: 223
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36064e7fe56866540800000000000000
+      internalID: 5000832178685501539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_7
+      rect:
+        serializedVersion: 2
+        x: 1202
+        y: 119
+        width: 83
+        height: 87
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 032398dc1b4ef1dd0800000000000000
+      internalID: -2513038614740782544
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_8
+      rect:
+        serializedVersion: 2
+        x: 1381
+        y: 75
+        width: 119
+        height: 147
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3afd04c88543af8c0800000000000000
+      internalID: -3964798967031472221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 147
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99d8503a3b0c6d240800000000000000
+      internalID: 4816248729286053273
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_10
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 0
+        width: 196
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92d43023a1cfeb2f0800000000000000
+      internalID: -955048881517540055
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_11
+      rect:
+        serializedVersion: 2
+        x: 1292
+        y: 119
+        width: 100
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f87f38f8b632dff0800000000000000
+      internalID: -12887680861898509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_12
+      rect:
+        serializedVersion: 2
+        x: 446
+        y: 63
+        width: 84
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0dca3fec3ca2a78c0800000000000000
+      internalID: -4000838298486199088
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_13
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 78
+        width: 107
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5b01315dfe5e5390800000000000000
+      internalID: -7827714660241437861
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_14
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 0
+        width: 109
+        height: 79
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4e06ab10a5e187c0800000000000000
+      internalID: -4070720112344822198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_15
+      rect:
+        serializedVersion: 2
+        x: 951
+        y: 0
+        width: 111
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eba0701ed41d5df20800000000000000
+      internalID: 3446891222240004798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_16
+      rect:
+        serializedVersion: 2
+        x: 1274
+        y: 40
+        width: 93
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80b6a94861ee48370800000000000000
+      internalID: 8324039791768922888
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_17
+      rect:
+        serializedVersion: 2
+        x: 1477
+        y: 55
+        width: 23
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69f2c636e2f693a70800000000000000
+      internalID: 8807192791326928790
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_18
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 0
+        width: 109
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b94ea2530cb355580800000000000000
+      internalID: -8839092996932967269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_19
+      rect:
+        serializedVersion: 2
+        x: 504
+        y: 0
+        width: 63
+        height: 65
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75d3e10a30816e590800000000000000
+      internalID: -7645396913564533417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_20
+      rect:
+        serializedVersion: 2
+        x: 575
+        y: 0
+        width: 73
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82624b28e85f94470800000000000000
+      internalID: 8379498574126523944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_21
+      rect:
+        serializedVersion: 2
+        x: 1220
+        y: 0
+        width: 122
+        height: 49
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9cf294a17d3c7a4d0800000000000000
+      internalID: -3123312487931760695
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_22
+      rect:
+        serializedVersion: 2
+        x: 1381
+        y: 0
+        width: 90
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20a43a4c4d0decc60800000000000000
+      internalID: 7840433613549292034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: lower-woodland_23
+      rect:
+        serializedVersion: 2
+        x: 1481
+        y: 6
+        width: 19
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f897983a78d88a900800000000000000
+      internalID: 695961756132538767
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      lower-woodland_0: 5578621491691726364
+      lower-woodland_1: -2607539456839833034
+      lower-woodland_10: -955048881517540055
+      lower-woodland_11: -12887680861898509
+      lower-woodland_12: -4000838298486199088
+      lower-woodland_13: -7827714660241437861
+      lower-woodland_14: -4070720112344822198
+      lower-woodland_15: 3446891222240004798
+      lower-woodland_16: 8324039791768922888
+      lower-woodland_17: 8807192791326928790
+      lower-woodland_18: -8839092996932967269
+      lower-woodland_19: -7645396913564533417
+      lower-woodland_2: 4379072761562858624
+      lower-woodland_20: 8379498574126523944
+      lower-woodland_21: -3123312487931760695
+      lower-woodland_22: 7840433613549292034
+      lower-woodland_23: 695961756132538767
+      lower-woodland_3: -3425908827523292853
+      lower-woodland_4: 4878635097159200619
+      lower-woodland_5: 3532612604114484603
+      lower-woodland_6: 5000832178685501539
+      lower-woodland_7: -2513038614740782544
+      lower-woodland_8: -3964798967031472221
+      lower-woodland_9: 4816248729286053273
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

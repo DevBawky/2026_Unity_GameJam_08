@@ -13,24 +13,24 @@ MonoBehaviour:
   m_Name: cannon-impact
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: -907330891, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -640418657, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -729895295, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -422438963, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 178838038, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 256734488, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -700162019, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 248601708, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 507509974, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 1132143909, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -5456322247088692184, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 1998542295640403729, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -5416988707262824144, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 8484556014865955703, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 8986089742861914906, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -1373979136147483528, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: 5231957318664490464, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
-  - {fileID: -4919825458164570347, guid: 18bc66fe877ff4b42b0ceaaf5f845afa, type: 3}
+  - {fileID: -907330891, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -640418657, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -729895295, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -422438963, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 178838038, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 256734488, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -700162019, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 248601708, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 507509974, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 1132143909, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -5456322247088692184, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 1998542295640403729, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -5416988707262824144, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 8484556014865955703, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 8986089742861914906, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -1373979136147483528, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: 5231957318664490464, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
+  - {fileID: -4919825458164570347, guid: bd79ffa3bbc38597ab9468158f94a3f3, type: 3}
   frameStarts:
   - 0
   - 0.16666667

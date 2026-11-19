@@ -310,7 +310,7 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
       team: camera.team,
       waypoints: camera.waypoints,
       ...(view.seat === 'gunner' ? { aim: { angleDegrees: round(firingAngle(s, s.fuse.end ? s.gunAngle : aimAngle(p)) * 180 / Math.PI), targets: camera.targets } } : {}),
-      inputs: { stick: view.role === 'catch' ? 'idle' : !view.seat ? 'move' : ['gunner', 'driver'].includes(view.seat) ? 'aim' : 'idle', leave: !!view.seat },
+      inputs: { stick: view.role === 'catch' ? 'idle' : !view.seat ? 'move' : view.seat === 'driver' ? 'steer' : view.seat === 'gunner' ? 'aim' : 'idle', leave: !!view.seat },
     };
   }
 
@@ -324,6 +324,7 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
     const p = s.players[PLAYER];
     const first = observe();
     const initialView = playerView(s, PLAYER);
+    const steering = first.inputs.stick === 'steer' && (kind === 'move' || kind === 'aim');
     const destination = kind === 'approach' && first.waypoints.some(item => item.id === action.target) ? marker(action.target) : null;
     let accepted = true;
     let reason = null;
@@ -338,10 +339,10 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
       accepted = leaveStation(s, PLAYER);
       if (!accepted) reason = '이탈할 작업대가 없습니다.';
       track(before);
-    } else if (kind === 'aim' && first.inputs.stick !== 'aim') {
+    } else if (kind === 'aim' && first.inputs.stick !== 'aim' && !steering) {
       accepted = false;
       reason = '조준 스틱을 사용할 수 있는 자리가 아닙니다.';
-    } else if (['move', 'approach'].includes(kind) && first.inputs.stick !== 'move') {
+    } else if (['move', 'approach'].includes(kind) && first.inputs.stick !== 'move' && !steering) {
       accepted = false;
       reason = first.role === 'catch' ? '붙잡기 중에는 이동할 수 없습니다.' : '이동하려면 작업대에서 먼저 이탈하세요.';
     } else if (kind === 'approach' && !destination) {
@@ -355,7 +356,8 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
       const before = capture(s);
       const oldX = p.x;
       const oldY = p.y;
-      let [mx, my] = kind === 'move' ? [x, y] : [0, 0];
+      const oldCartY = s.y;
+      let [mx, my] = steering ? [0, y] : kind === 'move' ? [x, y] : [0, 0];
       let [ax, ay] = [p.ax, p.ay];
       if (destination) {
         const dx = destination.x - oldX;
@@ -367,9 +369,8 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
         }
         [mx, my] = [dx / Math.max(APPROACH_SLOWDOWN_RADIUS, len), dy / Math.max(APPROACH_SLOWDOWN_RADIUS, len)];
       }
-      if (kind === 'aim') {
-        if (initialView.seat === 'driver') [ax, ay] = [ax + x * 1.05 / HZ, ay + y * 1.05 / HZ];
-        if (initialView.seat === 'gunner' && Math.hypot(x, y) > 0.08) [ax, ay] = [x, y];
+      if (kind === 'aim' && initialView.seat === 'gunner' && Math.hypot(x, y) > 0.08) {
+        [ax, ay] = [x, y];
       }
       setInput(s, PLAYER, { mx, my, ax, ay, aimRole: initialView.seat });
       step(s);
@@ -379,7 +380,8 @@ export function createGame({ seed = 718, maxTicks = 3600, scenario = 'cannon-rec
       if (current.role !== first.role || playerFloor(p) !== first.floor) break;
       if (kind === 'wait' && current.timing?.ready && !first.timing?.ready) break;
       if (kind === 'aim' && initialView.seat === 'gunner' && before.fuse.end && !s.fuse.end) break;
-      if (Math.hypot(mx, my) > 0.1 && Math.hypot(p.x - oldX, p.y - oldY) <= 0.005) {
+      const travel = steering ? Math.abs(s.y - oldCartY) : Math.hypot(p.x - oldX, p.y - oldY);
+      if (Math.hypot(mx, my) > 0.1 && travel <= 0.005) {
         if (++stuck < 6) continue;
         reason = '이 방향으로 더 움직이지 않았습니다.';
         event('movement_blocked', PLAYER, { target: action.target, reason });

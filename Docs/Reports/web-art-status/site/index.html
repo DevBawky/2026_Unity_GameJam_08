@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#17362b">
+    <meta name="description" content="《그건 님이!!!》 웹 빌드의 픽셀 아트 적용 현황과 스크린샷 근거">
+    <title>《그건 님이!!!》 비픽셀 리소스 점검</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./dashboard.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#checklist">점검 목록으로 건너뛰기</a>
+    <header class="site-header">
+      <div class="page-width masthead">
+        <a class="site-name" href="./">그건 님이!!!</a>
+        <nav aria-label="보고서">
+          <a href="#checklist">점검 목록</a>
+          <a href="#history">변경 이력</a>
+          <a class="report-link" href="./report.md">Markdown 보고서</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-width">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="project-name">웹 빌드</p>
+          <h1 id="page-title">비픽셀 리소스 점검</h1>
+          <dl class="snapshot" id="snapshot" hidden>
+            <div>
+              <dt>마지막 점검</dt>
+              <dd><time id="checked-at"></time></dd>
+            </div>
+            <div>
+              <dt>점검 기준</dt>
+              <dd id="baseline"></dd>
+            </div>
+            <div>
+              <dt>소스 식별자</dt>
+              <dd><code id="revision"></code></dd>
+            </div>
+          </dl>
+        </div>
+        <figure class="hero-shot" id="hero-shot" hidden></figure>
+      </section>
+
+      <div class="dashboard">
+        <section id="checklist" class="checklist" aria-labelledby="checklist-title" aria-busy="true">
+          <div class="section-heading">
+            <h2 id="checklist-title">점검 목록</h2>
+            <p id="result-count" class="result-count" aria-live="polite"></p>
+          </div>
+          <div id="filters" class="filters" role="group" aria-label="상태 필터" hidden></div>
+          <div id="completion-summary" class="completion-summary" hidden>
+            <p id="completion-count" aria-live="polite"></p>
+            <p id="completion-hint" role="status">체크 상태는 이 브라우저에 저장됩니다.</p>
+          </div>
+          <div id="item-list" class="item-list"></div>
+          <div id="load-state" class="load-state">
+            <p id="load-message" role="status">점검 데이터를 불러오는 중입니다.</p>
+            <button id="retry" type="button" hidden>다시 불러오기</button>
+          </div>
+          <noscript><p class="load-state">점검 목록을 보려면 JavaScript를 사용하거나 Markdown 보고서를 여세요.</p></noscript>
+        </section>
+        <aside id="history" class="history" aria-labelledby="history-title">
+          <h2 id="history-title">변경 이력</h2>
+          <ol id="history-list" class="history-list"></ol>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>

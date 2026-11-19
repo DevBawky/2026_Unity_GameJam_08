@@ -68,7 +68,8 @@ public sealed class CannonAim : MonoBehaviour
     {
         var game = CartStations.Instance;
         bool aiming = game != null && CartStations.Running && actor.IsSpawned && actor.Assigned.Value && muzzle != null &&
-            game.CannonAction == StationAction.Cannon && game.HoldsStation(StationAction.Cannon, actor);
+            game.IsLoaded && game.HoldsStation(StationAction.Cannon, actor) &&
+            (!game.IsFiring || game.Gunner.Value == actor.NetworkObjectId);
         if (crosshair != null) crosshair.enabled = aiming;
         if (aimLine != null) aimLine.enabled = aiming;
         if (spreadRing != null) spreadRing.enabled = aiming;

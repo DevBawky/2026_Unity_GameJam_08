@@ -1,7 +1,9 @@
-import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, playerFloor, STATIONS, WHEELS, wheelNeedsRepair, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, WHEEL_KNOCK_TICKS, BARREL, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, isCannonRole, cannonAfterShot, CANNON_IMPACT_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, ENEMY_RECOVERY_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, ROYAL_RETURN_REACH, royalStatusNearby, royalTarget, feedTarget, stationAt, occupiedStation, horseCondition, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=double-shell87';
-import {DRAFT_HORSES,DRAFT_HORSE_SCALE,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseOrigin,horseBoardPoint,horseWhipTarget,whipAimPoint} from './horse-targets.mjs?v=whip-reach73';
+import {LANES, ROAD_TOP, ROAD_BOTTOM, DECK_FLOOR, CELLAR_FLOOR, STAIRS, TELESCOPE_POINT, atTelescope, playerFloor, STATIONS, SUPPLY_PILE, WHEELS, wheelIsMounted, WHEEL_MOUNT_OFFSET, LOOSE_WHEEL_RADIUS, WHEEL_KNOCK_TICKS, BARREL, cannonAim, cannonScale, cannonShotRadius, cannonBlastWidth, cannonStation, isCannonRole, cannonAfterShot, FUSE_TICKS, CANNON_IMPACT_TICKS, CANNON_NEAR_MISS_TICKS, enemyKnockback, incomingPursuit, HZ, CATAPULT_RADIUS, catapultX, catapultAirX, catapultHitsWagon, ENEMY_RETREAT_TICKS, ENEMY_RECOVERY_TICKS, CAVALRY_SIZE_FACTOR, CAVALRY_ART_X, CAVALRY_DEATH_FRAME_TICKS, CAVALRY_DEATH_FRAME_COUNT, CAVALRY_DEATH_TICKS, ROYAL_SEATS, royalStatusNearby, royalTarget, royalActionTarget, canGiveRoyalAttention, royalRequests, feedTarget, stationAt, occupiedStation, horseRageStatus, canLoad, canTakeSpareWheel,ROAD_CAMERA_MIN_X,ROAD_OBSTACLE_DRAW_MARGIN,roadApproachWarning} from './sim.mjs?v=nearest-wheel134';
+import {DRAFT_HORSES,DRAFT_HORSE_SCALE,HORSE_BODY,HORSE_NECK_AND_HEAD,draftHorseOrigin,horseBoardPoint} from './horse-targets.mjs?v=whip-reach73';
 import {obstacleY, roadObstacleProfile, roadsideTrees} from './road-obstacles.mjs?v=loose-wheels34';
+import {art,emoteArt,sprite,frame} from './pixel-art.mjs?v=crew-release107';
 const ink='#393933';
+const pixelFont='"NeoDunggeunmo", system-ui, sans-serif';
 let c,view;
 function poly(points,fill,edge=ink,lw=2.4){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(edge){c.lineWidth=lw;c.strokeStyle=edge;c.stroke();}}
 function box(x,y,w,h,fill,edge=null,r=0,lw=2){c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();if(edge){c.lineWidth=lw;c.strokeStyle=edge;c.stroke();}}
@@ -46,15 +48,16 @@ function createPineSprite(colors){
   return canvas;
 }
 function pine(x,y,size,tone){
+  if(sprite(c,art['roadside-tree'],x,y-28*size,92*size))return;
   const key=tone%pineColors.length,colors=pineColors[key];
   if(pineSprites[key]===undefined)pineSprites[key]=createPineSprite(colors);
-  const sprite=pineSprites[key];
-  if(!sprite){
+  const cached=pineSprites[key];
+  if(!cached){
     at(x,y,size,()=>drawPineArt(colors));
     return;
   }
   const bounds=pineBounds;
-  c.drawImage(sprite,x+bounds.x*size,y+bounds.y*size,bounds.width*size,bounds.height*size);
+  c.drawImage(cached,x+bounds.x*size,y+bounds.y*size,bounds.width*size,bounds.height*size);
 }
 function stone(x,y,z){
   at(x,y,z,()=>{oval(3,5,20,6,'#685b4240');poly([[-18,4],[-14,-7],[-3,-13],[10,-11],[18,-1],[14,5],[-4,7]],'#82958b','#59695f',2.2);
@@ -154,35 +157,52 @@ function roadShape(edges,upperOffset,lowerOffset,fill){
   }
   c.closePath();c.fillStyle=fill;c.fill();
 }
+function sceneryTile(name,scroll){
+  const tile=art[name];
+  if(!spriteReady(tile))return false;
+  const {naturalWidth:width,naturalHeight:height}=tile;
+  const start=view.left-mod(view.left-scroll,width);
+  for(let x=start;x<view.right;x+=width)sprite(c,tile,x+width/2,LANES[1],width,height);
+  return true;
+}
+function vergeArt(scroll,band){
+  const prefix=band===upperVerge?'upper':'lower';
+  const top=LANES[1]-450,bottom=LANES[1]+450;
+  if(!sceneryTile(prefix+'-woodland',scroll))woodland(scroll,band);
+  else if(band===upperVerge?view.top<top:view.bottom>bottom){
+    // Continue the forest on unusually tall or wide camera views.
+    const edge=band===upperVerge?top:bottom;
+    c.save();c.beginPath();
+    c.rect(view.left,band===upperVerge?view.top:edge,view.right-view.left,
+      band===upperVerge?edge-view.top:view.bottom-edge);
+    c.clip();woodland(scroll,band);c.restore();
+  }
+  if(!sceneryTile(prefix+'-shoulder',scroll))drawShoulder(scroll,band);
+}
 function landscape(scroll,stage){
   const {left,right,top,bottom}=view;
   // A focused camera wholly inside the road only sees the topmost road fill.
   if(top>ROAD_TOP+18&&bottom<ROAD_BOTTOM-20){
-    box(left-2,top-2,right-left+4,bottom-top+4,'#ead09e');
+    c.fillStyle=spriteReady(art['road-surface'])?'#e8d3a2':'#ead09e';
+    c.fillRect(left-2,top-2,right-left+4,bottom-top+4);
   }else{
     box(left-2,top-2,right-left+4,bottom-top+4,['#92b492','#a1b1a0','#acaa90'][(stage-1)%3]);
-    woodland(scroll,upperVerge);
-    drawShoulder(scroll,upperVerge);
-    const edges=[];
-    for(let x=Math.floor(left/20)*20-20;x<=right+20;x+=20){
-      const t=(x-scroll)*Math.PI/720;
-      edges.push([x,
-        ROAD_TOP+5*Math.sin(t*4)+3*Math.sin(t*14),
-        ROAD_BOTTOM+6*Math.sin(t*3+.7)+3*Math.sin(t*13),
-      ]);
-    }
-    roadShape(edges,-6,7,'#c3bd87');
-    roadShape(edges,0,0,'#d9ba84');
-    roadShape(edges,8,-9,'#ead09e');
-  }
-  for(const lane of [LANES[0],LANES[2]]){
-    for(let j=0;j<12;j++){
-      for(let x=firstSceneryTile(j*133+lane+scroll,1470,-120,56);x<=right+4;x+=1470){
-        if(inView(x+26,lane,30,5))line([[x,lane],[x+24,lane],[x+30,lane-1],[x+53,lane-1]],'#d5b786',2);
+    vergeArt(scroll,upperVerge);
+    if(!sceneryTile('road-surface',scroll)){
+      const edges=[];
+      for(let x=Math.floor(left/20)*20-20;x<=right+20;x+=20){
+        const t=(x-scroll)*Math.PI/720;
+        edges.push([x,
+          ROAD_TOP+5*Math.sin(t*4)+3*Math.sin(t*14),
+          ROAD_BOTTOM+6*Math.sin(t*3+.7)+3*Math.sin(t*13),
+        ]);
       }
+      roadShape(edges,-6,7,'#c3bd87');
+      roadShape(edges,0,0,'#d9ba84');
+      roadShape(edges,8,-9,'#ead09e');
     }
   }
-  for(const speck of roadSpecks){
+  if(!sceneryTile('road-specks',scroll))for(const speck of roadSpecks){
     const {y,shade}=speck;
     for(let x=firstSceneryTile(speck.x+scroll,1450,-65,24);x<=right+24;x+=1450){
       if(!inView(x,y,24,6,8))continue;
@@ -192,7 +212,31 @@ function landscape(scroll,stage){
       }else oval(x,y,shade*2.4+.6,1.2,'#ccb185');
     }
   }
-  drawVerge(scroll,upperVerge);
+  if(!sceneryTile('upper-verge',scroll))drawVerge(scroll,upperVerge);
+}
+function drawWheelTracks(s){
+ const tracks=s.wheelTracks;
+ if(!tracks||tracks.length<2)return;
+ c.save();
+ c.beginPath();
+ for(const [index,wheel] of WHEELS.entries()){
+   const bit=1<<index,roadX=s.road+wheel.x;
+   const trackY=mountedWheelY(Math.sign(wheel.y))+wheelTreadOffset;
+   let drawing=false;
+   for(let i=1;i<tracks.length;i++){
+     const [startRoad,startY,startMask]=tracks[i-1], [endRoad,endY,endMask]=tracks[i];
+     const startX=roadX-startRoad,endX=roadX-endRoad;
+     if(!(startMask&endMask&bit)||startX<view.left-8||endX>view.right+8){drawing=false;continue;}
+     if(!drawing)c.moveTo(startX,startY+trackY);
+     c.lineTo(endX,endY+trackY);
+     drawing=true;
+   }
+ }
+ // Stroke all wheels together so overlapping ruts have the same color as a single rut.
+ c.lineCap='butt';c.lineJoin='bevel';
+ c.strokeStyle='#79533258';c.lineWidth=12;c.stroke();
+ c.strokeStyle='#68442582';c.lineWidth=6;c.stroke();
+ c.restore();
 }
 function fallenLog(){
   poly([[-17,-25],[-7,-30],[9,-26],[18,21],[9,26],[-7,25]],'#996d49');
@@ -239,6 +283,7 @@ function drawRoadObstacle(obstacle){
   if(!inView(obstacle.x,y,ROAD_OBSTACLE_DRAW_MARGIN))return;
   const {halfWidth}=roadObstacleProfile(obstacle.type);
   at(obstacle.x,y,halfWidth/30,()=>{
+    if(sprite(c,art['road-'+obstacle.type],0,0,90))return;
     const rx=obstacle.type==='rock'?34:22;
     oval(4,0,rx,30,'#78674644');
     if(obstacle.type==='log')fallenLog();
@@ -248,6 +293,7 @@ function drawRoadObstacle(obstacle){
 }
 function drawRoadsideTree({x,y,r}){
   if(!inView(x,y,48,93,14))return;
+  if(sprite(c,art['roadside-tree'],x,y-4*r,13*r))return;
   pine(x,y-r,r/9,1);
   oval(x+2,y+2,r*1.2,r*.68,'#62644565');
   poly([
@@ -257,8 +303,7 @@ function drawRoadsideTree({x,y,r}){
   line([[x-r*.3,y-r*1.34],[x-r*.45,y-r*.4],[x-r*.69,y]],'#c39463',2);
 }
 const horseStrideRate=2;
-const rumpMarks=[[20,-8],[25,-5],[18,1],[30,0],[24,6],[32,-5],[17,7],[29,6]];
-function horse(x,y,z,palette,t,wounds=0,showShadow=true){
+function horse(x,y,z,palette,t,showShadow=true){
   const [coat,light,mane]=palette;
   at(x,y,z,()=>{
     if(showShadow)oval(3,7,42,14,'#715f4850');
@@ -273,9 +318,6 @@ function horse(x,y,z,palette,t,wounds=0,showShadow=true){
     poly([[32,-4],[46,-4],[51,0],[47,3],[54,7],[39,6],[31,3]],mane,ink,2);
     poly(HORSE_BODY,coat,ink,2.8);
     poly([[-11,-10],[12,-11],[23,-7],[9,-6],[-5,-7]],light,null);box(7,-13,7,26,'#805737',ink,1,1.6);
-    for(const [mx,my] of rumpMarks.slice(0,Math.ceil(wounds))){
-      line([[mx-1,my-1],[mx+2,my+2]],'#713c37',1.9);
-    }
     poly(HORSE_NECK_AND_HEAD,coat,ink,2.5);
     poly([[-28,-12],[-18,-14],[-9,-10],[-13,-3],[-21,-4],[-25,-7]],mane,ink,1.8);line([[-38,-8],[-37,5]],'#7b4c37',3);oval(-36,-4,1.8,1.8,ink);oval(-48,-1,1.25,1.25,ink);line([[-45,1],[-42,2]],light,1.5);});
 }
@@ -293,8 +335,8 @@ function crewBody(color,ball,outline=0){
     }
   });
   if(ball){
-    oval(12,5,7,7,'#454e5b',edge,1.8+outline);
-    if(!outline)oval(10,2,2,1.5,'#a5b1b2');
+    oval(-12,5,7,7,'#454e5b',edge,1.8+outline);
+    if(!outline)oval(-14,2,2,1.5,'#a5b1b2');
   }
 }
 function snackPlate(x,y,scale=1){
@@ -305,44 +347,35 @@ function snackPlate(x,y,scale=1){
    line([[-2,-4],[-3,-1],[2,-2],[3,-4]],'#fff0b5',1.15);
  });
 }
-const royalClothes={
- prince:{robe:'#84adcc',trim:'#405a78',hair:'#a46c48',seat:'#8fa9cd'},
- princess:{robe:'#d69ab8',trim:'#794461',hair:'#c6874c',seat:'#c79abb'}
-};
+const royalTileWidth=36,royalTileHeight=44,royalHeight=40;
+const royalPoses={seated:0,standing:1,crying:2,bored:3};
 function royalStatusVisible(s,royal){
  return view.localPlayers.some(id=>royalStatusNearby(s.players[id],royal));
 }
 function royalSprite(s,royal,x,y,scale,t,tilt=0){
- const colors=royalClothes[royal.id],seated=royal.state==='seated';
+ const seated=royal.state==='seated';
  const playingShell=royal.state==='wandering'&&royal.shellPlayUntil>s.tick;
  const wandering=royal.state==='wandering'&&!playingShell&&!(royal.snackPauseUntil>s.tick);
- const gait=wandering?Math.sin(t*1.25+(royal.id==='prince'?0:2))*2:0;
  const showMood=(royal.bored||royal.crying)&&royalStatusVisible(s,royal);
+ const pose=showMood?(royal.bored?'bored':'crying'):seated?'seated':'standing';
+ const row=royal.id==='prince'?0:1;
+ const bob=wandering&&!reducedMotion?.matches?-Math.abs(Math.sin(t*1.25+row*2))*2:0;
+ const crop=[royalPoses[pose]*royalTileWidth,row*royalTileHeight,royalTileWidth,royalTileHeight];
  at(x,y,scale,()=>{
    if(royal.state!=='carried')oval(1,8,13,6,'#60473647');
    c.save();
    c.rotate(tilt);
-   for(const side of [-1,1])box(side*4-2,(seated?5:9)+side*gait,5,4,colors.trim,ink,1.5,1.3);
-   poly([[-6,-3],[6,-3],[9,8],[-9,8]],colors.robe,colors.trim,1.8);
-   line([[-5,0],[5,5]],'#fff1be',2);
-   oval(0,-7,9,8,colors.hair,ink,1.7);
-   oval(0,-5,6.6,6,'#efc6a2',null);
-   if(showMood&&royal.bored){
-     line([[-5,-5],[-1.5,-5]],'#654337',1.25);
-     line([[1.5,-5],[5,-5]],'#654337',1.25);
-     line([[-2,-1],[2,-1]],'#773e39',1.25);
-   }else if(showMood&&royal.crying){
-     line([[-5,-5],[-2.2,-6],[0,-4.8],[2.2,-6],[5,-5]],'#654337',1.25);
-     oval(0,-1,1.8,2.2,'#773e39');
-     for(const side of [-1,1]){
-       const tear=mod(t*.58+side*1.7,5);
-       oval(side*(4.4+tear*.22),-2+tear,1.4,1.7,'#a7e1fa','#567caa',.6);
-     }
-   }else{
-     oval(-2.3,-5,1,1,ink);oval(2.3,-5,1,1,ink);
+   sprite(c,art['royal-children'],0,10-royalHeight/2+bob,royalHeight*royalTileWidth/royalTileHeight,royalHeight,crop);
+   const heart=royal.attentionHeart;
+   const heartFlying=heart&&heart.floor===view.floor&&s.tick>=heart.tick&&s.tick<heart.until;
+   const needs=royalRequests(royal);
+   if(heartFlying||needs){
+     const {a,b,c:skewX,d:scaleY,e:x,f:y}=c.getTransform();
+     const faceY=-14+bob;
+     const faceX=x+skewX*faceY,faceScreenY=y+scaleY*faceY;
+     if(heartFlying)view.royalHearts.push({heart,x:faceX,y:faceScreenY});
+     if(needs)view.royalRequestAnchors.push({id:royal.id,needs,x:faceX,y:faceScreenY,scale:Math.hypot(a,b)});
    }
-   poly([[-7,-11],[-8,-18],[-3,-15],[0,-20],[3,-15],[8,-18],[7,-11]],'#f0cf65','#645239',1.4);
-   oval(0,-14,1.6,1.6,colors.trim);
    if(playingShell){
      const lift=reducedMotion?.matches?0:Math.abs(Math.sin((royal.shellPlayUntil-s.tick)*.23))*9;
      const ballY=4-lift;
@@ -353,18 +386,54 @@ function royalSprite(s,royal,x,y,scale,t,tilt=0){
    c.restore();
  });
 }
+const floorPadWidth=48,floorPadHeight=floorPadWidth*19/32;
+function drawFloorPad(x,y,fill,edge,strokeWidth){
+ oval(x,y,floorPadWidth/2,floorPadHeight/2,fill,edge,strokeWidth);
+}
+function telescopeMark(s){
+ const {x,y}=TELESCOPE_POINT;
+ const selected=view.localPlayers.some(id=>atTelescope(s.players[id]));
+ drawFloorPad(x,y,selected?'#a4eed47d':'#6dad9c45',selected?'#d7fff1':'#51867a',selected?2.7:1.8);
+ at(x+17,y-1,1,()=>{
+   oval(0,11,12,4,'#513c3447');
+   poly([[-2,-2],[3,-2],[8,11],[5,11],[1,3],[-3,11],[-7,11]],'#91604a','#50392f',1.6);
+   poly([[-12,-4],[-7,-4],[-7,-5],[11,-11],[16,-11],[16,-4],[12,-4],[-6,2],[-7,1],[-12,1]],'#bd8650','#4f3a32',2);
+   line([[-6,-4],[11,-9]],'#fadd93',1.6);
+   poly([[10,-12],[15,-13],[18,-12],[18,-5],[14,-3],[10,-4]],'#e7af64','#4f3a32',1.4);
+   c.fillStyle=selected?'#c7ffed':'#8ad7dc';
+   c.fillRect(15,-10,2,4);
+ });
+}
 function returnMark(seat){
- oval(seat.x,seat.dropY,ROYAL_RETURN_REACH,ROYAL_RETURN_REACH,'#fff2a936','#6f503c',3);
- c.save();
- c.setLineDash([4,4]);
- oval(seat.x,seat.dropY,ROYAL_RETURN_REACH-2,ROYAL_RETURN_REACH-2,'#00000000','#fff2a7',2);
- c.restore();
- poly([[seat.x-5,seat.dropY-2],[seat.x,seat.dropY-9],[seat.x+5,seat.dropY-2]],'#fff2a7','#6f503c',1.4);
+ drawFloorPad(seat.x,seat.dropY,'#fff2a936',null);
+ if(!sprite(c,art.bottom_crown,seat.x,seat.dropY,floorPadWidth)){
+   poly([[seat.x-5,seat.dropY-2],[seat.x,seat.dropY-9],[seat.x+5,seat.dropY-2]],'#fff2a7','#6f503c',1.4);
+ }
 }
 function feedMark(seat,selected){
  const {x,dropY:y}=seat;
- oval(x,y,ROYAL_RETURN_REACH,ROYAL_RETURN_REACH,selected?'#ffdf875c':'#ffe3a327',selected?'#ffe1a2':'#d4ad72',selected?2.7:1.8);
+ drawFloorPad(x,y,selected?'#ffdf875c':'#ffe3a327',selected?'#ffe1a2':'#d4ad72',selected?2.7:1.8);
  snackPlate(x,y,.82);
+}
+function drawPixelHeart(){
+ poly([
+   [-8,-5],[-6,-5],[-6,-7],[-2,-7],[-2,-5],[2,-5],[2,-7],[6,-7],[6,-5],[8,-5],
+   [8,-1],[6,-1],[6,1],[4,1],[4,3],[2,3],[2,5],[-2,5],[-2,3],[-4,3],[-4,1],[-6,1],[-6,-1],[-8,-1],
+ ],'#fa689b','#7b324c',1.8);
+ c.fillStyle='#ffd0dd';
+ c.fillRect(-5,-5,3,2);
+}
+function attentionMark(royal,selected){
+ const seat=ROYAL_SEATS[royal.id];
+ const x=seat.x+(royal.id==='prince'?-10:10),y=seat.dropY-6;
+ drawFloorPad(x,y,selected?'#f6a4c7c4':'#d169964d',selected?'#ffe0e9':'#a05372',selected?2.7:1.8);
+ at(x,y+1,1.25,drawPixelHeart);
+}
+function royalSeatLift(s,tick=s.tick){
+ const bounce=s.royalSeatBounce;
+ if(!bounce||tick<bounce.tick||tick>=bounce.until||reducedMotion?.matches||(s.mode!=='run'&&s.mode!=='paused'))return 0;
+ const progress=(tick-bounce.tick)/(bounce.until-bounce.tick);
+ return (12+7*bounce.strength)*4*progress*(1-progress);
 }
 function looseRoyal(s,royal,t,reachable){
  const {x,y}=royal;
@@ -373,7 +442,8 @@ function looseRoyal(s,royal,t,reachable){
    const side=royal.id==='prince'?-1:1,seat=ROYAL_SEATS[royal.id];
    const age=s.tick-(royal.fallAt??-Infinity);
    const progress=reducedMotion?.matches?1:Math.max(0,Math.min(1,age/9));
-   const drawY=seat.y+(y-seat.y)*progress-9*Math.sin(Math.PI*progress);
+   const launchLift=royalSeatLift(s,royal.fallAt??-Infinity)*(1-progress);
+   const drawY=seat.y+(y-seat.y)*progress-9*Math.sin(Math.PI*progress)-launchLift;
    if(reachable)oval(x,y,19,13,upset?'#ffc7a85f':'#fff1b858',upset?'#ffc8a2':'#fff2a7',2.2);
    royalSprite(s,royal,x,drawY,1,t,side*1.24*progress);
    return;
@@ -393,7 +463,7 @@ function looseRoyal(s,royal,t,reachable){
 function drawRoyal(s,royal,t){
  if(royal.state==='seated'){
    const {x,y}=ROYAL_SEATS[royal.id];
-   royalSprite(s,royal,x,y,.83,t);
+   royalSprite(s,royal,x,y-15-royalSeatLift(s),1.42,t);
    return;
  }
  const reachable=view.localPlayers.some(id=>{
@@ -403,12 +473,16 @@ function drawRoyal(s,royal,t){
  looseRoyal(s,royal,t,reachable);
 }
 const stationArt={
- driver:['마부석','마','#bea5bd','#795d83'],
- rack:['적재칸','적','#80afc6','#3a6579'],cleaner:['포신 청소','청','#e9cd82','#80632d'],loader:['장전','장','#9bc69a','#476b49'],gunner:['포수','포','#dba476','#865c3d'],supply:['포탄 더미','탄','#92b6c5','#4d7080'],
- cook:['음식 제작대','','#c4a575','#765333'],
- 'wheel-pickup':['바퀴 보관함','','#c0a16d','#705635']
+ driver:['#bea5bd','#795d83','bottom_horse_move'],
+ rack:['#80afc6','#3a6579','bottom_bombbox'],
+ cleaner:['#e9cd82','#80632d','bottom_cannon'],
+ loader:['#9bc69a','#476b49','bottom_bomb'],
+ gunner:['#dba476','#865c3d','bottom_cannon'],
+ supply:['#92b6c5','#4d7080','bottom_bombplus'],
+ cook:['#c4a575','#765333'],
+ 'wheel-pickup':['#c0a16d','#705635']
 };
-const occupiedPadStyle={fill:'#999c9b',edge:'#565a59',ring:'#dedfdf'};
+const occupiedPadStyle={fill:'#999c9b',edge:'#565a59'};
 function occupiedByAnother(role){
  const owner=view.stationOwners.get(role);
  return owner!==undefined&&!view.localPlayers.includes(owner);
@@ -416,6 +490,7 @@ function occupiedByAnother(role){
 function spareWheel(x,y,scale,angle){
  at(x,y,scale,()=>{
    if(angle!==undefined)c.rotate(angle);
+   if(sprite(c,art.bottom_wheel[0],0,0,26))return;
    oval(0,0,12,12,'#544842','#302829',2);
    oval(0,0,9,9,'#493630','#c29960',1.7);
    for(let spoke=0;spoke<6;spoke++){
@@ -426,7 +501,33 @@ function spareWheel(x,y,scale,angle){
    if(angle!==undefined)line([[-2,-10.5],[2,-11]],'#e8c48b',2);
  });
 }
+function drawSpareWheelStack(x,y,side,count){
+ oval(x,y+5,22,8,'#21160965');
+ for(let level=0;level<count;level++){
+   const wheelX=x+side*(level%2)*2,wheelY=y-level*7;
+   oval(wheelX,wheelY+3,20,8,'#65432e','#382419',1.5);
+   if(!sprite(c,art.bottom_wheel[0],wheelX,wheelY,40,18)){
+     at(wheelX,wheelY,1,()=>{
+       c.scale(1,.5);
+       spareWheel(0,0,40/26);
+     });
+   }
+ }
+}
 const cellarLabelScale=()=>Math.max(1,.9/(view.zoom*view.cssX));
+const rackPile={x:STATIONS.rack.x+STATIONS.rack.r+18,y:STATIONS.rack.y};
+function drawRackPile(count){
+ const {x,y}=rackPile;
+ box(x-17,y-9,34,21,'#907050',ink,3,1.6);
+ for(let i=0;i<Math.min(count,5);i++){
+   const shellX=x-9+(i%3)*9+(i>=3?4.5:0);
+   const shellY=y+5-Math.floor(i/3)*8;
+   if(!sprite(c,art['rack-shell'],shellX,shellY,12)){
+     oval(shellX,shellY,5.6,5.6,'#565b66',ink,1.3);
+   }
+   oval(shellX-1.5,shellY-1.8,2,1.35,'#9297a1');
+ }
+}
 function floorStation(s,role){
  const onRoute=(view.role==='carry'||view.role==='catch')&&role==='rack';
  const focused=view.role&&view.role!=='driver';
@@ -434,79 +535,94 @@ function floorStation(s,role){
  const cannonView=isCannonRole(view.role);
  const occupied=occupiedByAnother(role);
  if(focused&&view.role!==role&&!onRoute&&!occupied&&!(cannonPad&&cannonView))return;
- const spot=STATIONS[role],[name,mark,fill,edge]=stationArt[role],{x,y,r}=spot;
- const inactive=(role==='loader'&&!canLoad(s))||(role==='wheel-pickup'&&!canTakeSpareWheel(s));
+ const {x,y}=STATIONS[role],[fill,edge,image]=stationArt[role];
+ const hasSupply=s.testMode||s.ammo.stock>0;
+ const inactive=(role==='loader'&&!canLoad(s))||(role==='wheel-pickup'&&!canTakeSpareWheel(s))||(role==='supply'&&!hasSupply);
  const border=occupied?occupiedPadStyle.edge:inactive?'#897961':edge;
  const padFill=occupied?occupiedPadStyle.fill:inactive?'#bda47e':fill;
- oval(x,y,r,r,padFill,border,2.3);
- c.save();c.strokeStyle=occupied?occupiedPadStyle.ring:'#fff1d8';c.lineWidth=1.8;c.setLineDash([4,4]);c.beginPath();c.arc(x,y,r-4,0,Math.PI*2);c.stroke();c.restore();
- c.textAlign='center';c.textBaseline='middle';c.font='bold 16px system-ui';c.fillStyle=occupied?occupiedPadStyle.edge:edge;c.fillText(mark,x,y);
- if(role==='supply'||role==='rack'){
-   box(x-15,y-8,30,18,'#907050',ink,3);
-   for(let i=0;i<Math.min(role==='rack'?s.ammo.rack:s.ammo.stock,5);i++)oval(x-8+(i%3)*8+(i>2?3:0),y+3-Math.floor(i/3)*7,4.8,4.8,'#565b66',ink,1.3);
+ if(role==='supply'&&hasSupply)sprite(c,art['supply-pile'],SUPPLY_PILE.x,SUPPLY_PILE.y,SUPPLY_PILE.width);
+ c.save();
+ if(occupied||inactive)c.filter='grayscale(1)';
+ const padDrawn=image&&sprite(c,art[image],x,y,floorPadWidth);
+ c.restore();
+ if(!padDrawn)drawFloorPad(x,y,padFill,border,2.3);
+ c.textAlign='center';c.textBaseline='middle';
+ if(role==='rack'){
+   const count='x '+s.ammo.rack,labelX=rackPile.x,labelY=y-17;
+   c.font='bold 9px '+pixelFont;
+   const width=c.measureText(count).width+12;
+   box(labelX-width/2,labelY-6,width,13,border,ink,3,1);
+   c.fillStyle='#fff8e9';c.fillText(count,labelX,labelY+.5);
+ }else if(role==='supply'&&!s.testMode){
+   box(SUPPLY_PILE.x+7,SUPPLY_PILE.y+10,20,14,border,ink,3,1);
+   c.fillStyle='#fff8e9';c.font='bold 10px '+pixelFont;c.fillText(s.ammo.stock,SUPPLY_PILE.x+17,SUPPLY_PILE.y+17);
  }else if(role==='cook'){
    box(x-16,y-10,32,20,'#986f45','#604329',3,2);
    line([[x-13,y+6],[x+13,y+6]],'#b8915a',1.5);
    snackPlate(x-6,y,.82);
    oval(x+8,y-1,5,5,'#7c6c60','#554636',1.3);
    oval(x+8,y-2,3.3,2.5,'#c58159');
- }else if(role==='wheel-pickup'){
-   box(x-19,y-12,38,26,'#745434','#473729',3,2);
-   box(x-16,y-8,32,18,'#463733','#9d7447',2,1.3);
-   spareWheel(x-7,y,.66);
-   spareWheel(x+7,y,.66);
-   line([[x-15,y+10],[x+15,y+10]],'#b38a58',2);
  }
- if(focused&&!onRoute&&!cannonPad&&!occupied)return;
- if(role==='cook'){
-   const scale=cellarLabelScale();
-   at(x,y+r+15*scale,scale,()=>tag(0,0,name,false,border,true));
-   return;
- }
- if(role==='wheel-pickup'){
-   const scale=cellarLabelScale();
-   at(x,y-r-12*scale,scale,()=>tag(0,0,name,false,border));
-   return;
- }
- const labelY=y-r-5;
- box(x-23,labelY-6,46,13,border,ink,3,1);c.fillStyle='#fff8e9';c.font='bold 9px system-ui';c.fillText(role==='rack'?'적재 '+s.ammo.rack+'발':inactive?'포탄 필요':name,x,labelY+.5);
 }
+const crewArt={
+ p1:['#aa7ed4','bottom_purple',0],
+ p2:['#dc9d5d','bottom_orange',3],
+ p3:['#7aa5c5','bottom_blue',6],
+ p4:['#d887b9','bottom_pink',9],
+};
 function crewSprite(s,id,t,passenger,recordPosition){
- const p=s.players[id],color=({p1:'#aa7ed4',p2:'#dc9d5d',p3:'#7aa5c5',p4:'#88b995'})[id];
- const moving=Math.hypot(p.mx,p.my)>.15&&s.mode==='run';
- const bounce=moving?Math.sin(t*1.3)*1.8:0;
- oval(p.x+2,p.y+7,17,7,'#4d3e454a');
+ const p=s.players[id],[color,image,phase]=crewArt[id];
  const currentRole=stationAt(p,s);
- const aim=currentRole==='driver'?whipAimPoint(s,p):{x:p.x+p.ax,y:p.y+p.ay};
- const a=Math.atan2(aim.y-p.y,aim.x-p.x);
- c.save();c.translate(p.x,p.y);c.rotate(a);poly([[22,-5],[31,0],[22,5]],color,ink,1.4);c.restore();
+ const side=currentRole==='driver'?-1:p.facing??(p.ax<0?-1:1);
+ const moving=currentRole!=='driver'&&Math.hypot(p.mx,p.my)>.15&&s.mode==='run';
+ const reduced=reducedMotion?.matches;
+ const animationTick=reduced?0:(s.mode==='ready'?Math.floor(t*14):s.tick)+phase;
+ const bounce=moving&&!reduced?Math.sin(t*1.3)*1.8:0;
+ if(!sprite(c,art.bottom_shadow,p.x+2,p.y+10,32))oval(p.x+2,p.y+7,17,7,'#4d3e454a');
  at(p.x,p.y+bounce,1,()=>{
    recordPosition(id);
-   if(view.localPlayers.includes(id)){
-     crewBody(color,p.ball,7/Math.sqrt(view.zoom));
+   const local=view.localPlayers.includes(id);
+   c.save();
+   c.scale(-side,1); // The original goblin sprites face left.
+   if(local){
+     c.filter='drop-shadow(2px 0 white) drop-shadow(-2px 0 white) drop-shadow(0 2px white) drop-shadow(0 -2px white)';
    }
-   crewBody(color,p.ball);
+   const avatarDrawn=sprite(c,frame(art[image],animationTick,moving?4:13),0,-5,46);
+   if(local)c.filter='none';
+   if(avatarDrawn){
+     if(p.ball){
+       if(local)oval(-15,6,9,9,'#fff');
+       oval(-15,6,7,7,'#454e5b',ink,1.8);
+       oval(-17,3,2,1.5,'#a5b1b2');
+     }
+   }else{
+     if(local)crewBody(color,p.ball,7/Math.sqrt(view.zoom));
+     crewBody(color,p.ball);
+   }
+   c.restore();
    if(passenger){
-     const side=p.ax<0?-1:1;
      const rocking=currentRole==='royal-soothe'&&!passenger.bored&&moving&&!reducedMotion?.matches;
      const sway=rocking?side*Math.sin(t*.65)*.14:0;
      royalSprite(s,passenger,side*13,6,.76,t,sway);
      line([[side*5,8],[side*12,12]],'#a4bd74',3);
    }
-   if(p.food)snackPlate(passenger&&p.ax>=0?-12:12,7,.83);
+   if(p.food)snackPlate((passenger?-side:side)*12,7,.83);
    if(p.spareWheel){
-     const side=p.ax<0?-1:1;
      spareWheel(side*15,6,.89);
      line([[side*7,8],[side*12,10]],'#a4bd74',3);
    }
    box(-13,20,26,14,'#454641',ink,4,1);
-   c.fillStyle='#fff9e8';c.textAlign='center';c.textBaseline='middle';c.font='bold 10px monospace';c.fillText(id.toUpperCase(),0,27);
+   c.fillStyle='#fff9e8';c.textAlign='center';c.textBaseline='middle';c.font='bold 10px '+pixelFont;c.fillText(id.toUpperCase(),0,27);
  });
 }
 function actorsOnFloor(s,floor,localPlayers){
  const actors=[];
  if(floor===DECK_FLOOR){
-   for(const enemy of s.enemies)actors.push({y:enemy.y,enemy});
+   for(const enemy of s.enemies){
+     const strike=enemyKnockback(enemy)?null:
+       cavalryStrikePose(enemy.x+CAVALRY_ART_X,enemy.y,enemy.strikeTarget,s.tick-(enemy.lastStrike??-Infinity));
+     actors.push({y:enemy.y+(strike?.bodyY??0),enemy,strike});
+   }
  }
  for(const royal of s.royals){
    const {state}=royal;
@@ -517,9 +633,9 @@ function actorsOnFloor(s,floor,localPlayers){
  for(const [id,player] of Object.entries(s.players)){
    if(playerFloor(player)===floor)actors.push({y:s.y+player.y,id});
  }
- // Canvas draws later sprites in front. Use world positions before animation offsets.
+ // Canvas Y grows downward. On deck the lower world-Y actor is drawn last.
  return actors.sort((a,b)=>{
-   const depth=b.y-a.y;
+   const depth=floor===DECK_FLOOR?a.y-b.y:b.y-a.y;
    if(depth)return depth;
    if(a.enemy&&b.enemy)return b.enemy.x-a.enemy.x;
    return Number(Boolean(b.enemy))-Number(Boolean(a.enemy))
@@ -528,9 +644,9 @@ function actorsOnFloor(s,floor,localPlayers){
 }
 function drawActors(s,t,floor,offset,recordPosition,carriedRoyals,cavalryFrame){
  const showCrew=!view.role||view.role==='driver';
- for(const {enemy,royal,id} of actorsOnFloor(s,floor,view.localPlayers)){
+ for(const {enemy,strike,royal,id} of actorsOnFloor(s,floor,view.localPlayers)){
    if(enemy){
-     drawEnemy(enemy,s.tick,t,cavalryFrame);
+     drawEnemy(enemy,s.tick,t,cavalryFrame,strike);
    }else if(royal){
      at(offset.x,offset.y,1,()=>drawRoyal(s,royal,t));
    }else{
@@ -539,17 +655,35 @@ function drawActors(s,t,floor,offset,recordPosition,carriedRoyals,cavalryFrame){
    }
  }
 }
+function drawRoyalAttentionHearts(s,carriage){
+ if(!view.royalHearts.length)return;
+ const {a,d,e,f}=c.getTransform();
+ for(const {heart,x,y} of view.royalHearts){
+   const age=(s.tick-heart.tick)/(heart.until-heart.tick);
+   const travel=reducedMotion?.matches?1:Math.min(1,age/.65);
+   const fromX=carriage.x+heart.fromX,fromY=carriage.y+heart.fromY-12;
+   const targetX=(x-e)/a,targetY=(y-f)/d;
+   const heartX=fromX+(targetX-fromX)*travel;
+   const heartY=fromY+(targetY-fromY)*travel-15*Math.sin(travel*Math.PI);
+   at(heartX,heartY,1,()=>{
+     c.globalAlpha=Math.min(1,(1-age)*5);
+     drawPixelHeart();
+   });
+ }
+}
 function drawStairs(floor){
  const {x,y,r}=STAIRS,below=floor===CELLAR_FLOOR,dir=below?-1:1;
- box(x-r-3,y-r-3,r*2+6,r*2+6,below?'#211b1b':'#745237',ink,5,2);
- box(x-r,y-r,r*2,r*2,below?'#2e2523':'#48382b',below?'#c6a36f':'#e9c891',4,1.8);
- for(let i=0;i<5;i++){
-   const stepY=y+(i-2)*6;
-   line([[x-r+4,stepY],[x+r-4,stepY]],below?'#816d55':'#a27e54',2.2);
+ if(!sprite(c,art.bottom_cellar,x,y,r*2+6)){
+   box(x-r-3,y-r-3,r*2+6,r*2+6,below?'#211b1b':'#745237',ink,5,2);
+   box(x-r,y-r,r*2,r*2,below?'#2e2523':'#48382b',below?'#c6a36f':'#e9c891',4,1.8);
+   for(let i=0;i<5;i++){
+     const stepY=y+(i-2)*6;
+     line([[x-r+4,stepY],[x+r-4,stepY]],below?'#816d55':'#a27e54',2.2);
+   }
  }
  line([[x,y-dir*8],[x,y+dir*8]],'#ffe6aa',3);
  line([[x-6,y+dir*2],[x,y+dir*8],[x+6,y+dir*2]],'#ffe6aa',3);
- tag(x,y-r-10,below?'1층 계단':'지하층 계단',false,below?'#755331':'#69462f');
+ drawStairLabel(x,y-r-10,below?'1층 계단':'지하층 계단',below?'#755331':'#69462f');
 }
 function drawMountedWheel(x,y){
  at(x,y,1,()=>{
@@ -558,19 +692,51 @@ function drawMountedWheel(x,y){
    box(-6,-7,12,14,'#ae976e',ink,3,1.6);oval(0,0,2,2,'#635d51');
  });
 }
-function wheelMounts(s){
+const wagonPixelScale=375/221;
+const wheelWidth=35*wagonPixelScale;
+const wheelTreadOffset=29*wagonPixelScale/2; // The 29-pixel wheel frames are centered vertically.
+const wheelExitBounds=[[0,22,35,23],[20,0,43,35],[54,8,37,37],[90,16,35,29]];
+const wheelMountPlaybackRate=.85,wheelMountFrameTicks=2;
+
+function mountedWheelY(side){return side*WHEEL_MOUNT_OFFSET+(side>0?0:2);}
+
+function wheelMounts(s,side){
+ const reduced=reducedMotion?.matches;
+ const rolling=!reduced&&s.mode==='run'&&s.speed>0;
+ const phase=rolling?s.tick:0;
+ const {broken,progress,mountedAt,mountedIndex=progress===1?broken:-1}=s.wheel;
+ const equip=side<0?art.bottom_wheel_topequip:art.bottom_wheel_bottomequip;
+ const equipAge=(s.tick-(mountedAt??-Infinity))*wheelMountPlaybackRate;
+ const equipping=!reduced&&equipAge>=0&&equipAge<equip.length*wheelMountFrameTicks;
  for(let n=0;n<WHEELS.length;n++){
-   const w=WHEELS[n],side=Math.sign(w.y),mount=side*WHEEL_MOUNT_OFFSET;
-   const attached=s.wheel.broken===n&&s.wheel.progress===1;
-   if(!wheelNeedsRepair(s,n)||attached)drawMountedWheel(w.x,mount);
-   else box(w.x-19,mount-3,38,6,'#92897d',ink,2,2);
+   const w=WHEELS[n],mount=side*WHEEL_MOUNT_OFFSET;
+   if(Math.sign(w.y)!==side)continue;
+   const attached=broken===n&&progress===1;
+   if(wheelIsMounted(s,n)){
+     const mounting=equipping&&mountedIndex===n;
+     if(!mounting||!sprite(c,frame(equip,equipAge,wheelMountFrameTicks),w.x,mount-side*6,wheelWidth)){
+       const y=mountedWheelY(side);
+       if(!sprite(c,frame(art.bottom_wheel,phase,3),w.x,y,wheelWidth))drawMountedWheel(w.x,y);
+     }
+     if(side>0&&rolling&&!attached&&!mounting){
+       sprite(c,frame(art.bottom_wheel_dust,phase+n,3),w.x+55,mount+20,63*wagonPixelScale);
+     }
+   }else{
+     box(w.x-16,mount-side*10-3,32,6,'#92897d',ink,2,2);
+   }
+ }
+ if(reduced)return;
+ for(const wheel of s.looseWheels??[]){
+   const w=WHEELS[wheel.mount],age=s.tick-wheel.launchTick;
+   if(w&&Math.sign(w.y)===side&&age>=0&&age<8){
+     sprite(c,frame(art.bottom_wheel_out_effect,age,2),w.x,side*WHEEL_MOUNT_OFFSET,82);
+   }
  }
 }
 function drawLooseWheel(wheel,tick){
  const {x,y,vx,vy,angle,bounceTick,launchTick}=wheel;
- const radius=LOOSE_WHEEL_RADIUS;
- if(x<view.left-radius||x>view.left+view.span/view.zoom+radius)return;
- if(y<view.top-40||y>view.bottom+40)return;
+ const radius=LOOSE_WHEEL_RADIUS*1.5,margin=radius*1.5;
+ if(!inView(x,y,margin,margin+8,margin))return;
  const age=tick-(bounceTick??launchTick);
  const jolt=age>=0&&age<10&&!reducedMotion?.matches;
  const lift=jolt?Math.sin(age*Math.PI/10)*8:0;
@@ -584,31 +750,37 @@ function drawLooseWheel(wheel,tick){
    c.restore();
  }
  oval(x+2,y+4,radius,radius*.4,'#67504468');
+ const launchAge=tick-launchTick;
+ if(!reducedMotion?.matches&&launchAge>=0&&launchAge<8){
+   const index=Math.floor(launchAge/2),bounds=wheelExitBounds[index];
+   if(sprite(c,art.bottom_wheel_out[index],x,y-lift,bounds[2]*radius/17.5,undefined,bounds))return;
+ }
  spareWheel(x,y-lift,radius/12,angle);
 }
 function wheelRepairLabel(w,label,fill,stroke){
  const scale=cellarLabelScale(),labelX=w.x<500?w.x+31:w.x-31-48*scale;
  at(labelX,w.y,scale,()=>{
    box(0,-9,48,18,fill,stroke,4,1);
-   c.fillStyle='#fff9e9';c.font='bold 10px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(label,24,0);
+   c.fillStyle='#fff9e9';c.font='bold 10px '+pixelFont;c.textAlign='center';c.textBaseline='middle';c.fillText(label,24,0);
  });
 }
 function repairMark(s){
  if(!view.role)for(const n of s.wheel.pending??[]){
    const queued=WHEELS[n];
    if(!queued)continue;
-   oval(queued.x,queued.y,22,20,'#80746585','#a79884',1.6);
+   drawFloorPad(queued.x,queued.y,'#80746585','#a79884',1.6);
    wheelRepairLabel(queued,'수리 대기','#65594b','#41392f');
  }
  const w=WHEELS[s.wheel.broken];if(!w)return;
  const occupied=occupiedByAnother('repair');
  const edge=occupied?occupiedPadStyle.edge:'#355c52';
  const tool=occupied?occupiedPadStyle.edge:'#3c5e50';
- const pulse=.5+.5*Math.sin(s.tick*.19);
- oval(w.x,w.y,27,24,occupied?occupiedPadStyle.fill:'#88b6a0',edge,2.4);
- c.save();c.setLineDash([6,4]);c.strokeStyle=occupied?occupiedPadStyle.ring:pulse>.5?'#f6ffda':'#d2ead3';c.lineWidth=2.8;
- c.beginPath();c.ellipse(w.x,w.y,23,20,0,0,2*Math.PI);c.stroke();c.restore();
- at(w.x,w.y,1,()=>{line([[-7,8],[6,-5]],tool,5);line([[2,-10],[1,-5],[6,-2],[12,-6]],tool,4);});
+ drawFloorPad(w.x,w.y,occupied?occupiedPadStyle.fill:'#88b6a0',edge,2.4);
+ c.save();
+ if(occupied)c.filter='grayscale(1)';
+ const padDrawn=sprite(c,art.bottom_repair,w.x,w.y,floorPadWidth);
+ c.restore();
+ if(!padDrawn)at(w.x,w.y,1,()=>{line([[-7,8],[6,-5]],tool,5);line([[2,-10],[1,-5],[6,-2],[12,-6]],tool,4);});
  const hasSpare=view.localPlayers.some(id=>s.players[id].spareWheel);
  const label=s.wheel.progress?'핀 고정':hasSpare?'수리  !':'바퀴 필요';
  wheelRepairLabel(w,label,occupied?occupiedPadStyle.edge:'#3f6c5a',occupied?occupiedPadStyle.edge:'#365346');
@@ -617,6 +789,10 @@ const draftHorseColors={
  right:['#b17b4d','#cf9960','#795139'],
  left:['#cba06d','#e3bb83','#835e42']
 };
+const draftHorseFrameWidth=128,draftHorseFrameHeight=84,draftHorseFrames=8,draftHorseFramesPerMeter=1.1;
+// Hoof bounds in each source frame: left, right, bottom.
+const draftHorseHooves=[[30,84,77],[29,87,82],[23,101,83],[20,103,82],[14,101,82],[19,105,82],[39,87,81],[39,87,81]];
+const draftHorseStillHooves=[25,97,76];
 const whipEffectTicks=7;
 
 function drawWhip(spot,x,y,sinceHit){
@@ -634,117 +810,178 @@ function drawWhip(spot,x,y,sinceHit){
  c.restore();
 }
 
-function drawDriverAim(s,p,spot){
- const {x,y}=whipAimPoint(s,p),target=horseWhipTarget(s,p);
- const ready=target?.zone==='rump'&&horseCondition(s,target.side)==='fresh';
- const color=ready?'#adffc2':target?'#ff9d86':'#fff2d2';
- const swing=p.whipSwing,age=s.tick-(swing?.tick??-Infinity);
- if(age>=0&&age<whipEffectTicks&&!reducedMotion?.matches){
-   c.save();c.globalAlpha=.75*(1-age/whipEffectTicks);
-   c.beginPath();c.moveTo(swing.x,swing.y);c.quadraticCurveTo(Math.max(swing.x,x)+26,(swing.y+y)/2,x,y);
-   c.strokeStyle='#fff2d2';c.lineWidth=2.3;c.stroke();c.restore();
- }
- c.save();c.setLineDash([4,6]);
- line([[spot.x-14,spot.y],[x,y]],'#49382d',3.1);
- line([[spot.x-14,spot.y],[x,y]],color,1.4);
- c.restore();
- oval(x,y,7,7,'#40352d38','#49382d',3.4);
- oval(x,y,7,7,'#00000000',color,1.7);
- for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]])line([[x+dx*7,y+dy*7],[x+dx*11,y+dy*11]],color,1.7);
- oval(x,y,1.4,1.4,color);
-}
-
-function drawRunawayTrail(x,y,t,side){
- const drift=side==='right'?1:-1;
+function drawHorseSpeedTrail(x,y,t){
  for(let i=0;i<3;i++){
    const reach=mod(t*5+i*11,27),start=x+61+reach;
    const row=y+(i-1)*14;
-   line([[start,row],[start+24,row+drift*6]],'#a96a53a6',2);
+   line([[start,row],[start+24,row]],'#a96a53a6',2);
+ }
+}
+
+function spriteReady(image){return image?.complete&&image.naturalWidth>0;}
+function drawHoofShadow(left,top,scale,[front,back,bottom],depth,color){
+ const x=left+(front+back)*scale/2;
+ const y=top+(bottom-1)*scale;
+ const radius=(back-front)*scale/2+4;
+ oval(x,y,radius,depth,color);
+ oval(x,y,radius*.83,depth*.65,color);
+}
+
+const draftHorseHitchPixels=[[55,36],[55,37],[55,39],[55,40],[53,41],[54,39],[53,36],[53,37]];
+const draftHorseStillHitchPixel=[49,33];
+
+function drawDraftHorseHitch(horseX,horseY,side){
+ const railX=354,railY=DRAFT_HORSES[side].y+8;
+ const width=84,height=17,hook={x:3,y:3},bolt={x:80,y:13};
+ const span=bolt.x-hook.x;
+ const scaleY=DRAFT_HORSE_SCALE;
+ const scaleX=(railX-horseX)/span;
+ const slope=(railY-horseY-(bolt.y-hook.y)*scaleY)/span;
+ // Keep the bolt on the rail as the saddle moves.
+ c.save();
+ c.translate(railX,railY);
+ c.transform(scaleX,slope,0,scaleY,0,0);
+ const hitched=sprite(c,art.horse_equip,width/2-bolt.x,height/2-bolt.y,width,height);
+ c.restore();
+ if(!hitched){
+   line([[horseX,horseY],[railX,railY]],'#5b5148',6);
+   oval(railX,railY,4,4,'#b48654','#4c4744',1.5);
  }
 }
 
 function drawDraftHorses(s,t){
- const spot=STATIONS.driver;
+ const reduced=reducedMotion?.matches;
+ const {phase}=horseRageStatus(s);
+ const lastWhip=s.horseRage?.lastWhipTick;
+ const sinceHit=lastWhip==null?Infinity:s.tick-lastWhip;
+ // Distance keeps the gait continuous as rage changes the wagon speed.
+ const gait=s.distance*draftHorseFramesPerMeter;
+ const atlas=art['draft-horse-walk'],animated=spriteReady(atlas);
+ const image=animated?atlas:art.horse1;
+ const width=(animated?draftHorseFrameWidth:119)*DRAFT_HORSE_SCALE;
+ const height=(animated?draftHorseFrameHeight:76)*DRAFT_HORSE_SCALE;
  for(const side of Object.keys(DRAFT_HORSES)){
-   const {x,y}=draftHorseOrigin(s,side),wear=s.horseWear?.[side];
-   const mood=horseCondition(s,side);
-   let gait=t*horseStrideRate;
-   if(mood==='tired')gait*=.52;
-   if(!reducedMotion?.matches){
-     if(mood==='runaway'){
-       gait*=2.05;
-       drawRunawayTrail(x,y,t,side);
-     }else if(mood==='angry')gait*=1.4;
+   const {x,y}=draftHorseOrigin(s,side);
+   const frameOffset=side==='left'?2:0;
+   if(phase==='boost'&&!reduced)drawHorseSpeedTrail(x,y,t+frameOffset);
+   const walkFrame=reduced||s.mode==='ready'?3:mod(Math.floor(gait)+frameOffset,draftHorseFrames);
+   const crop=animated?[walkFrame*draftHorseFrameWidth,0,draftHorseFrameWidth,draftHorseFrameHeight]:undefined;
+   const stride=(gait+frameOffset)*2*Math.PI/draftHorseFrames;
+   const bob=animated||reduced||s.mode!=='run'?0:Math.sin(stride)*2.2;
+   const drawnX=x+5,drawnY=y+4+bob;
+   if(spriteReady(image)){
+     const hooves=animated?draftHorseHooves[walkFrame]:draftHorseStillHooves;
+     drawHoofShadow(drawnX-width/2,drawnY-height/2,DRAFT_HORSE_SCALE,hooves,8,'#715f482d');
+   }else{
+     oval(x+3,y+30,45,8,'#715f4850');
    }
-   horse(x,y,DRAFT_HORSE_SCALE,draftHorseColors[side],gait+(side==='left'?1.4:0),wear?.wounds);
-   if(mood==='runaway')tag(x,y-28,side==='right'?'폭주 ↑':'폭주 ↓',false,'#a03f39');
-   if(mood==='tired')tag(x,y-28,'지침',false,'#685747');
-   if(mood==='angry')tag(x,y-28,'놀람',false,'#a36b44');
-   const sinceHit=s.tick-(wear?.lastHit??-Infinity);
+   if(!sprite(c,image,drawnX,drawnY,width,height,crop)){
+     horse(x,y,DRAFT_HORSE_SCALE,draftHorseColors[side],stride,false);
+   }
+   const [hitchX,hitchY]=animated?draftHorseHitchPixels[walkFrame]:draftHorseStillHitchPixel;
+   drawDraftHorseHitch(drawnX-width/2+hitchX*DRAFT_HORSE_SCALE,drawnY-height/2+hitchY*DRAFT_HORSE_SCALE,side);
    if(sinceHit>=0&&sinceHit<whipEffectTicks){
-     const impact=horseBoardPoint(s,side,wear?.lastWhip??undefined);
-     drawWhip(spot,impact.x,impact.y,sinceHit);
+     const impact=horseBoardPoint(s,side);
+     drawWhip(STATIONS.driver,impact.x,impact.y,sinceHit);
    }
  }
- if(view.role==='driver')drawDriverAim(s,s.players[view.id],spot);
 }
 
-function wagon(s,offset){
- at(offset.x,offset.y,1,()=>{
-   for(const q of [-42,42]){
-     line([[238,q],[292,q*.84],[355,q*.77]],'#514438',6);
-     line([[238,q-1],[292,q*.84-1],[355,q*.77-1]],'#bb9261',2.2);
-   }
-   box(271,-4,83,9,'#b2865b',ink,3,2);
-   box(345,-89,376,204,'#715d484e',null,20);wheelMounts(s);
-   box(340,-99,375,199,'#92683f',ink,12,4);
-   box(348,-92,359,183,'#cc9f66','#614b37',7,2.5);
-   for(let k=0;k<8;k++){
-     const py=-89+k*22;box(352,py,349,21,['#d1aa76','#dab37d','#cca06b'][k%3],null,1);
-     line([[352,py+21],[701,py+21]],'#a47d57',1.7);
-     for(let i=0;i<2;i++){
-       const x=370+i*159+(k%3)*38;line([[x,py],[x,py+19]],'#af885e',1.5);
-       line([[x+10,py+7],[x+34,py+7]],'#c19564',1.4);
-     }
-   }
-   for(const yy of [-99,90]){
-     box(345,yy,366,10,'#af8153',ink,3,2.3);
-     for(const xx of [351,426,510,588,691]){box(xx,yy-1,8,12,'#848377',ink,2,1.4);oval(xx+4,yy+4,1.45,1.45,'#d1caba');}
-   }
-   for(const xx of [340,705])box(xx,-83,9,166,'#a47d50',ink,2,2);
-   for(const wheel of WHEELS){
-     const side=Math.sign(wheel.y);box(wheel.x-10,side*85-3,20,6,'#8e8473',ink,1.8,1.5);
-     oval(wheel.x,side*85,2,2,'#cfbd9e');
-   }
-   for(const role of ['driver','rack',cannonStation(s)])floorStation(s,role);
-   drawStairs(DECK_FLOOR);
-   for(const yy of [-23,28]){box(353,yy,16,12,'#745237',ink,3);line([[360,yy+5],[324,yy+5],[282,yy*1.55],[250,yy*1.62]],'#72533b',2);}
-   const feeders=view.localPlayers.map(id=>s.players[id]).filter(p=>p.food&&!p.royal&&playerFloor(p)===DECK_FLOOR);
-   for(const royal of s.royals){
-     if(royal.state==='carried'&&!royal.upset&&view.localPlayers.includes(royal.carrier))returnMark(ROYAL_SEATS[royal.id]);
-     if(royal.state==='seated'&&feeders.length)feedMark(ROYAL_SEATS[royal.id],feeders.some(p=>feedTarget(s,p)===royal));
-   }
-   for(const xx of [478,575])box(xx,-92,7,38,'#9b7952',ink,2,2);
-   box(485,-93,90,37,'#8b6c9b',ink,4,2.5);box(490,-89,80,27,'#b79bbb','#795d8b',3,1.6);
-   for(const royal of s.royals){
-     const {x,y}=ROYAL_SEATS[royal.id],colors=royalClothes[royal.id];
-     box(x-15,y-12,30,25,colors.seat,colors.trim,4,1.5);
-   }
-   line([[482,-57],[579,-57]],'#6f5345',4);
-   line([[596,-82],[596,-124]],'#4e4038',4);
-   poly([[596,-124],[615,-120],[634,-122],[626,-112],[634,-103],[615,-105],[596,-108]],'#ac80d7',ink,2.5);
-   poly([[606,-114],[611,-118],[617,-113],[611,-109]],'#ebd8fc',null);
-   const gunner=view.role==='gunner'?s.players[view.id]:Object.values(s.players).find(p=>stationAt(p,s)==='gunner');
-   const recoil=s.cannonRecoil;
-   const justFired=!s.ammo.loaded&&recoil&&s.tick-recoil.tick<4;
-   const angle=justFired?recoil.angle:cannonAim(s,gunner).angle;
-   at(BARREL.x,BARREL.y,cannonScale(s),()=>{
-     oval(-2,0,19,19,'#766b64',ink,2.8);
-     if(s.fuse.end){line([[-8,-9],[-14,-19]],'#6a4537',2);oval(-14,-20,4,4,s.tick%6<3?'#ffe29a':'#f0833e');}
-     c.rotate(angle);
+const cannonGatherTicks=HZ*.3,cannonSettleTicks=HZ*.4;
+const cannonRestScale={x:1,y:1};
+// The bore sits just inside the front edge of the barrel sprite.
+const cannonMouthX=BARREL.length-4;
+
+function cannonBarrelScale(s,recoilAge){
+ if(reducedMotion?.matches)return cannonRestScale;
+ if(s.fuse.end){
+   const elapsed=Math.max(0,Math.min(FUSE_TICKS,s.tick-s.fuse.end+FUSE_TICKS));
+   const charge=elapsed/FUSE_TICKS;
+   const lateTicks=Math.max(0,elapsed-(FUSE_TICKS-cannonGatherTicks));
+   const late=lateTicks/cannonGatherTicks;
+   const gather=late*late*(3-2*late);
+   // Keep the pulse continuous when it speeds up for the final part of the fuse.
+   const pulseTime=elapsed+lateTicks*.15;
+   const pulse=(1-Math.cos(pulseTime*2*Math.PI/(HZ*.48)))*.5*(.4+.6*charge)*(1-gather);
+   return {x:1+.075*charge+.075*gather+.018*pulse,y:1-.09*charge-.07*gather-.028*pulse};
+ }
+ if(recoilAge>=0&&recoilAge<cannonSettleTicks){
+   const progress=recoilAge/cannonSettleTicks;
+   return {x:1,y:1+.08*(1-progress)**2*Math.cos(2*Math.PI*progress)};
+ }
+ return cannonRestScale;
+}
+
+function renderedCannonMuzzle(carriage,angle,caliber,barrelScale){
+ const length=cannonMouthX*caliber*barrelScale.x;
+ return {
+   x:BARREL.x+carriage.x+Math.cos(angle)*length,
+   y:BARREL.y+carriage.y+Math.sin(angle)*length,
+ };
+}
+
+function drawCannonFuseFlame(s,x,y){
+ const flame=frame(art.bottom_cannon_aim_count_fire,reducedMotion?.matches?0:s.tick,3);
+ return sprite(c,flame,x,y-8,8,16);
+}
+
+function drawWagonCannon(s,barrelScale,recoilAge){
+ const gunner=view.role==='gunner'?s.players[view.id]:Object.values(s.players).find(p=>stationAt(p,s)==='gunner');
+ const justFired=recoilAge>=0&&recoilAge<cannonSettleTicks;
+ const angle=justFired?s.cannonRecoil.angle:cannonAim(s,gunner).angle;
+ at(BARREL.x,BARREL.y,cannonScale(s),()=>{
+   if(!sprite(c,art.bottom_cannonbar,-3,3,32))oval(-2,0,19,19,'#766b64',ink,2.8);
+   c.save();
+   c.rotate(angle);
+   c.scale(barrelScale.x,barrelScale.y);
+   const barrelWidth=78;
+   if(!sprite(c,art.bottom_cannonshot,BARREL.length-barrelWidth/2,0,barrelWidth)){
      poly([[-14,-10],[27,-8],[31,-12],[BARREL.length,-12],[BARREL.length,12],[31,12],[27,8],[-14,10]],'#77818a',ink,3);
      line([[-7,-5],[24,-4]],'#b9c0be',2.8);line([[34,-8],[34,8]],'#465561',2.5);
-   });
+     c.fillStyle='#202126';
+     c.fillRect(cannonMouthX-2,-5,4,10);
+     c.fillRect(cannonMouthX-1,-7,2,14);
+   }
+   c.restore();
+   if(s.fuse.end&&!drawCannonFuseFlame(s,-14,-18)){
+     line([[-8,-9],[-14,-19]],'#6a4537',2);
+     oval(-14,-20,4,4,s.tick%6<3?'#ffe29a':'#f0833e');
+   }
+ });
+}
+
+const wagonLampWidth=52;
+const lowerLampCrop=[0,0,37,32];
+// The lamp's foot is behind the inner edge of the lower wall at y=67.
+const lowerLampY=67-wagonLampWidth*lowerLampCrop[3]/lowerLampCrop[2]/2;
+function wagon(s,t,offset,barrelScale,recoilAge){
+ at(offset.x,offset.y,1,()=>{
+   const phase=reducedMotion?.matches?0:s.mode==='ready'?t*12:s.tick;
+   box(345,-89,376,204,'#715d484e',null,20);
+   wheelMounts(s,-1);
+   if(!sprite(c,art.bottom,527.5,.5,375,199))box(340,-99,375,199,'#cc9f66','#614b37',8,3);
+   wheelMounts(s,1);
+   sprite(c,art.bottom_paper,374,-62,28);
+   sprite(c,frame(art.bottom_light,phase,5),370,-89,wagonLampWidth);
+   sprite(c,frame(art.bottom_light,phase+8,5),373,lowerLampY,wagonLampWidth,undefined,lowerLampCrop);
+   sprite(c,frame(art.bottom_flag,phase,5),614,-126,35*wagonPixelScale);
+   const seatLift=royalSeatLift(s);
+   if(!sprite(c,art.bottom_sofa,529.5,-86-seatLift,103))box(479,-108-seatLift,101,46,'#8b6c9b',ink,5,2.5);
+   drawRackPile(s.ammo.rack);
+   for(const role of ['driver','rack',cannonStation(s)])floorStation(s,role);
+   telescopeMark(s);
+   drawStairs(DECK_FLOOR);
+   const deckPlayers=view.localPlayers.map(id=>s.players[id]).filter(p=>playerFloor(p)===DECK_FLOOR);
+   const feeders=deckPlayers.filter(p=>p.food&&!p.royal);
+   const attentionTargets=s.mode==='run'&&!feeders.length?deckPlayers
+     .filter(p=>stationAt(p,s)==='royal-attention').map(p=>royalActionTarget(s,p,'royal-attention')):[];
+   for(const royal of s.royals){
+     if(royal.state==='carried'&&!royal.upset&&view.localPlayers.includes(royal.carrier))returnMark(ROYAL_SEATS[royal.id]);
+     if(royal.state!=='seated')continue;
+     if(feeders.length)feedMark(ROYAL_SEATS[royal.id],feeders.some(p=>feedTarget(s,p)===royal));
+     else attentionMark(royal,attentionTargets.includes(royal)&&canGiveRoyalAttention(s,royal));
+   }
+   drawWagonCannon(s,barrelScale,recoilAge);
  });
 }
 function cellarLantern(x,y,t){
@@ -773,6 +1010,7 @@ function drawCellar(s,t,offset){
  c.fillStyle='#17191b';
  c.fillRect(view.left-1,view.top-1,view.span/view.zoom+2,view.height/view.zoom+2);
  at(offset.x,offset.y,1,()=>{
+   if(!sprite(c,art['wagon-cellar'],527.5,0,397,221)){
    box(340,-99,375,199,'#312725','#211e21',12,5);
    box(348,-91,359,183,'#4d3f37','#6e5444',7,2.5);
    for(let i=0;i<8;i++){
@@ -795,15 +1033,30 @@ function drawCellar(s,t,offset){
      box(wheel.x-18,mount-4,36,8,'#686564','#30292a',2,2);
      for(const sign of [-1,1])oval(wheel.x+sign*12,mount,2.1,2.1,'#c1ad91','#473b36',1);
    }
+   }
    if(!view.role||view.role==='repair'||occupiedByAnother('repair'))repairMark(s);
    floorStation(s,'supply');
    floorStation(s,'cook');
    floorStation(s,'wheel-pickup');
+   const {x:wheelX,y:wheelY}=STATIONS['wheel-pickup'];
+   drawSpareWheelStack(wheelX-49,wheelY+12,-1,2);
+   drawSpareWheelStack(wheelX+49,wheelY+10,1,3);
    drawStairs(CELLAR_FLOOR);
    drawFallingAmmo(s,CELLAR_FLOOR,0);
  });
 }
 const cavalryFrameWidth=200,cavalryFrameHeight=184,cavalryRunCount=8,cavalryRunFps=16;
+const cavalryLeft=-106,cavalryTop=-114,cavalryScale=.88*CAVALRY_SIZE_FACTOR;
+const cavalryHooves=[[62,136,172],[49,131,175],[41,156,175],[41,156,175],[35,155,178],[37,174,177],[64,154,177],[64,154,177]];
+const cavalryStillHooves=[9,49,56];
+// The spear, fallback art, and marker offsets use the original half-scale as their baseline.
+const cavalryDetailScale=CAVALRY_SIZE_FACTOR/.5;
+const knightScale=1.25*cavalryDetailScale;
+const spearCrop=[0,28,85,13];
+const spearGrip={x:-10*cavalryDetailScale,y:-3*cavalryDetailScale};
+const spearGripPixel=49;
+const spearReach=spearGripPixel*knightScale;
+const spearHoldTicks=3,spearReturnTicks=9;
 function loadCavalrySheet(filename){
  if(typeof Image!=='function')return null;
  const sprite=new Image();
@@ -815,33 +1068,64 @@ const cavalryHitSprite=loadCavalrySheet('./cavalry-death-hit.png');
 const cavalryBlastSprite=loadCavalrySheet('./cavalry-death-blast.png');
 
 function drawCavalryFrame(sprite,x,y,frame,tilt=0){
- if(!sprite?.complete||!sprite.naturalWidth)return false;
+ if(!spriteReady(sprite))return false;
  // Align the horse's body with the existing collision shape.
- at(x,y,.88*CAVALRY_SIZE_FACTOR,()=>{
+ at(x,y,cavalryScale,()=>{
    if(tilt)c.rotate(tilt);
    c.imageSmoothingEnabled=false;
    c.drawImage(sprite,frame*cavalryFrameWidth,0,cavalryFrameWidth,cavalryFrameHeight,
-     -106,-114,cavalryFrameWidth,cavalryFrameHeight);
+     cavalryLeft,cavalryTop,cavalryFrameWidth,cavalryFrameHeight);
  });
  return true;
 }
-function drawKnight(x,y,kind,t,jab,frame,tilt=0){
-  if(drawCavalryFrame(cavalryRunSprite,x-jab*.45*CAVALRY_SIZE_FACTOR,y,frame,tilt))return;
+function cavalryStrikePose(x,y,target,age){
+ if(age<0||age>=spearHoldTicks+spearReturnTicks)return null;
+ if(reducedMotion?.matches&&age>=spearHoldTicks)return null;
+ const retract=Math.max(0,age-spearHoldTicks)/spearReturnTicks;
+ const extension=1-retract*retract*(3-2*retract);
+ const dx=(target?.x??x-104)-(x+spearGrip.x);
+ const dy=(target?.y??y+spearGrip.y)-(y+spearGrip.y);
+ const angle=Math.atan2(-dy,-dx);
+ // A longer spear can pull back to meet the same strike point.
+ const travel=(Math.hypot(dx,dy)-spearReach)*extension;
+ const thrustX=-Math.cos(angle)*travel,thrustY=-Math.sin(angle)*travel;
+ const bodyShare=.65;
+ const bodyX=thrustX*bodyShare*1.3,bodyY=thrustY*bodyShare;
+ return {bodyX,bodyY,handX:thrustX-bodyX,handY:thrustY-bodyY,angle:angle*extension};
+}
+function drawKnight(x,y,kind,t,runFrame,tilt=0,strike=null){
+  let painted=false;
+  at(x,y,1,()=>{
+    if(tilt)c.rotate(tilt);
+    painted=drawCavalryFrame(cavalryRunSprite,0,0,runFrame)||sprite(c,art.enemy,-5*cavalryDetailScale,-11*cavalryDetailScale,60*knightScale);
+    if(!painted)return;
+    at(spearGrip.x+(strike?.handX??0),spearGrip.y+(strike?.handY??0),1,()=>{
+      if(strike)c.rotate(strike.angle);
+      const width=spearCrop[2]*knightScale;
+      sprite(c,art.enemy_spear,width/2-spearReach,0,width,undefined,spearCrop);
+    });
+  });
+  if(painted)return;
   at(x,y,DRAFT_HORSE_SCALE*CAVALRY_SIZE_FACTOR,()=>{
     c.rotate(tilt);
-    horse(0,4,1,kind===1?['#b5825f','#ddac7e','#6c5144']:['#b8ab92','#d9ccaf','#86745b'],t*horseStrideRate+kind,0,false);
+    horse(0,4,1,kind===1?['#b5825f','#ddac7e','#6c5144']:['#b8ab92','#d9ccaf','#86745b'],t*horseStrideRate+kind,false);
     poly([[-15,3],[-8,-11],[9,-11],[18,4],[11,12],[-9,11]],'#528ca0',ink,2.2);
-    line([[-39-jab,-10],[24-jab,-15]],'#554b3c',3.5);
-    poly([[-48-jab,-10],[-37-jab,-14],[-31-jab,-12],[-38-jab,-7]],'#c6d5ce',ink,1.7);
+    line([[-39,-10],[24,-15]],'#554b3c',3.5);
+    poly([[-48,-10],[-37,-14],[-31,-12],[-38,-7]],'#c6d5ce',ink,1.7);
     box(-9,-17,18,18,'#a4b9bd',ink,5,2.2);box(-11,-10,18,5,'#687c87',ink,1,1.7);line([[-7,-9],[-7,-7]],'#dce1d9',1.3);
     poly([[-3,-18],[-1,-23],[7,-25],[16,-22],[8,-21],[4,-16]],'#719cb9',ink,1.6);
     poly([[1,3],[11,1],[17,5],[15,13],[9,17],[2,13]],'#689eb1',ink,2);line([[8,4],[9,12]],'#d0d9c4',2.2);
   });
 }
-function drawCavalryShadow(x,y){
- const size=CAVALRY_SIZE_FACTOR,groundX=x-6*size,groundY=y+52*size;
- oval(groundX,groundY,76*size,16*size,'#55402b29');
- oval(groundX,groundY,63*size,10*size,'#55402b24');
+function drawCavalryShadow(x,y,runFrame=4){
+ const scale=cavalryDetailScale,depth=4.5*scale;
+ if(spriteReady(cavalryRunSprite)){
+   drawHoofShadow(x+cavalryLeft*cavalryScale,y+cavalryTop*cavalryScale,cavalryScale,cavalryHooves[runFrame],depth,'#55402b25');
+ }else if(spriteReady(art.enemy)){
+   drawHoofShadow(x-5*scale-30*knightScale,y-11*scale-28*knightScale,knightScale,cavalryStillHooves,depth,'#55402b25');
+ }else{
+   oval(x-3*scale,y+20*scale,31*scale,5*scale,'#55402b35');
+ }
 }
 function drawThrownKnight(enemy,knockback,tick){
  const {x,y,kind}=enemy;
@@ -851,8 +1135,8 @@ function drawThrownKnight(enemy,knockback,tick){
  const tilt=age/HZ*knockback.spin;
  c.save();
  c.globalAlpha=1-Math.max(0,progress-.7)/.3;
- drawCavalryShadow(x+CAVALRY_ART_X,y);
- drawKnight(x+CAVALRY_ART_X,y-lift,kind,0,0,0,tilt);
+ drawCavalryShadow(x+CAVALRY_ART_X,y,0);
+ drawKnight(x+CAVALRY_ART_X,y-lift,kind,0,0,tilt);
  c.restore();
 }
 function drawCannonDefeat(enemy,knockback,tick){
@@ -865,20 +1149,21 @@ function drawCannonDefeat(enemy,knockback,tick){
  c.save();
  c.globalAlpha=Math.min(1,(CAVALRY_DEATH_TICKS-age)/fadeTicks);
  drawCavalryShadow(x,y);
- if(!drawCavalryFrame(sprite,x,y,frame))drawKnight(x,y,enemy.kind,0,0,0);
+ if(!drawCavalryFrame(sprite,x,y,frame))drawKnight(x,y,enemy.kind,0,0);
  c.restore();
 }
-function drawEnemy(enemy,tick,t,cavalryFrame){
+function drawEnemy(enemy,tick,t,cavalryFrame,strike){
  const {y,kind,id}=enemy,x=enemy.x+CAVALRY_ART_X;
+ const detailScale=cavalryDetailScale;
  const knockback=enemyKnockback(enemy);
  if(knockback){
-   if(inView(x,y,150,182,150)){
+   if(inView(x,y,150*detailScale,182*detailScale,150*detailScale)){
      if(enemy.cannonKnock)drawCannonDefeat(enemy,knockback,tick);
      else drawThrownKnight(enemy,knockback,tick);
    }
    return;
  }
- if(!inView(x,y,124,108,65))return;
+ if(!inView(x,y,124*detailScale,108*detailScale,65*detailScale))return;
  const sinceStrike=tick-(enemy.lastStrike??-Infinity);
  const dustSide=sinceStrike<=ENEMY_RETREAT_TICKS?-1:1;
  const dustCount=sinceStrike<=ENEMY_RETREAT_TICKS+ENEMY_RECOVERY_TICKS?2:4;
@@ -887,16 +1172,29 @@ function drawEnemy(enemy,tick,t,cavalryFrame){
    const q=mod(i*11+t*1.4,45);
    oval(x+dustSide*(59+q)*size,y+(20+Math.sin(i*4)*7)*size,(4+q*.09)*size,3.2*size,'#f6dfb4');
  }
- const jab=16*Math.max(0,1-sinceStrike/7);
- drawCavalryShadow(x-jab*.45*size,y);
- drawKnight(x,y,kind,t,jab,mod(cavalryFrame+id,cavalryRunCount));
+ const bodyX=x+(strike?.bodyX??0),bodyY=y+(strike?.bodyY??0);
+ const runFrame=mod(cavalryFrame+id,cavalryRunCount);
+ const nearMissLeft=(enemy.nearMissUntil??0)-tick;
+ const startled=!enemy.spent&&nearMissLeft>0;
+ const lean=startled&&!reducedMotion?.matches
+   ? .14*Math.max(0,1-(CANNON_NEAR_MISS_TICKS-nearMissLeft)/8) : 0;
+ drawCavalryShadow(bodyX,bodyY,runFrame);
+ drawKnight(bodyX,bodyY,kind,t,runFrame,lean,strike);
+ if(startled){
+   c.save();
+   c.textAlign='center';c.textBaseline='bottom';c.font='bold 22px '+pixelFont;
+   c.strokeStyle='#ffefcf';c.lineWidth=3.5;
+   c.fillStyle='#d5232d';
+   c.strokeText('!!',bodyX+8*detailScale,bodyY-54*detailScale);
+   c.fillText('!!',bodyX+8*detailScale,bodyY-54*detailScale);
+   c.restore();
+ }
 }
-function tag(x,y,title,dot=false,fill='#383c38',pointUp=false){
-  c.font='bold 10px system-ui, sans-serif';let w=c.measureText(title).width+19+(dot?9:0);
-  const base=y+(pointUp?-11:8),tip=y+(pointUp?-15:12);
-  box(x-w/2,y-11,w,19,fill,'#353a35',4,1);poly([[x-3,base],[x+3,base],[x,tip]],fill,null);
-  if(dot)oval(x-w/2+9,y-1.5,2.8,2.8,'#bb92ff');
-  c.fillStyle='#fff9e9';c.textAlign='center';c.textBaseline='middle';c.fillText(title,x+(dot?4:0),y-1);
+function drawStairLabel(x,y,title,fill){
+ c.font='bold 10px '+pixelFont;
+ const width=c.measureText(title).width+19;
+ box(x-width/2,y-11,width,19,fill,'#353a35',4,1);poly([[x-3,y+8],[x+3,y+8],[x,y+12]],fill,null);
+ c.fillStyle='#fff9e9';c.textAlign='center';c.textBaseline='middle';c.fillText(title,x,y-1);
 }
 const boulderOutline=[[-37,10],[-32,-15],[-16,-33],[12,-32],[31,-18],[39,7],[29,24],[-5,31],[-30,24]];
 const boulderScale=2;
@@ -919,18 +1217,32 @@ function cannonKick(recoil,age){
  const push=18*Math.cos(age*.76)*decay;
  return {x:-Math.cos(recoil.angle)*push,y:-Math.sin(recoil.angle)*push+10*Math.cos(age*1.38)*decay};
 }
-function drawCannonBurst(recoil,age){
- if(!(age>=0&&age<12))return;
- at(recoil.x,recoil.y,recoil.caliber??1,()=>{
-   c.rotate(recoil.angle);
-   const spread=age/12;
-   c.globalAlpha=.55*(1-spread);
-   for(let i=0;i<5;i++){
-     const haze=hash(i+recoil.tick);
-     const lateral=(i-2)*(4+12*spread);
-     oval(4+(27+haze*22)*spread,lateral,8+12*spread,5+8*spread,i%2?'#a27d59':'#c89b66');
+const cannonExhaustTicks=24;
+const muzzleSmokePuffs=[
+ {delay:0,travel:74,rise:27,side:-10,size:37},
+ {delay:2,travel:58,rise:18,side:12,size:30},
+ {delay:4,travel:44,rise:22,side:-5,size:25},
+ {delay:6,travel:32,rise:12,side:6,size:20},
+];
+function drawCannonBurst(s,age,carriage,barrelScale){
+ if(!(age>=0&&age<cannonExhaustTicks))return;
+ const {angle}=s.cannonRecoil,caliber=cannonScale(s);
+ const settling=age<cannonSettleTicks;
+ const muzzle=renderedCannonMuzzle(carriage,angle,caliber,settling?barrelScale:cannonRestScale);
+ const dx=Math.cos(angle),dy=Math.sin(angle);
+ at(muzzle.x,muzzle.y,caliber,()=>{
+   for(const {delay,travel,rise,side,size} of muzzleSmokePuffs){
+     if(age<delay)continue;
+     const progress=(age-delay)/(cannonExhaustTicks-delay);
+     const forward=travel*progress*(2-progress),lateral=side*progress;
+     c.globalAlpha=.56*(1-progress)**1.3;
+     sprite(c,art['cannon-muzzle-smoke'],dx*forward-dy*lateral,dy*forward+dx*lateral-rise*progress**2,12+size*progress);
    }
-   if(age>=4)return;
+   if(!settling)return;
+   c.globalAlpha=1;
+   c.rotate(angle);
+   const blast=frame(art.bottom_cannon_fier,reducedMotion?.matches?0:age,3);
+   if(sprite(c,blast,53,-3,119)||age>=4)return;
    c.globalAlpha=1-age/4;
    poly([[-12,0],[-1,-10],[16,-14],[13,-7],[38,0],[13,7],[16,14],[-1,10]],'#ed803a','#ae502d',2);
    poly([[-6,0],[7,-6],[28,0],[7,6]],'#fff0b5',null);
@@ -939,18 +1251,17 @@ function drawCannonBurst(recoil,age){
    }
  });
 }
-function drawShot(shot){
- if(shot.enemy){
-   if(!inView(shot.x,shot.y,18))return;
-   const angle=Math.atan2(shot.vy,shot.vx);
-   line([[shot.x-15*Math.cos(angle),shot.y-15*Math.sin(angle)],[shot.x,shot.y]],'#70554b',3);
-   return;
- }
+function drawShot(shot,tick){
+ if(shot.enemy)return;
  const radius=cannonShotRadius(shot),trail=98*(shot.caliber??1);
  if(!inView(shot.x,shot.y,trail+4))return;
  const angle=Math.atan2(shot.vy,shot.vx);
  at(shot.x,shot.y,1,()=>{
    c.rotate(angle);
+   const bomb=frame(art.bottom_cannon_bomb,reducedMotion?.matches?0:tick,3);
+   const scale=radius/10;
+   // The ball sits right of center in its source canvas.
+   if(sprite(c,bomb,-4.5*scale,0,45*scale))return;
    const wake=c.createLinearGradient(-trail,0,0,0);
    wake.addColorStop(0,'#b74e2800');
    wake.addColorStop(.65,'#e1733aae');
@@ -979,6 +1290,7 @@ function drawCannonScorch(impact,x,age){
  const y=impact.y,k=impact.caliber;
  c.save();
  c.globalAlpha=Math.min(.66,(1-age/CANNON_IMPACT_TICKS)*1.9);
+ if(sprite(c,art['cannon-scorch'],x+10*k,y,94*k)){c.restore();return;}
  poly([[x-29*k,y+4*k],[x-19*k,y-6*k],[x-4*k,y-11*k],[x+24*k,y-9*k],
    [x+51*k,y-2*k],[x+33*k,y+7*k],[x+9*k,y+13*k],[x-18*k,y+10*k]],'#6e4d39',null);
  line([[x-18*k,y+2*k],[x-4*k,y-4*k],[x+19*k,y-5*k],[x+35*k,y-2*k]],'#453c32',4*k);
@@ -1014,10 +1326,15 @@ function drawCannonShockwave(impact,x,age){
    c.quadraticCurveTo(edge+reach*.08,y,edge-reach*.21,y+full*.6);
    c.globalAlpha=brightness*.94;c.strokeStyle='#ffe4a6';c.lineWidth=2+brightness*3;c.stroke();
  }
- if(age<9){
-   c.globalAlpha=Math.pow(1-age/9,.75);
-   poly([[x-16,y],[x-2,y-17],[x+11,y-13],[x+40,y-23],[x+28,y-8],[x+76,y],[x+28,y+8],[x+40,y+23],[x+11,y+13],[x-2,y+14]],'#ef8f43','#af5637',2.4);
-   poly([[x-9,y],[x+13,y-7],[x+39,y],[x+13,y+7]],'#fff4c2',null);
+ if(age<24){
+   const flame=frame(art.bottom_cannon_bomb_effect,reducedMotion?.matches?0:age,6);
+   const width=impact.length*1.15;
+   c.globalAlpha=1-age/30;
+   if(!sprite(c,flame,x+width/2,y-width*.22,width)&&age<9){
+     c.globalAlpha=Math.pow(1-age/9,.75);
+     poly([[x-16,y],[x-2,y-17],[x+11,y-13],[x+40,y-23],[x+28,y-8],[x+76,y],[x+28,y+8],[x+40,y+23],[x+11,y+13],[x-2,y+14]],'#ef8f43','#af5637',2.4);
+     poly([[x-9,y],[x+13,y-7],[x+39,y],[x+13,y+7]],'#fff4c2',null);
+   }
  }
  const liftPhase=.67*Math.sin(progress*Math.PI);
  for(const {forward,side,lift,size} of cannonDust){
@@ -1048,23 +1365,50 @@ function drawCannonImpact(impact,x,age){
  }
  c.restore();
 }
-function drawCannonAim(s,carriage,aim){
- const {x,y,spreadX,spreadY,angle}=aim;
- const muzzle=BARREL.length*cannonScale(s);
- const startX=BARREL.x+carriage.x+Math.cos(angle)*muzzle;
- const startY=BARREL.y+carriage.y+Math.sin(angle)*muzzle;
+function drawCannonAimFuse(s,x,y){
+ const scale=2.5,width=32*scale;
+ // The circle is two source pixels below the center of the sprite with its loose tip.
+ const spriteY=y-2*scale,radius=13.5*scale;
+ if(!s.fuse.end){
+   sprite(c,art.bottom_cannon_aim_count,x,spriteY,width);
+   return;
+ }
+
+ const remaining=Math.max(0,Math.min(1,(s.fuse.end-s.tick)/FUSE_TICKS));
+ sprite(c,art.bottom_cannon_aim_count_bar,x,spriteY,width);
+ if(!remaining)return;
+
+ const top=-Math.PI/2,fullTurn=top+2*Math.PI;
+ const burnAngle=fullTurn-remaining*2*Math.PI;
+ c.save();
+ c.beginPath();
+ c.moveTo(x,y);
+ c.arc(x,y,22*scale,burnAngle,fullTurn);
+ c.closePath();
+ c.clip();
+ sprite(c,art.bottom_cannon_aim_count,x,spriteY,width);
+ c.restore();
+ drawCannonFuseFlame(s,x+Math.cos(burnAngle)*radius,y+Math.sin(burnAngle)*radius);
+}
+
+function drawCannonAim(s,carriage,aim,barrelScale){
+ const {x,y,angle}=aim;
+ const muzzle=renderedCannonMuzzle(carriage,angle,cannonScale(s),barrelScale);
  const col=s.fuse.end?'#ffba76':'#fff1c9',rim='#513a35';
  c.save();
- c.setLineDash([5,7]);line([[startX,startY],[x,y]],rim,1.5);c.setLineDash([]);
+ c.setLineDash([5,7]);line([[muzzle.x,muzzle.y],[x,y]],rim,1.5);c.setLineDash([]);
  if(inView(x,y,0)){
-   c.setLineDash([3,5]);oval(x,y,spreadX,spreadY,'#c36a3533',rim,1.6);c.setLineDash([]);
-   oval(x,y,8,8,'#563c3844',rim,3.2);
-   oval(x,y,8,8,'#00000000',col,1.35);
-   for(const [ux,uy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-     const mark=[[x+ux*5,y+uy*5],[x+ux*12,y+uy*12]];
-     line(mark,rim,2.8);line(mark,col,1.3);
+   const crosshair=frame(art.bottom_cannon_aim,reducedMotion?.matches?0:s.tick,4);
+   if(!sprite(c,crosshair,x,y,(crosshair?.naturalWidth??0)*22/12)){
+     oval(x,y,8,8,'#00000000',rim,6.4);
+     oval(x,y,8,8,'#00000000',col,2.7);
+     for(const [ux,uy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+       const mark=[[x+ux*5,y+uy*5],[x+ux*12,y+uy*12]];
+       line(mark,rim,5.6);line(mark,col,2.6);
+     }
+     oval(x,y,1.7,1.7,col);
    }
-   oval(x,y,1.7,1.7,col);
+   drawCannonAimFuse(s,x,y);
  }else{
    const edgeX=Math.max(view.left+12,Math.min(view.right-12,x));
    const edgeY=Math.max(view.top+12,Math.min(view.bottom-12,y));
@@ -1090,6 +1434,7 @@ function drawParticles(particles){
 function drawBoulder(x,y,angle){
  at(x,y-31*(boulderScale-1),boulderScale,()=>{
    c.rotate(angle);
+   if(sprite(c,art['catapult-rock'],0,3,93))return;
    poly(boulderOutline,'#787a70','#49483f',3);
    poly([[-32,-15],[-16,-33],[12,-32],[24,-19],[7,-12],[-16,-9]],'#a9aa95',null);
    poly([[7,-12],[24,-19],[31,-18],[39,7],[29,24],[7,27],[15,10]],'#5f625b',null);
@@ -1150,14 +1495,11 @@ function drawCatapult(s,impactAge){
    const rx=landingMarkerScale*(22+(CATAPULT_RADIUS.x-22)*approach);
    const ry=landingMarkerScale*(13+(CATAPULT_RADIUS.y-13)*approach);
    c.globalAlpha=.28+.24*approach;
-   oval(x,rock.y,rx,ry,'#47342b');
+   const hitsWagon=locked&&catapultHitsWagon(s,x);
+   const landingArt=art[hitsWagon?'catapult-landing-danger':'catapult-landing-safe'];
+   if(!sprite(c,landingArt,x,rock.y,rx*2.2,ry*2.2))oval(x,rock.y,rx,ry,'#47342b');
    if(locked){
-     const dangerous=catapultHitsWagon(s,x);
-     if(dangerous)warning={x,y:rock.y};
-     c.globalAlpha=dangerous?1:.68+.22*Math.sin(s.tick*.33);
-     c.setLineDash([5,4]);
-     oval(x,rock.y,rx,ry,'#00000000',dangerous?'#ed3845':'#ffcf8c',3.2);
-     c.setLineDash([]);
+     if(hitsWagon)warning={x,y:rock.y};
      if(untilLanding<=boulderDropTicks){
        const fall=1-untilLanding/boulderDropTicks;
        c.globalAlpha=Math.min(1,fall*4);
@@ -1167,6 +1509,10 @@ function drawCatapult(s,impactAge){
    }
  }else if(impactAge>=0){
    const x=catapultX(s),age=Math.min(1,impactAge/(HZ*.7));
+   const frameIndex=Math.min(10,Math.floor(age*11));
+   const impactFrame=[frameIndex%3*928,Math.floor(frameIndex/3)*606,928,606];
+   c.globalAlpha=Math.min(1,(1-age)*3);
+   if(sprite(c,art['catapult-impact'],x,rock.y-39,464,303,impactFrame)){c.restore();return;}
    c.globalAlpha=Math.min(1,(1-age)*3);
    oval(x,rock.y+22,69,21,'#52433386');
    if(age<.55){
@@ -1186,16 +1532,86 @@ function drawEmoteBubbles(bubbles,left,right,bottom,cssX,cssY){
  c.save();
  c.setTransform(1/cssX,0,0,1/cssY,0,0);
  for(const {icon,x,y,scale} of bubbles){
+   const iconSprite=emoteArt[icon];
+   if(!spriteReady(iconSprite))continue;
    const radius=Math.max(12,Math.min(20,7+5*scale));
    const gap=Math.max(21,30*scale)+radius+4;
    const side=right-x>=gap+radius+2||right-x>=x-left?1:-1;
    const bubbleX=Math.max(left+radius+2,Math.min(right-radius-2,x+side*gap));
    const bubbleY=Math.max(radius+2,Math.min(bottom-radius-2,y-13*scale));
+   c.save();c.translate(bubbleX,bubbleY);c.scale(side,1);
+   const bubbleDrawn=sprite(c,art.EmoteBubble,0,3,radius*2.5);
+   c.restore();
+   if(!bubbleDrawn){
+     const color='#fff4da',edge='#4c3d4a';
+     poly([[bubbleX-side*radius*.8,bubbleY],[bubbleX-side*(radius+5),bubbleY+radius*.66],[bubbleX-side*radius*.35,bubbleY+radius*.58]],color,edge,1.5);
+     oval(bubbleX,bubbleY,radius,radius,color,edge,2);
+   }
+   sprite(c,iconSprite,bubbleX,bubbleY,radius*1.75);
+ }
+ c.restore();
+}
+const royalRequestLines=[null,['하트를 주세요!'],['간식 주세요!'],['하트를 주세요!','간식 주세요!']];
+function speechOverlap(a,b){
+ const width=Math.max(0,Math.min(a.right,b.right+4)-Math.max(a.left,b.left-4));
+ const height=Math.max(0,Math.min(a.bottom,b.bottom+4)-Math.max(a.top,b.top-4));
+ return width*height;
+}
+function royalSpeechPosition(x,y,w,h,scale,side,left,right,bottom,occupied){
+ const gap=Math.max(13,20*scale),sideX=x+side*gap-(side<0?w:0),otherX=x-side*gap-(side>0?w:0);
+ const centerX=x-w/2;
+ const candidates=[[centerX,y-gap-h],[sideX,y-h],[sideX,y-h/2],
+   [otherX,y-h/2],[centerX,y+gap],[sideX,y+gap],[otherX,y+gap]];
+ for(const area of occupied){
+   candidates.push([centerX,area.top-h-9],[centerX,area.bottom+9]);
+ }
+ let best,bestOverlap=Infinity;
+ for(const [desiredX,desiredY] of candidates){
+   const leftEdge=Math.min(Math.max(left+4,desiredX),right-w-4);
+   const topEdge=Math.min(Math.max(4,desiredY),bottom-h-4);
+   const candidate={left:leftEdge,top:topEdge,right:leftEdge+w,bottom:topEdge+h};
+   const overlap=occupied.reduce((sum,area)=>sum+speechOverlap(candidate,area),0);
+   if(overlap<bestOverlap){best=candidate;bestOverlap=overlap;}
+   if(!overlap)break;
+ }
+ return best;
+}
+function drawRoyalRequestBubbles(left,right,bottom,cssX,cssY,avoid){
+ if(!view.royalRequestAnchors.length)return;
+ const anchors=view.royalRequestAnchors.map(anchor=>({
+   ...anchor,x:anchor.x*cssX,y:anchor.y*cssY,scale:anchor.scale*cssX,
+ })).filter(({x,y})=>x>=left&&x<=right&&y>=0&&y<=bottom);
+ const occupied=[...avoid,...anchors.map(({x,y,scale})=>({
+   left:x-12*scale,top:y-12*scale,right:x+12*scale,bottom:y+12*scale,
+ }))];
+ c.save();
+ c.setTransform(1/cssX,0,0,1/cssY,0,0);
+ for(const {x,y,scale,needs,id} of anchors){
+   const lines=royalRequestLines[needs];
+   const font=Math.max(12,Math.min(16,Math.round(11+scale*3)));
+   const lineHeight=font+2;
+   c.font=`bold ${font}px ${pixelFont}`;
+   const w=Math.min(right-left-8,Math.max(...lines.map(line=>c.measureText(line).width))+16);
+   const h=lines.length*lineHeight+8;
+   if(w<=12||bottom<h+8)continue;
+   const side=id==='prince'?-1:1;
+   const rect=royalSpeechPosition(x,y,w,h,scale,side,left,right,bottom,occupied);
+   occupied.push(rect);
    const color='#fff4da',edge='#4c3d4a';
-   poly([[bubbleX-side*radius*.8,bubbleY],[bubbleX-side*(radius+5),bubbleY+radius*.66],[bubbleX-side*radius*.35,bubbleY+radius*.58]],color,edge,1.5);
-   oval(bubbleX,bubbleY,radius,radius,color,edge,2);
-   c.font=Math.round(radius*1.45)+'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-   c.textAlign='center';c.textBaseline='middle';c.fillStyle='#302638';c.fillText(icon,bubbleX,bubbleY+1);
+   if(x<rect.left||x>rect.right){
+     const dir=x<rect.left?-1:1,tailX=dir<0?rect.left:rect.right;
+     const tailY=Math.max(rect.top+7,Math.min(rect.bottom-7,y));
+     const tip=Math.max(left+1,Math.min(right-1,tailX+dir*8));
+     poly([[tailX,tailY-5],[tip,tailY],[tailX,tailY+5]],color,edge,1.4);
+   }else{
+     const dir=y<rect.top?-1:1,tailY=dir<0?rect.top:rect.bottom;
+     const tailX=Math.max(rect.left+8,Math.min(rect.right-8,x));
+     const tip=Math.max(1,Math.min(bottom-1,tailY+dir*8));
+     poly([[tailX-5,tailY],[tailX,tip],[tailX+5,tailY]],color,edge,1.4);
+   }
+   box(rect.left,rect.top,w,h,color,edge,4,1.4);
+   c.textAlign='center';c.textBaseline='middle';c.fillStyle='#3b2934';
+   for(const [index,line] of lines.entries())c.fillText(line,rect.left+w/2,rect.top+4+lineHeight*(index+.5),w-10);
  }
  c.restore();
 }
@@ -1217,13 +1633,14 @@ function drawApproachWarning(warning,tick,left,right,bottom,cssX,cssY,edge,tools
  c.setTransform(1/cssX,0,0,1/cssY,0,0);
  at(x,y,radius/20,()=>{
    oval(0,1,23+5*pulse,22+5*pulse,'#b92f3c38');
+   if(sprite(c,art.RoadWarning,0,0,43))return;
    poly([[0,-20],[20,14],[-20,14]],'#fff3d7','#ab2835',3);
    box(-2.1,-9,4.2,12,'#ad2533',null,1.8);
    oval(0,8,2.25,2.25,'#ad2533');
  });
  c.restore();
 }
-export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBoundingClientRect(),sceneScale=1,playToolsBounds=null){
+export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBoundingClientRect(),sceneScale=1,playToolsBounds=null,royalRequestAvoid=[]){
  // Bound only the game canvas backing buffer; DOM controls keep native screen resolution.
  const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/Math.max(1,rect.width*rect.height));
  const dpr=Math.min(2,window.devicePixelRatio||1,pixelScale)*sceneScale;
@@ -1234,10 +1651,11 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  const cssX=rect.width/cw,cssY=rect.height/ch;
  const viewCssX=rect.width/views[0].screenWidth,viewCssY=rect.height/views[0].height;
  const t=s.mode==='ready'?wall/470:s.tick*.37;
- const cavalryFrame=Math.floor(s.tick*cavalryRunFps/HZ);
+ const cavalryFrame=reducedMotion?.matches?0:Math.floor(s.tick*cavalryRunFps/HZ);
  const rock=s.catapult;
  const impactAge=rock?.hit===undefined?-1:s.tick-rock.landAt;
  const recoil=s.cannonRecoil,recoilAge=recoil?s.tick-recoil.tick:-1;
+ const barrelScale=cannonBarrelScale(s,recoilAge);
  const kick=cannonKick(recoil,recoilAge);
  const carriage={x:kick.x,y:s.y+s.shake*Math.sin(t*3)*3+kick.y};
  const carriedRoyals=s.royals.filter(royal=>royal.state==='carried');
@@ -1251,7 +1669,7 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  })):null;
  let roadside;
  for(const camera of views){
- view={...impactCamera(camera,impactAge),cssX:viewCssX,stationOwners};
+ view={...impactCamera(camera,impactAge),cssX:viewCssX,stationOwners,royalHearts:[],royalRequestAnchors:[]};
  if(kick.x||kick.y)view={...view,left:view.left-kick.x*.56/view.zoom,top:view.top-kick.y*.7/view.zoom};
  if(view.floor!==CELLAR_FLOOR)view.left=Math.max(view.left,ROAD_CAMERA_MIN_X);
  view.right=view.left+view.span/view.zoom;
@@ -1283,11 +1701,14 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
  if(view.floor===CELLAR_FLOOR){
    drawCellar(s,t,carriage);
    drawActors(s,t,CELLAR_FLOOR,carriage,recordPosition,carriedRoyals,cavalryFrame);
+   drawRoyalAttentionHearts(s,carriage);
    drawEmoteBubbles(bubbles,left,right,bottom,cssX,cssY);
+   drawRoyalRequestBubbles(left,right,bottom,cssX,cssY,royalRequestAvoid);
    c.restore();
    continue;
  }
  landscape(s.road,s.stage);
+ drawWheelTracks(s);
  roadside??=roadsideTrees(s.road,ROAD_TOP,ROAD_BOTTOM);
  for(const tree of roadside)if(tree.y<LANES[1])drawRoadsideTree(tree);
  for(const obstacle of s.obstacles)drawRoadObstacle(obstacle);
@@ -1295,40 +1716,35 @@ export function render(canvas,s,wall,views,emoteIcons={},rect=canvas.getBounding
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonScorch(impact,x,age);
  }
  for(const wheel of s.looseWheels??[])drawLooseWheel(wheel,s.tick);
- if(inView(777,s.y+19,54,20)){
-   for(let i=0;i<8;i++){
-     const q=mod(i*11+t*2.4,84);
-     oval(735+q,s.y+19+Math.sin(i*7)*12,3.5+q*.053,2.7+q*.02,'#f7e1b6');
-   }
- }
- wagon(s,carriage);
+ wagon(s,t,carriage,barrelScale,recoilAge);
  drawActors(s,t,DECK_FLOOR,carriage,recordPosition,carriedRoyals,cavalryFrame);
  at(carriage.x,carriage.y,1,()=>drawDraftHorses(s,t));
 
  // Lower roadside plants overlap the wagon, with gameplay effects above them.
- woodland(s.road,lowerVerge);
- drawShoulder(s.road,lowerVerge);
- drawVerge(s.road,lowerVerge);
+ vergeArt(s.road,lowerVerge);
+ if(!sceneryTile('lower-verge',s.road))drawVerge(s.road,lowerVerge);
  for(const tree of roadside)if(tree.y>LANES[1])drawRoadsideTree(tree);
 
- drawCannonBurst(recoil,recoilAge);
- for(const shot of s.shots)drawShot(shot);
+ drawCannonBurst(s,recoilAge,carriage,barrelScale);
+ for(const shot of s.shots)drawShot(shot,s.tick);
  if(blasts)for(const {impact,x,age} of blasts){
    if(age>=0&&age<CANNON_IMPACT_TICKS)drawCannonImpact(impact,x,age);
  }
  drawParticles(s.particles);
+ drawRoyalAttentionHearts(s,carriage);
  drawFallingAmmo(s,DECK_FLOOR,s.y);
  const warning=drawCatapult(s,impactAge);
  if(warning){
    const x=(warning.x-view.left)*steadyScaleX,y=(warning.y-view.top)*steadyScaleY;
    if(x>=0&&x<=right-left&&y>=0&&y<=bottom)catapultAlerts.push({left,width:right-left,x,y});
  }
- if(view.role==='gunner'&&s.ammo.loaded&&!cannonAfterShot(s,s.players[view.id]))drawCannonAim(s,carriage,cannonAim(s,s.players[view.id]));
+ if(view.role==='gunner'&&s.ammo.loaded&&!cannonAfterShot(s,s.players[view.id]))drawCannonAim(s,carriage,cannonAim(s,s.players[view.id]),barrelScale);
  drawApproachWarning(roadApproachWarning(s,camera),s.tick,left,right,bottom,cssX,cssY,'left');
  if(!view.role||view.role==='driver'||view.role==='gunner'){
    drawApproachWarning(incomingPursuit(s,view),s.tick,left,right,bottom,cssX,cssY,'right',playToolsBounds);
  }
  drawEmoteBubbles(bubbles,left,right,bottom,cssX,cssY);
+ drawRoyalRequestBubbles(left,right,bottom,cssX,cssY,royalRequestAvoid);
  c.restore();
  }
  if(views.length===2){box(views[0].span-1.5,0,3,views[0].height,'#34382d');}

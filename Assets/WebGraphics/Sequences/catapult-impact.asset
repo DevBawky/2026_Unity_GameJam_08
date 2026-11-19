@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: catapult-impact
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: -2091572604, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 156981388, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 28532409, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: -1355468210, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: -1573188075, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 1362778928, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: -1661815211, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 1378394089, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 1677110552, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 1567280948, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
-  - {fileID: 6262953568202918021, guid: db73e037b442f0c4faf2acbd007be89d, type: 3}
+  - {fileID: -2091572604, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 156981388, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 28532409, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: -1355468210, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: -1573188075, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 1362778928, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: -1661815211, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 1378394089, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 1677110552, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 1567280948, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
+  - {fileID: 6262953568202918021, guid: a4e9eeb4c944c5938d58231648a2bdd6, type: 3}
   frameStarts:
   - 0
   - 0.06666667

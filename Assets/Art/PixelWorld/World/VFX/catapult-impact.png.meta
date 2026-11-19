@@ -1,0 +1,403 @@
+fileFormatVersion: 2
+guid: a4e9eeb4c944c5938d58231648a2bdd6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -268977072032376573
+    second: catapult-impact_0
+  - first:
+      213: -6337768437631193686
+    second: catapult-impact_1
+  - first:
+      213: -7635336245167495457
+    second: catapult-impact_2
+  - first:
+      213: -5488379533357660307
+    second: catapult-impact_3
+  - first:
+      213: 3508471959852670821
+    second: catapult-impact_4
+  - first:
+      213: -8342657726691643939
+    second: catapult-impact_5
+  - first:
+      213: 8558773712187856236
+    second: catapult-impact_6
+  - first:
+      213: -9062548028601739003
+    second: catapult-impact_7
+  - first:
+      213: 5373878998016031379
+    second: catapult-impact_8
+  - first:
+      213: -7220070186336164834
+    second: catapult-impact_9
+  - first:
+      213: 6262953568202918021
+    second: catapult-impact_10
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0.5, y: 0.35643566}
+  spritePixelsToUnits: 200
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: catapult-impact_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1818
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7f4796d90d14fd1409f81b577c39250c
+      internalID: -2091572604
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_01
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 1818
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a495419b8dd22e245947a3ce712f2887
+      internalID: 156981388
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_02
+      rect:
+        serializedVersion: 2
+        x: 1856
+        y: 1818
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 25f56e37dbd0f78488d25cc2e721251c
+      internalID: 28532409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_03
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1212
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 45cfbb78c3ef7604e8ce25860d44c15d
+      internalID: -1355468210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_04
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 1212
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cf5d346140910194dafe269445bbb14c
+      internalID: -1573188075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_05
+      rect:
+        serializedVersion: 2
+        x: 1856
+        y: 1212
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ad438a9a7bda4ca4f945eaa565ed237b
+      internalID: 1362778928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_06
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 606
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 638524c077d811347902d8a7fe3eae9d
+      internalID: -1661815211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_07
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 606
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d457ac243a624bf49bab28fd6d98b209
+      internalID: 1378394089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_08
+      rect:
+        serializedVersion: 2
+        x: 1856
+        y: 606
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a960517d8157d8543a51247a5f6bc9a9
+      internalID: 1677110552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_09
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 316934b466851f8439a6ee4824147dce
+      internalID: 1567280948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: catapult-impact_10
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 0
+        width: 928
+        height: 606
+      alignment: 9
+      pivot: {x: 0.5, y: 0.35643566}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c74d743c9e0f19543a25a454a7f347ad
+      internalID: 6262953568202918021
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 07754128ca3047f4c908cd1c00b611d4
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      catapult-impact_00: -2091572604
+      catapult-impact_01: 156981388
+      catapult-impact_02: 28532409
+      catapult-impact_03: -1355468210
+      catapult-impact_04: -1573188075
+      catapult-impact_05: 1362778928
+      catapult-impact_06: -1661815211
+      catapult-impact_07: 1378394089
+      catapult-impact_08: 1677110552
+      catapult-impact_09: 1567280948
+      catapult-impact_10: 6262953568202918021
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

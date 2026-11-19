@@ -1,12 +1,11 @@
-import {cannonAimCursor,cannonAimInput,occupiedStation} from './sim.mjs?v=double-shell87';
-import {whipAimInput} from './horse-targets.mjs?v=whip-reach73';
-import {worldPoint} from './workstation.mjs?v=double-shell87';
+import {cannonAimCursor,cannonAimInput,occupiedStation} from './sim.mjs?v=nearest-wheel134';
+import {worldPoint} from './workstation.mjs?v=nearest-wheel134';
 
 const WASD=['KeyA','KeyD','KeyW','KeyS'];
 const ARROWS=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
 const SLOTS=['p1','p2'];
 const ACTION_KEYS={p1:'Space',p2:'Enter'};
-const CANNON_CURSOR_SPEED=2.2;
+const CANNON_CURSOR_SPEED=1.4;
 
 function axis(keys,layout){
  return [Number(keys.has(layout[1]))-Number(keys.has(layout[0])),Number(keys.has(layout[3]))-Number(keys.has(layout[2]))];
@@ -21,7 +20,7 @@ function bounded(x,y){
  const length=Math.max(1,Math.hypot(x,y));
  return [x/length,y/length];
 }
-function aimRole(role){
+function controlRole(role){
  return role==='driver'||role==='gunner'?role:null;
 }
 const clampAxis=value=>Math.max(-1,Math.min(1,value));
@@ -67,17 +66,16 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
    const s=getState(),actor=mapSlot(slot),player=s.players[actor],local=state[slot];
    const role=occupiedStation(player,s);
    const changed=local.actor!==actor||local.role!==role;
-   const whipSequence=role==='driver'?(player.whipSwing?.sequence??0):null;
-   if(changed||local.whipSequence!==whipSequence){
-     if(changed&&local.actor!==null)resetDirections(slot);
+   if(changed){
+     if(local.actor!==null)resetDirections(slot);
      local.actor=actor;
      local.role=role;
-     local.whipSequence=whipSequence;
      const aim=role==='gunner'?cannonAimCursor(s,player):player;
      local.ax=aim?.ax??0;
      local.ay=aim?.ay??0;
      local.lastSample=performance.now();
    }
+   local.whipSequence=role==='driver'?(player.whipSwing?.sequence??0):null;
    return local;
  }
  function readGamepads(){
@@ -88,21 +86,20 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
    const now=performance.now(),elapsed=Math.min(.05,(now-local.lastSample)/1000);
    local.lastSample=now;
    const pad=(gamepads??readGamepads())[second?1:0];
-   const [padX,padY]=deadzone(pad?.axes[0],pad?.axes[1]);
+   const steering=local.role==='driver';
+   const [padX,padY]=deadzone(steering?0:pad?.axes[0],pad?.axes[1]);
    if(!padX&&!padY)local.waitForPad=false;
    let [x,y]=axis(keys,second?ARROWS:WASD);
-   if(!second&&!isDuo()&&!x&&!y)[x,y]=axis(keys,ARROWS);
+   if(!second&&!isDuo()&&(!x||steering)&&!y)[x,y]=axis(keys,ARROWS);
+   if(steering)x=0;
    if(!local.waitForPad&&(padX||padY))[x,y]=[padX,padY];
    if(local.drag)[x,y]=local.drag;
    [x,y]=playing?bounded(x,y):[0,0];
 
    let mx=0,my=0,ax=0,ay=0;
-   const aiming=aimRole(local.role);
-   if(aiming==='driver'){
-     const travel=elapsed*1.05*Math.hypot(x,y);
-     [local.ax,local.ay]=bounded(local.ax+x*travel,local.ay+y*travel);
-     ({ax,ay}=local);
-   }else if(aiming==='gunner'){
+   const aiming=local.role==='gunner';
+   if(steering)my=y;
+   else if(aiming){
      local.ax=clampAxis(local.ax+x*elapsed*CANNON_CURSOR_SPEED);
      local.ay=clampAxis(local.ay+y*elapsed*CANNON_CURSOR_SPEED);
      ({ax,ay}=local);
@@ -122,7 +119,7 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
      (actionDown&&!local.waitForCookPad));
    local.padAct=actionDown;
    local.padExit=exitDown;
-   return {mx,my,ax,ay,aimRole:aiming,aimCursor:aiming==='gunner',whipSequence:local.whipSequence??undefined,cookHeld};
+   return {mx,my,ax,ay,aimRole:controlRole(local.role),aimCursor:aiming,whipSequence:local.whipSequence??undefined,cookHeld};
  }
  function action(slot){
    if(canPlay()&&!actionButtons[slot].disabled&&context(slot).role!=='cook')onAct(mapSlot(slot),input(slot));
@@ -139,7 +136,8 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
    if(!pointer)return;
    const {slot,stick,originX,originY,dragRadius,knobTravel}=pointer,local=context(slot);
    if(!pointers.has(e.pointerId))return;
-   const [x,y]=bounded((e.clientX-originX)/dragRadius,(e.clientY-originY)/dragRadius);
+   const horizontal=local.role==='driver'?0:(e.clientX-originX)/dragRadius;
+   const [x,y]=bounded(horizontal,(e.clientY-originY)/dragRadius);
    local.drag=deadzone(x,y);
    stick.firstElementChild.style.transform='translate('+x*knobTravel+'px,'+y*knobTravel+'px)';
  }
@@ -147,7 +145,7 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
    if(e.button!==0||!canPlay()||pointers.has(e.pointerId)||Array.from(pointers.values()).some(pointer=>pointer.slot===slot))return;
    const {role,actor}=context(slot);
    const player=getState().players[actor];
-   if((role&&!aimRole(role))||(player?.ball&&player.slipUntil))return;
+   if((role&&!controlRole(role))||(player?.ball&&player.slipUntil))return;
    const stick=sticks[slot],rect=stick.getBoundingClientRect();
    if(!rect.width)return;
    const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
@@ -243,17 +241,16 @@ export function createControls({isDuo,active,onAct,onExit,onEscape,onAddShell,ca
  function mouseAim(e){
    if(e.pointerType!=='mouse'||!(e.buttons&1)||!canPlay())return;
    const local=context('p1');
-   if(!aimRole(local.role))return;
+   if(local.role!=='gunner')return;
    const s=getState(),r=canvas.getBoundingClientRect(),camera=getViews()[0];
    const point=worldPoint(camera,(e.clientX-r.left)*camera.screenWidth/r.width,(e.clientY-r.top)*camera.height/r.height);
    if(!point)return;
-   if(local.role==='driver')({ax:local.ax,ay:local.ay}=whipAimInput(point.x,point.y-s.y));
-   else ({ax:local.ax,ay:local.ay}=cannonAimInput(s,point.x,point.y));
+   ({ax:local.ax,ay:local.ay}=cannonAimInput(s,point.x,point.y));
  }
  canvas.addEventListener('pointerdown',e=>{
    if(!canPlay())return;
    const slot=movementSlot(e);
-   if(e.pointerType==='mouse'&&e.button===0&&slot!=='p2'&&aimRole(context('p1').role)){
+   if(e.pointerType==='mouse'&&e.button===0&&slot!=='p2'&&context('p1').role==='gunner'){
      mouseAimPointer=e.pointerId;
      mouseAim(e);
      return;

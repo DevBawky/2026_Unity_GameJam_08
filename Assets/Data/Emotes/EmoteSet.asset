@@ -13,24 +13,24 @@ MonoBehaviour:
   m_Name: EmoteSet
   m_EditorClassIdentifier: Assembly-CSharp::EmoteSet
   emotes:
-  - icon: {fileID: 21300000, guid: 9f9bab9e6bb28cc4c936fd3c1f0bf7bd, type: 3}
+  - icon: {fileID: 21300000, guid: b7c7cf0b53b65d8e904437a226964a1e, type: 3}
     label: "\uD3EC\uD0C4 \uD544\uC694"
     message: "\uD3EC\uD0C4 \uBCF4\uAE09\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: e0a8027a655e9694f806a778614c31e3, type: 3}
+  - icon: {fileID: 21300000, guid: 57767d454d3857589976bc45016af134, type: 3}
     label: "\uC7A5\uC804 \uD544\uC694"
     message: "\uB300\uD3EC \uC7A5\uC804\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: a3f4e89b72512f34f8aa2a928bbb0653, type: 3}
+  - icon: {fileID: 21300000, guid: 2d4890caca4a51f6bff10c9f6671457b, type: 3}
     label: "\uBC14\uD034 \uC218\uB9AC \uD544\uC694"
     message: "\uBC14\uD034 \uC218\uB9AC\uB97C \uC694\uCCAD\uD569\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: 8562a05d5b67f4041be7c139825850df, type: 3}
+  - icon: {fileID: 21300000, guid: 5cb33a6290c5537aa1d9bb94c90ecacf, type: 3}
     label: "\uB9C8\uCC28 \uC870\uC791 \uD544\uC694"
     message: "\uB9C8\uCC28 \uC870\uC791\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: 284f3f28d1ea0f44cae3e2400356e66f, type: 3}
+  - icon: {fileID: 21300000, guid: 9fe80a347f6551e4ad30f28c53859332, type: 3}
     label: "\uC544\uC774 \uB3CC\uBD04 \uD544\uC694"
     message: "\uC544\uC774 \uB3CC\uBD04\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: c9963c8929fdcc041a38ab889bcaead7, type: 3}
+  - icon: {fileID: 21300000, guid: 066ffd4101905115a6029114e286bb9f, type: 3}
     label: "\uC88B\uC544\uC694"
     message: "\uC88B\uC544\uC694\uB97C \uBCF4\uB0C8\uC2B5\uB2C8\uB2E4."
-  - icon: {fileID: 21300000, guid: 0a4d15e207fe8a9459f4e830f82b1de6, type: 3}
+  - icon: {fileID: 21300000, guid: 31625570b48657f6bbcabb9ae9c93c16, type: 3}
     label: "\uB180\uB790\uC5B4\uC694"
     message: "\uAE5C\uC9DD \uB180\uB790\uC2B5\uB2C8\uB2E4."

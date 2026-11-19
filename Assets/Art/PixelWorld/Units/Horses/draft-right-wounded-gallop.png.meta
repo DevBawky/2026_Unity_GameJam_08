@@ -1,0 +1,429 @@
+fileFormatVersion: 2
+guid: 6042ddadfd38106d1bf3973cbb9382f7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1962646951889274594
+    second: draft-right-wounded-gallop_0
+  - first:
+      213: -1090898823157934433
+    second: draft-right-wounded-gallop_1
+  - first:
+      213: -4586332926289137788
+    second: draft-right-wounded-gallop_2
+  - first:
+      213: 3435357508473400186
+    second: draft-right-wounded-gallop_3
+  - first:
+      213: 5124312176830209869
+    second: draft-right-wounded-gallop_4
+  - first:
+      213: -4760621983275600486
+    second: draft-right-wounded-gallop_5
+  - first:
+      213: -8351251771559687357
+    second: draft-right-wounded-gallop_6
+  - first:
+      213: -5909882106453283758
+    second: draft-right-wounded-gallop_7
+  - first:
+      213: 7876516775713700183
+    second: draft-right-wounded-gallop_8
+  - first:
+      213: -2112727821133878352
+    second: draft-right-wounded-gallop_9
+  - first:
+      213: 4419771744169558297
+    second: draft-right-wounded-gallop_10
+  - first:
+      213: -510285704365164512
+    second: draft-right-wounded-gallop_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 200
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 400
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 903e42b0dad5454489050061b573673d
+      internalID: 695980859
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_01
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 400
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6d0d5b1299919e40ad1df22c19dbcec
+      internalID: 2047276197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_02
+      rect:
+        serializedVersion: 2
+        x: 808
+        y: 400
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5d8f72eb90849774882bd7c376ebfe3b
+      internalID: -679570857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_03
+      rect:
+        serializedVersion: 2
+        x: 1212
+        y: 400
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da7817b139fb43a41b3ec4c8718e6a33
+      internalID: 1518926288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 200
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5dc274a20b7ed334797d6ebc4e6129ec
+      internalID: 561993174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_05
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 200
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 82870c0b71a1ccd4fb3cdd5ffa926450
+      internalID: -783211501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_06
+      rect:
+        serializedVersion: 2
+        x: 808
+        y: 200
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 646b679b22e166e43a41673877cc6b12
+      internalID: 91549284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_07
+      rect:
+        serializedVersion: 2
+        x: 1212
+        y: 200
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bbc466a1be7bc8042871c2f1fb0a341b
+      internalID: 849341809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9f541c56259a26a49a5b945bd845f2fd
+      internalID: 1441661751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_09
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 0
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f4273f30bbbdbe549bbdaf0da43bac55
+      internalID: 358847271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_10
+      rect:
+        serializedVersion: 2
+        x: 808
+        y: 0
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bf1d5d7183ef2284dbca31956b1c4cd1
+      internalID: 4419771744169558297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: draft-right-wounded-gallop_11
+      rect:
+        serializedVersion: 2
+        x: 1212
+        y: 0
+        width: 404
+        height: 200
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b012d88109624c049abcd2751df13a5d
+      internalID: -510285704365164512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 70766cc43bbe0fa42bf72c794f49def2
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      draft-right-wounded-gallop_00: 695980859
+      draft-right-wounded-gallop_01: 2047276197
+      draft-right-wounded-gallop_02: -679570857
+      draft-right-wounded-gallop_03: 1518926288
+      draft-right-wounded-gallop_04: 561993174
+      draft-right-wounded-gallop_05: -783211501
+      draft-right-wounded-gallop_06: 91549284
+      draft-right-wounded-gallop_07: 849341809
+      draft-right-wounded-gallop_08: 1441661751
+      draft-right-wounded-gallop_09: 358847271
+      draft-right-wounded-gallop_10: 4419771744169558297
+      draft-right-wounded-gallop_11: -510285704365164512
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -12,7 +12,7 @@ const longWait = {...wait, ticks: 90};
 const press = {...wait, kind: 'press', ticks: 1};
 const approach = target => ({...longWait, kind: 'approach', target});
 // Wait on deck with the shell still in hand when the cannon fires.
-const untilCatch = [approach('stairs'), approach('supply'), longWait, press,
+const untilCatch = [approach('stairs'), approach('supply'), press,
   approach('stairs'), longWait, longWait];
 
 function apiAction(action) {
@@ -123,7 +123,7 @@ test('records a partial result when OpenAI stops returning playable inputs', asy
 test('replays a shell recovered from cannon recoil through delivery, loading, and its next shot', async t => {
   const {run, savedRuns, output} = await testWorkspace(t);
   // Catch the shell again when the wheel comes off during the slower trip to the rack.
-  const inputs = [...untilCatch, press, approach('rack'), longWait, press, approach('rack')];
+  const inputs = [...untilCatch, longWait, press, approach('rack'), longWait, press, approach('rack')];
   let next = 0;
   const request = async () => apiAction(inputs[next++] ?? longWait);
 

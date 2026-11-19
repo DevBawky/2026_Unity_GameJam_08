@@ -1,23 +1,31 @@
-import {stationAt,horseCondition,horseProgress,runawaySide,HORSE_NAMES,HORSE_RUNAWAY_HITS,royalTarget,royalBoredHint,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,WHEELS,DECK,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_VIEW_RIGHT_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,isCannonRole,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=double-shell87';
-import {horseWhipTarget} from './horse-targets.mjs?v=whip-reach73';
+import {stationAt,atTelescope,horseRageStatus,royalTarget,royalActionTarget,canGiveRoyalAttention,royalBoredHint,royalSootheProgress,feedTarget,canLoad,canTakeSpareWheel,STATIONS,SUPPLY_PILE,WHEELS,CELLAR,HZ,CAMERA_TRANSITION_SECONDS,LANES,ROAD_TOP,ROAD_BOTTOM,playerFloor,CELLAR_FLOOR,CANNON_VIEW_RIGHT_X,CANNON_CLEAN_TAPS,cannonAim,cannonAfterShot,isCannonRole,CANNON_VIEW_HOLD_TICKS,CANNON_VIEW_RETURN_TICKS,ROAD_CAMERA_MIN_X} from './sim.mjs?v=nearest-wheel134';
 
-const isRoyalRole=role=>['royal-soothe','royal-pickup','royal-carry','royal-seat'].includes(role);
+const isRoyalRole=role=>['royal-soothe','royal-pickup','royal-carry','royal-seat','royal-attention'].includes(role);
 const isSpareWheelRole=role=>['wheel-missing','wheel-pickup','wheel-carry','wheel-return'].includes(role);
 const driverViewRange=1.5;
 const convoyCenterX=450,convoyScreenX=.55;
+const telescopeRearShift=300;
 const convoyMinimumWidth=760;
 const gunViewLeft=STATIONS.gunner.x-65;
 const gunViewTop=ROAD_TOP-12,gunViewHeight=ROAD_BOTTOM-ROAD_TOP+24;
+const supplyViewLeft=STATIONS.supply.x-STATIONS.supply.r-26;
+const supplyViewRight=SUPPLY_PILE.x+SUPPLY_PILE.width/2+6;
 const cameraTransitionMs=CAMERA_TRANSITION_SECONDS*1000;
+const driverHints={
+ normal:'왼쪽 스틱 위아래로 마차를 조종하세요',
+ boost:'분노 폭주 · 추가 가속',
+ slow:'지침 · 이동 속도 감소',
+};
 
 function overviewCamera(base){
- const {span,height,role}=base;
+ const {span,height,role,telescope}=base;
  // Keep the horses and deck together, with more room ahead to the left.
  const overviewZoom=Math.min(1,height/(ROAD_BOTTOM-ROAD_TOP+12),span/convoyMinimumWidth);
  // Keep the forward edge bounded even on unusually wide displays.
  const ahead=span*convoyScreenX;
- const zoom=Math.max(role==='driver'?overviewZoom/driverViewRange:overviewZoom,ahead/(convoyCenterX-ROAD_CAMERA_MIN_X));
- const left=convoyCenterX-ahead/zoom;
+ const wide=role==='driver'||telescope;
+ const zoom=Math.max(wide?overviewZoom/driverViewRange:overviewZoom,ahead/(convoyCenterX-ROAD_CAMERA_MIN_X));
+ const left=convoyCenterX-ahead/zoom+(telescope?telescopeRearShift:0);
  return {...base,zoom,left,top:LANES[1]-height*.48/zoom};
 }
 function gunnerCamera(base){
@@ -49,25 +57,30 @@ export function cameraViews(s,duo,player,pixelWidth=1200,pixelHeight=350,reduced
  const views=ids.map(id=>{
    const p=s.players[id],floor=playerFloor(p);
    const role=playing?stationAt(p,s):null;
+   const telescope=playing&&atTelescope(p);
    const shot=role==='cleaner'?cannonAfterShot(s,p):null;
    const recoilReturn=shot?Math.max(0,Math.min(1,(s.tick-shot.tick-CANNON_VIEW_HOLD_TICKS)/CANNON_VIEW_RETURN_TICKS)):null;
    const overview=isRoyalRole(role)||isSpareWheelRole(role)||role==='royal-feed'||role==='food-carry'||(floor===CELLAR_FLOOR&&role==='carry');
-   return {id,p,floor,role:overview?null:role,recoilReturn};
+   return {id,p,floor,role:overview||telescope?null:role,recoilReturn,telescope};
  });
- const count=duo&&(views.some(view=>view.role)||views[0].floor!==views[1].floor)?2:1;
- return views.slice(0,count).map(({id,p,floor,role,recoilReturn},i)=>{
+ const count=duo&&(views.some(view=>view.role||view.telescope)||views[0].floor!==views[1].floor)?2:1;
+ return views.slice(0,count).map(({id,p,floor,role,recoilReturn,telescope},i)=>{
    const span=screenWidth/count;
-   const base={id,localPlayers:count===1?ids:[id],role,floor,span,height,screenWidth,start:i*span};
+   const base={id,localPlayers:count===1?ids:[id],role,telescope,floor,span,height,screenWidth,start:i*span};
    if(floor===CELLAR_FLOOR){
-     const zoom=role?Math.min(3.2,span/120,height/112):Math.min(3,span/(DECK.right-DECK.left+80),height/(DECK.bottom-DECK.top+72));
-     const cx=role?p.x:(DECK.left+DECK.right)/2,cy=s.y+(role?p.y:0);
+     const supply=role==='supply';
+     const focusWidth=supply?supplyViewRight-supplyViewLeft:120;
+     const zoom=role?Math.min(3.2,span/focusWidth,height/112):Math.min(3,span/(CELLAR.right-CELLAR.left+80),height/(CELLAR.bottom-CELLAR.top+72));
+     const cx=supply?(supplyViewLeft+supplyViewRight)/2:role?p.x:(CELLAR.left+CELLAR.right)/2;
+     const cy=s.y+(role?p.y:0);
      return {...base,zoom,left:cx-span/(2*zoom),top:cy-height*.48/zoom};
    }
    if(!role||role==='driver')return overviewCamera(base);
    if(role==='gunner')return gunnerCamera(base);
    const carrying=role==='carry'||role==='catch';
    const destination=role==='carry'?STATIONS.rack:null;
-   const carryZoom=destination?Math.min(3,span/(Math.abs(p.x-destination.x)+72),height/(Math.abs(p.y-destination.y)+84)):3;
+   // Leave room for the pile beside the rack pad.
+   const carryZoom=destination?Math.min(3,span/(Math.abs(p.x-destination.x)+112),height/(Math.abs(p.y-destination.y)+84)):3;
    const zoom=carrying?carryZoom:4;
    const cx=destination?(p.x+destination.x)/2:p.x;
    const cy=s.y+(destination?(p.y+destination.y)/2:p.y);
@@ -93,7 +106,7 @@ export function createCameraTransition(){
      if(target.cannonReturning)return {view:target};
 
      let transition=prior.transition;
-     if(previous.role!==target.role||previous.span!==target.span){
+     if(previous.role!==target.role||previous.telescope!==target.telescope||previous.span!==target.span){
        transition={start:now,zoom:previous.zoom,...cameraCenter(previous),blendViewport:isCannonRole(previous.role)||isCannonRole(target.role)};
      }
      if(!transition||now-transition.start>=cameraTransitionMs)return {view:target};
@@ -109,28 +122,10 @@ export function worldPoint(view,screenX,screenY){
 }
 export function workInfo(s,p,role){
  if(role==='driver'){
-   const target=horseWhipTarget(s,p);
-   const side=target?.side;
-   const condition=side&&horseCondition(s,side);
-   const runaway=runawaySide(s);
-   const progress=side?horseProgress(s,side):0;
-   const hits=Math.round(progress*HORSE_RUNAWAY_HITS);
-   const wouldTrigger=target?.zone==='rump'&&hits===HORSE_RUNAWAY_HITS-1;
-   const action=condition==='fresh'&&!(runaway&&wouldTrigger)?'채찍질':undefined;
-   const info={mode:'whip',action,blocked:!action,color:'#bb91d9'};
-   if(runaway){
-     const direction=runaway==='right'?'위로 급회전':'아래로 급회전';
-     return {...info,color:'#ffa887',hint:HORSE_NAMES[runaway]+' 폭주 · '+direction,
-       progress:horseProgress(s,runaway),progressKind:'horse-burst'};
-   }
-   if(condition==='tired'){
-     return {...info,color:'#e5bd8d',hint:HORSE_NAMES[side]+' 지침 · 체력 회복 중',
-       progress,progressKind:'horse-recovery'};
-   }
-   if(condition==='angry')return {...info,color:'#ffa887',hint:HORSE_NAMES[side]+' 놀람 · 잠시 쉬게 하세요'};
-   if(target?.zone!=='rump')return {...info,hint:'왼쪽 스틱으로 말 엉덩이를 겨냥하세요'};
-   return {...info,hint:HORSE_NAMES[side]+' 채찍질 · '+hits+'/'+HORSE_RUNAWAY_HITS+'회',
-     progress,progressKind:'horse-runaway'};
+   const {progress,phase,seconds}=horseRageStatus(s);
+   const blocked=phase!=='normal';
+   return {mode:'whip',action:'채찍질',color:'#bb91d9',hint:driverHints[phase],blocked,
+     progress,progressKind:'horse-rage',ragePhase:phase,seconds:blocked?seconds:undefined};
  }
  if(role==='cleaner')return {mode:'mash',color:'#e9cd82',action:'포신 청소',
    hint:'행동 버튼을 연타하세요',progress:s.ammo.cleaning/CANNON_CLEAN_TAPS,progressKind:'cannon-cleaning'};
@@ -142,7 +137,7 @@ export function workInfo(s,p,role){
  }
  if(role==='carry'){
    const downstairs=playerFloor(p)===CELLAR_FLOOR;
-   return {mode:'carry',color:'#9bcde1',hint:downstairs?'계단으로 1층에 올라가세요':'5시 방향 파란 적재칸으로 옮기세요',blocked:true};
+   return {mode:'carry',color:'#9bcde1',hint:downstairs?'계단으로 1층에 올라가세요':'오른쪽 아래 적재 장판으로 옮기세요',blocked:true};
  }
  if(role==='cook')return {mode:'cook',color:'#ffd192',action:'길게 눌러 만들기',hint:'행동을 길게 눌러 간식을 만드세요'};
  if(role==='royal-feed'){
@@ -161,6 +156,10 @@ export function workInfo(s,p,role){
    if(canLoad(s))return {color:'#a7d6aa',action:'장전'};
    return {color:'#a7d6aa',action:'장전 대기',mode:'waiting',blocked:true,
      hint:'적재칸에 포탄을 가져오세요'};
+ }
+ if(role==='royal-attention'){
+   const royal=royalActionTarget(s,p,role);
+   return {mode:'royal',color:'#d988a0',action:'하트 보내기',blocked:!canGiveRoyalAttention(s,royal)};
  }
  if(isRoyalRole(role)){
    const royal=royalTarget(s,p);

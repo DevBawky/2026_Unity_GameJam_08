@@ -55,7 +55,8 @@ public sealed class PlayerTiming : MonoBehaviour
     private float circularTargetCenter;
     private float circularPinAngle;
 
-    public bool IsCannonFocus => IsAt(StationAction.Cannon) && HasStationAccess;
+    public bool IsCannonFocus => IsAt(StationAction.Cannon) && HasStationAccess && stations.IsLoaded
+        && (!stations.IsFiring || stations.Gunner.Value == actor.NetworkObjectId);
     public bool CanInteract => actor.Holding.Value
         || (NearbyRoyal is StationAction royal && stations.CanUse(royal, actor))
         || (CurrentAction is StationAction action && stations.CanUse(action, actor));

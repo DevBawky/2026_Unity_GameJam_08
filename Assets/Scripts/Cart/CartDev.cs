@@ -21,7 +21,7 @@ public sealed partial class CartStations
         child.Hunger = 0f;
         rider.Value = child;
     }
-    public void DevRefillShells() { if (!IsServer) return; shellsInPile = StartShellsInPile; loaded = true; Refresh(); }
+    public void DevRefillShells() { if (!IsServer) return; shellsInPile = StartShellsInPile; loaded = true; cleaningTaps = CleaningTapsRequired; Refresh(); }
     public void DevClearStage() { if (IsServer && flow == StageFlow.Running) BeginUpgradeSelection(); }
     // 스테이지를 끝내고 마왕 보고도 건너뛰어 바로 상점을 연다.
     public void DevOpenShop()

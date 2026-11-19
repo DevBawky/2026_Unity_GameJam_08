@@ -98,6 +98,7 @@ public sealed partial class CartStations : NetworkBehaviour
     // 게임 흐름: 시작 대기 → 진행 → 업그레이드 선택 또는 실패. 동시에 둘이 될 수 없어 enum 하나로 둔다.
     private StageFlow flow = StageFlow.Waiting;
     private NetworkPlayer gunner;
+    private int gunnerScoreOwnerVersion;
     public NetworkVariable<double> FuseDeadline = new();
     public NetworkVariable<ulong> Gunner = new(ulong.MaxValue);
     // Indexed by StationAction. Only the server grants or releases a workstation.

@@ -5,7 +5,7 @@ export default function GameRuntime(){
    if(document.querySelector('script[data-game-runtime]'))return;
    const script=document.createElement('script');
    script.type='module';
-   script.src='/game.mjs?v=occupied-pad88';
+   script.src='/game.mjs?v=cannon-dot-cleanup140';
    script.dataset.gameRuntime='true';
    document.body.appendChild(script);
  },[]);

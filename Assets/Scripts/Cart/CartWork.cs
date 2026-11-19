@@ -10,6 +10,7 @@ public sealed partial class CartStations
         actor.Carrying.Value = false;
         depositedShells++;
         CompleteStation(action, actor);
+        actor.AwardScore(CartRules.Active.shellDeliveryScore);
         Refresh();
     }
 
@@ -33,12 +34,17 @@ public sealed partial class CartStations
             case StationAction.CannonCleaning:
                 if (!NeedsCleaning) break;
                 cleaningTaps = Mathf.Min(CleaningTapsRequired, cleaningTaps + CleaningTapGain(actor));
-                if (cleaningTaps == CleaningTapsRequired && IsPostShotGunner(actor)) EndPostShot();
+                if (cleaningTaps == CleaningTapsRequired)
+                {
+                    actor.AwardScore(CartRules.Active.cannonCleanScore);
+                    if (IsPostShotGunner(actor)) EndPostShot();
+                }
                 break;
             case StationAction.Reload:
                 if (!CanReload) break;
                 depositedShells--;
                 loaded = true;
+                actor.AwardScore(CartRules.Active.shellReloadScore);
                 actor.ShowWorkResult(true);
                 break;
             case StationAction.WheelRepair:
@@ -48,6 +54,7 @@ public sealed partial class CartStations
                     // 들고 온 예비 바퀴가 없으면 비상 바퀴 꾸러미를 쓴다.
                     if (actor.SpareWheel.Value) actor.SpareWheel.Value = false;
                     else SpareKitReady.Value = false;
+                    actor.AwardScore(CartRules.Active.wheelInstallScore);
                 }
                 wheelRepairSteps++;
                 if (wheelRepairSteps == 1)
@@ -59,6 +66,7 @@ public sealed partial class CartStations
                 {
                     CompleteStation(action, actor);
                     RepairWheel();
+                    actor.AwardScore(CartRules.Active.wheelRepairScore);
                 }
                 break;
         }

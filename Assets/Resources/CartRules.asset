@@ -55,3 +55,11 @@ MonoBehaviour:
   cookSeconds: 3
   fuseSeconds: 2.5
   shellHoldSeconds: 1.6
+  horseBoostScore: 1
+  cannonCleanScore: 1
+  shellReloadScore: 2
+  enemyEliminationScore: 4
+  shellDeliveryScore: 8
+  childReseatScore: 20
+  wheelInstallScore: 8
+  wheelRepairScore: 12

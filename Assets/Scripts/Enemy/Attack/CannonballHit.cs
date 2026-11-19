@@ -13,7 +13,13 @@ public class CannonballHit : NetworkBehaviour
     private readonly HashSet<Enemy> victims = new();
     private readonly List<RaycastHit2D> hits = new();
     private Collider2D shape;
-    private void Awake() => shape = GetComponent<Collider2D>();
+    private Projectile projectile;
+
+    private void Awake()
+    {
+        shape = GetComponent<Collider2D>();
+        TryGetComponent(out projectile);
+    }
 
     public int[] HitIndices(Enemy[] enemies)
     {
@@ -45,9 +51,15 @@ public class CannonballHit : NetworkBehaviour
             float width = halfWidth * Mathf.Min(1f, (.55f + .95f * Mathf.Sin(Mathf.PI * t)) * Mathf.Sqrt(1f-t));
             if (Mathf.Abs(delta.y) <= width && victims.Add(enemy))
             {
-                if (enemy.TryGetComponent<CavalryArtwork>(out _)) enemy.TakeDamage(damage, blast: true);
-                if (enemy.Health.Value > 0f)
-                    enemy.KnockAway(new Vector2(205f-64f*t, (delta.y>=0 ? 1 : -1)*(72+Mathf.Abs(delta.y)/CartStations.Instance.WorldPerWebUnit*.9f))*CartStations.Instance.WorldPerWebUnit);
+                if (enemy.TryGetComponent<CavalryArtwork>(out _) && enemy.TakeDamage(damage, blast: true))
+                {
+                    projectile?.AwardElimination();
+                    continue;
+                }
+                float scale = CartStations.Instance.WorldPerWebUnit;
+                float upward = delta.y >= 0f ? 1f : -1f;
+                var velocity = new Vector2(205f - 64f * t, upward * (72f + Mathf.Abs(delta.y) / scale * .9f)) * scale;
+                if (enemy.KnockAway(velocity)) projectile?.AwardElimination();
             }
         }
     }
@@ -56,7 +68,6 @@ public class CannonballHit : NetworkBehaviour
     {
         if (!IsSpawned || !IsServer || !CartStations.Running) return;
         if (!other.TryGetComponent(out Enemy enemy) || !victims.Add(enemy)) return;
-        enemy.TakeDamage(damage);
-
+        if (enemy.TakeDamage(damage)) projectile?.AwardElimination();
     }
 }

@@ -1,22 +1,35 @@
+import Image from 'next/image';
 import GameRuntime from "./game-runtime";
-import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, Play, Settings, Shield, Smile, Sparkles, TriangleAlert, Users, Volume2, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChartNoAxesColumn, ChevronRight, Crosshair, Flag, Gauge, LogOut, Maximize, Move, MoveVertical, Play, Settings, Shield, Smile, Sparkles, Timer, TriangleAlert, Users, Volume2, X } from 'lucide-react';
 
-function WorkHint({slot}:{slot:string}){
- return <div className="work-hint hud-bubble hud-notice" id={'work-hint-'+slot} hidden>
-  <span className="hud-notice-line"><span>
-   <span className="work-hint-text" aria-live="polite"/>
-   <small className="work-countdown" hidden/>
-  </span></span>
+function WorkNotice({slot}:{slot:string}){
+ return <div className="work-notice hud-bubble hud-notice" id={'work-notice-'+slot} hidden>
+  <span className="hud-notice-line">
+   <b className="work-notice-player" hidden>{slot.toUpperCase()}</b>
+   <span>
+    <span className="work-hint-text" aria-live="polite"/>
+    <small className="work-countdown" hidden/>
+   </span>
+  </span>
   <div className="work-progress" hidden>
    <span className="work-progress-name" hidden>조준률</span>
    <progress className="work-progress-bar" aria-label="작업 진행도" max={1} value={0}/>
-   <strong className="work-progress-value" aria-hidden="true">0%</strong>
   </div>
  </div>;
 }
-function RoyalWatch({slot}:{slot:string}){
- return <ul className="royal-watch" id={'royal-watch-'+slot} aria-label={slot.toUpperCase()+' 가까운 아이 상태'} hidden>
-  {['prince','princess'].map(id=><li key={id} data-royal={id} hidden><b/><span/><small/></li>)}
+function RoyalWatch(){
+ return <ul className="royal-watch" id="royal-watch" aria-label="가까운 아이 상태" role="list" hidden>
+  {[{id:'prince',name:'왕자'},{id:'princess',name:'공주'}].map(({id,name})=><li key={id} data-royal={id} hidden>
+   <Image className="royal-watch-face" src={'/pixel-art/royal-face-'+id+'.png'} width={31} height={26} alt="" loading="eager" unoptimized/>
+   <div className="royal-watch-details">
+    <div className="royal-watch-heading"><b>{name}</b><span className="royal-watch-players" hidden/></div>
+    <div className="royal-watch-meters">
+     <span>관심 필요 <strong className="royal-watch-attention"/></span>
+     <span>배고픔 <strong className="royal-watch-hunger"/></span>
+    </div>
+    <small className="royal-watch-condition" hidden/>
+   </div>
+  </li>)}
  </ul>;
 }
 function TimingPrompt({slot}:{slot:string}){
@@ -38,7 +51,7 @@ function PlayerControls({id}:{id:string}){
  return <div className="pad-pair" id={'pads-'+id} role="group" aria-label={id.toUpperCase()+' 조작'} hidden={id==='p2'}>
    <div className="pad-wrap">
     <button type="button" className="stick" id={id+'-stick'} data-mode="move" aria-label={id.toUpperCase()+' 이동 스틱'}>
-     <i aria-hidden="true"><Move className="move-glyph"/><Crosshair className="aim-glyph"/></i>
+     <i aria-hidden="true"><Move className="move-glyph"/><MoveVertical className="steer-glyph"/><Crosshair className="aim-glyph"/></i>
     </button>
     <span id={id+'-stick-label'} aria-hidden="true">이동</span>
    </div>
@@ -48,7 +61,9 @@ function PlayerControls({id}:{id:string}){
      <button type="button" className="emote-toggle" id={'emote-'+id} data-emote-toggle={id} aria-expanded="false" aria-controls={'emote-menu-'+id} aria-label="이모티콘">
       <Smile size={19} aria-hidden="true"/>이모티콘
      </button>
-     <div id={'emote-menu-'+id} className="emote-menu" role="group" aria-label="이모티콘 선택" hidden/>
+     <div id={'emote-menu-'+id} className="emote-menu" role="group" aria-label="이모티콘 선택" hidden>
+      <button type="button" className="emote-close" aria-label="이모티콘 목록 닫기"><X size={16} aria-hidden="true"/>닫기</button>
+     </div>
     </div>
     <button type="button" className="station-exit" id={id+'-exit'} data-exit={id} hidden><LogOut size={14} aria-hidden="true"/>이탈</button>
     <button type="button" className="station-action" id={id+'-action'} data-work={id} disabled>행동</button>
@@ -61,6 +76,7 @@ function SettingsMenu(){
    <div className="menu-list">
      <button id="expand"><Maximize/><span>전체화면</span><small id="full-state">켜기</small></button>
      <button id="sound"><Volume2/><span>효과음</span><small id="sound-state">꺼짐</small></button>
+     <button id="timing-sound" disabled><Timer/><span>타이밍 안내음</span><small id="timing-sound-state">꺼짐</small></button>
      <button data-view="crew"><Users/><span>협동 플레이</span><ChevronRight/></button>
      <button data-view="status"><ChartNoAxesColumn/><span>작전 현황 · 탑승원 배치</span><ChevronRight/></button>
      <button data-view="guide"><BookOpen/><span>조작 가이드</span><ChevronRight/></button>
@@ -93,6 +109,9 @@ export default function Home(){return <>
    <button id="start" className="primary" data-mode="ready"><Play size={17} fill="currentColor"/><span>작전 시작</span></button>
    <button id="settings-button" className="gear" aria-label="환경설정" title="환경설정" aria-haspopup="dialog"><Settings size={20}/></button>
   </div>
+  <section className="crew-ranking" id="crew-ranking" aria-label="승무원 점수 순위" hidden>
+   <ol className="crew-ranking-list" id="crew-ranking-list" role="list"/>
+  </section>
   <div className="campaign-hud" id="campaign-hud" role="group" aria-label="작전 진행" hidden>
    <span id="test-mode-label" className="test-mode-label" hidden>테스트 모드</span>
    <div className="campaign-route" id="campaign-route">
@@ -106,21 +125,24 @@ export default function Home(){return <>
      <circle cx="21" cy="19" r="3.4" fill="#6b503c" stroke="#3a2b26" strokeWidth="1.7"/>
     </svg>
    </div>
+   <RoyalWatch/>
   </div>
-  <div id="emote-notices" className="emote-notices" role="log" aria-label="팀원 소통" aria-live="polite" aria-relevant="additions"/>
+  <div id="top-notices" className="top-notices">
+   <div id="emote-notices" className="emote-notices" role="log" aria-label="팀원 소통" aria-live="polite" aria-relevant="additions"/>
+   <div id="work-notices" className="work-notices" role="group" aria-label="작업 안내">
+    <WorkNotice slot="p1"/><WorkNotice slot="p2"/>
+   </div>
+  </div>
   <div className="timing-prompts">
    <TimingPrompt slot="p1"/><TimingPrompt slot="p2"/>
-   <WorkHint slot="p1"/><WorkHint slot="p2"/>
+  </div>
+  <div className="royal-cry-overlay" id="royal-cry-overlay" aria-hidden="true" hidden>
+   {[0,1,2,3,4].map(index=><span key={index}/>)}
   </div>
   <div className="catapult-alerts" aria-hidden="true">
    {[0,1].map(pane=><div className="catapult-alert-pane" key={pane} hidden><TriangleAlert focusable="false"/></div>)}
   </div>
   <div className="controls" role="group" aria-label="가상 조이스틱과 행동 버튼"><PlayerControls id="p1"/><PlayerControls id="p2"/></div>
-  <div className="work-panels" id="work-panels" hidden>
-   {['p1','p2'].map(slot=><div className="player-work" key={slot} id={'work-'+slot} hidden>
-    <RoyalWatch slot={slot}/>
-   </div>)}
-  </div>
  </section>
 </main>
 <dialog id="dialog" aria-label="게임 메뉴"><div className="dialog-head">

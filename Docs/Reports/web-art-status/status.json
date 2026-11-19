@@ -1,0 +1,357 @@
+{
+  "checkedAt": "2026-11-18T21:08:39.348Z",
+  "revision": "MJ · 73101bc + 로컬 변경분",
+  "baseline": "2026-11-19 웹 빌드 점검",
+  "hero": "01-ready.png",
+  "items": [
+    {
+      "id": "01",
+      "title": "숲과 도로 배경",
+      "status": "remaining",
+      "applied": "현행 숲·도로 레이아웃과 충돌 나무 배치를 확인했습니다.",
+      "remaining": "침엽수·관목·풀·돌·울타리, 도로 경계·바퀴 자국·점무늬는 Canvas 도형입니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L20",
+        "goblin-getaway/public/scene.mjs#L98",
+        "goblin-getaway/public/scene.mjs#L250"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "08-road-and-route.png"
+      ],
+      "sourceDigest": "4d31670630a4dd6069c1602815d496ed2bfa65ab055c9cb1fe1e558c6b89a409"
+    },
+    {
+      "id": "02",
+      "title": "도로 장애물",
+      "status": "remaining",
+      "applied": "도로 바위, 통나무, 사슴의 3종 등장과 화면 위치를 확인했습니다.",
+      "remaining": "장애물 3종 본체와 타원 그림자는 Canvas 도형입니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L198",
+        "goblin-getaway/public/road-obstacles.mjs"
+      ],
+      "screenshots": [
+        "08-road-and-route.png",
+        "10-road-log.png",
+        "11-road-deer.png"
+      ],
+      "sourceDigest": "b95a67246e0b407ff1a785ed7835766a4e1d48a20bc3224e1cbe6792ca11b49f"
+    },
+    {
+      "id": "03",
+      "title": "마차 지하층 실내",
+      "status": "remaining",
+      "applied": "지하층 이동과 실내 렌더링을 확인했습니다.",
+      "remaining": "판재·이음새·난간·볼트·차축 고정부와 등불의 방사형 빛은 Canvas 도형과 그라데이션입니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L919",
+        "goblin-getaway/public/scene.mjs#L941"
+      ],
+      "screenshots": [
+        "12-cellar.png"
+      ],
+      "sourceDigest": "4d31670630a4dd6069c1602815d496ed2bfa65ab055c9cb1fe1e558c6b89a409"
+    },
+    {
+      "id": "04",
+      "title": "적재·보급·조리·수리 소품",
+      "status": "partial",
+      "applied": "적재 탄, 보급 칸, 예비 바퀴와 수리 칸의 기본 그림에 픽셀 스프라이트를 적용했습니다.",
+      "remaining": "적재 트레이와 하이라이트, 보급 수량 배지, 조리대·접시·팬, 예비 바퀴 상자와 수리 외곽 표시가 남아 있습니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L404",
+        "goblin-getaway/public/scene.mjs#L420",
+        "goblin-getaway/public/scene.mjs#L432",
+        "goblin-getaway/public/scene.mjs#L673",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "screenshots": [
+        "12-cellar.png",
+        "13-cellar-timing.png",
+        "14-cellar-cook.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "05",
+      "title": "갑판과 캐릭터 오버레이",
+      "status": "partial",
+      "applied": "기본 작업 칸과 계단 바닥은 픽셀 PNG를 사용합니다.",
+      "remaining": "이름표·상태 점선·계단 화살표·이동 방향, 운반 중인 탄과 음식, 왕실 인계 표시가 Canvas로 그려집니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L338",
+        "goblin-getaway/public/scene.mjs#L432",
+        "goblin-getaway/public/scene.mjs#L501",
+        "goblin-getaway/public/scene.mjs#L589",
+        "goblin-getaway/public/scene.mjs#L930",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "12-cellar.png",
+        "18-royal-watch.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "06",
+      "title": "마차·말·기병의 보조 효과",
+      "status": "partial",
+      "applied": "기본 그림자와 바퀴 상태·이탈 먼지의 일부는 픽셀 PNG를 사용합니다.",
+      "remaining": "차체·말발굽·기병의 추가 그림자와 먼지, 빈 바퀴 장착부, 마부 조준선과 채찍·불꽃, 말 상태 효과가 Canvas로 남아 있습니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L615",
+        "goblin-getaway/public/scene.mjs#L714",
+        "goblin-getaway/public/scene.mjs#L896",
+        "goblin-getaway/public/scene.mjs#L1045",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "screenshots": [
+        "08-road-and-route.png",
+        "09-catapult-impact.png",
+        "15-driver-aim.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "07",
+      "title": "대포 조준·착탄의 보조 효과",
+      "status": "partial",
+      "applied": "조준점과 점화 카운트, 발사 섬광, 비행 포탄과 착탄의 일부 효과에 픽셀 PNG를 적용했습니다.",
+      "remaining": "조준 점선과 범위 타원, 시야 밖 화살표, 그을음·포구 연무·충격파·연기·공용 파편이 남아 있습니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L1131",
+        "goblin-getaway/public/scene.mjs#L1189",
+        "goblin-getaway/public/scene.mjs#L1268",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "screenshots": [
+        "16-cannon-aim.png",
+        "17-cannon-blast.png",
+        "25-cannon-burst.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "08",
+      "title": "투석기 바위와 착탄",
+      "status": "remaining",
+      "applied": "착탄 예고부터 낙하와 착탄까지의 표시를 확인했습니다.",
+      "remaining": "바위·예고 타원·충격 고리·연기·돌조각이 Canvas 도형이며 위험 느낌표에 SVG를 사용합니다.",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L1323",
+        "goblin-getaway/public/scene.mjs#L1373",
+        "goblin-getaway/app/page.tsx#L118"
+      ],
+      "screenshots": [
+        "09-catapult-impact.png",
+        "22-catapult-warning.png"
+      ],
+      "sourceDigest": "e227abf6bcc2b31efe294a199673805897206755bf4c35b038f4334577bf2e48"
+    },
+    {
+      "id": "09",
+      "title": "주행 HUD와 조작 버튼",
+      "status": "remaining",
+      "applied": "시작·정지·설정과 조작 버튼, 작전 진행 표시를 확인했습니다.",
+      "remaining": "버튼·스틱과 진행 막대는 브라우저 UI, 버튼의 픽토그램과 상단 마차·깃발은 SVG입니다.",
+      "sources": [
+        "goblin-getaway/app/page.tsx#L37",
+        "goblin-getaway/app/page.tsx#L91",
+        "goblin-getaway/app/globals.css#L105",
+        "goblin-getaway/public/game.mjs#L872"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "08-road-and-route.png"
+      ],
+      "sourceDigest": "0f944ea2067fca1d629e359b446480721e8eb33a96bfadc77a2a30f1962ba5a1"
+    },
+    {
+      "id": "10",
+      "title": "상태·작업 HUD",
+      "status": "remaining",
+      "applied": "포탄 보급과 왕실 상태, 2인 분할, 화면 가장자리 경고를 확인했습니다.",
+      "remaining": "타이밍 링·바늘은 SVG입니다. 작업 말풍선·진행률·상태 카드·분할 라벨은 HTML/CSS, 접근 경고는 Canvas로 표시합니다.",
+      "sources": [
+        "goblin-getaway/app/page.tsx#L4",
+        "goblin-getaway/public/game.mjs#L743",
+        "goblin-getaway/app/globals.css#L246",
+        "goblin-getaway/public/scene.mjs#L1435"
+      ],
+      "screenshots": [
+        "13-cellar-timing.png",
+        "18-royal-watch.png",
+        "24-approach-alert.png",
+        "26-local-split.png"
+      ],
+      "sourceDigest": "0c4c62a03101a5a716c9fe6d27743194da5a140c1880481b15ab49d38fefd568"
+    },
+    {
+      "id": "11",
+      "title": "이모티콘",
+      "status": "remaining",
+      "applied": "이모티콘 선택창과 사용 후 화면 알림을 확인했습니다.",
+      "remaining": "선택창·알림의 7종 아이콘은 시스템 이모지입니다. 캐릭터의 말풍선은 Canvas 원과 이모지 글꼴로 그려집니다.",
+      "sources": [
+        "goblin-getaway/public/emotes.mjs#L1",
+        "goblin-getaway/public/game.mjs#L129",
+        "goblin-getaway/public/scene.mjs#L1417"
+      ],
+      "screenshots": [
+        "06-emote-menu.png",
+        "07-emote-bubble.png"
+      ],
+      "sourceDigest": "a342891f9a97f8d4429cd2e8473ba28222cf07e6e7f3f7a327c7f4547e8fec78"
+    },
+    {
+      "id": "12",
+      "title": "설정·협동·도움말·결과",
+      "status": "remaining",
+      "applied": "설정·작전 현황·협동 메뉴와 가이드·패배·보고·상점을 확인했습니다.",
+      "remaining": "메뉴·결과·상점의 패널과 배지는 HTML/CSS이고, 아이콘은 SVG나 글자 기호입니다.",
+      "sources": [
+        "goblin-getaway/app/page.tsx#L58",
+        "goblin-getaway/public/game.mjs#L257",
+        "goblin-getaway/app/globals.css#L296",
+        "goblin-getaway/public/intermission.mjs#L4"
+      ],
+      "screenshots": [
+        "02-settings.png",
+        "03-coop.png",
+        "04-guide.png",
+        "05-card-index.png",
+        "19-defeat.png",
+        "20-report-to-king.png",
+        "21-upgrade-shop.png",
+        "23-status.png"
+      ],
+      "note": "온라인 방 생성 후 전용 화면은 소스에서 확인했습니다.",
+      "sourceDigest": "1f628de4d39493923a3592e8e6044cee505da8621e0bc5639a731df916346718"
+    },
+    {
+      "id": "13",
+      "title": "화면 글꼴",
+      "status": "remaining",
+      "applied": "웹 UI와 Canvas 라벨에 사용되는 글꼴 경로를 확인했습니다.",
+      "remaining": "웹 한국어 글꼴 폴백과 Canvas의 시스템 글꼴 조합을 사용합니다.",
+      "sources": [
+        "goblin-getaway/app/globals.css#L2",
+        "goblin-getaway/public/scene.mjs#L493"
+      ],
+      "screenshots": [
+        "02-settings.png",
+        "12-cellar.png"
+      ],
+      "sourceDigest": "235c5ce7cb149d84a76cbf042048e9f498b8227a8ed4e7c21e47e42e2a506157"
+    },
+    {
+      "id": "14",
+      "title": "브라우저 탭 아이콘",
+      "status": "remaining",
+      "applied": "브라우저 메타데이터에서 파비콘 연결을 확인했습니다.",
+      "remaining": "파비콘 원본에 SVG 벡터 도형을 사용합니다.",
+      "sources": [
+        "goblin-getaway/app/layout.tsx#L4",
+        "goblin-getaway/public/favicon.svg"
+      ],
+      "screenshots": [],
+      "note": "브라우저 탭 영역은 소스에서 확인했습니다.",
+      "sourceDigest": "8bd02bf10f18536ae582f556dc6bb77b58d799a4840d0a6147b0eb2448cd423b"
+    },
+    {
+      "id": "15",
+      "title": "마차 차체와 기본 바퀴",
+      "status": "done",
+      "applied": "갑판·소파·깃발·갑판 등불·장착 바퀴·이탈 바퀴의 픽셀 PNG 렌더링을 확인했습니다.",
+      "remaining": "",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L603",
+        "goblin-getaway/public/scene.mjs#L648",
+        "goblin-getaway/public/scene.mjs#L896",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "watch": [
+        "goblin-getaway/public/pixel-art/"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "08-road-and-route.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "16",
+      "title": "졸개와 왕실 캐릭터",
+      "status": "done",
+      "applied": "P1~P4 졸개, 왕자·공주의 본체 프레임에 픽셀 스프라이트가 적용돼 있습니다.",
+      "remaining": "",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L314",
+        "goblin-getaway/public/scene.mjs#L501",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "watch": [
+        "goblin-getaway/public/pixel-art/"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "18-royal-watch.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    },
+    {
+      "id": "17",
+      "title": "말·마구·기병 기본 그림",
+      "status": "done",
+      "applied": "마차를 끄는 말, 견인 마구, 기병과 창의 픽셀 스프라이트 렌더링을 확인했습니다.",
+      "remaining": "",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L770",
+        "goblin-getaway/public/scene.mjs#L995",
+        "goblin-getaway/public/scene.mjs#L1021",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "watch": [
+        "goblin-getaway/public/pixel-art/",
+        "goblin-getaway/public/cavalry-run.png",
+        "goblin-getaway/public/cavalry-death-hit.png",
+        "goblin-getaway/public/cavalry-death-blast.png"
+      ],
+      "screenshots": [
+        "01-ready.png",
+        "15-driver-aim.png",
+        "19-defeat.png"
+      ],
+      "sourceDigest": "623e310c7f5156257437914bb64bdd7a7ef6645d3b4735761a04166db1827e03"
+    },
+    {
+      "id": "18",
+      "title": "대포와 발사 핵심 스프라이트",
+      "status": "done",
+      "applied": "대포 포신, 조준점, 점화 카운트, 발사 섬광과 비행 포탄에 픽셀 프레임이 적용돼 있습니다.",
+      "remaining": "",
+      "sources": [
+        "goblin-getaway/public/scene.mjs#L871",
+        "goblin-getaway/public/scene.mjs#L1131",
+        "goblin-getaway/public/scene.mjs#L1268",
+        "goblin-getaway/public/pixel-art.mjs"
+      ],
+      "watch": [
+        "goblin-getaway/public/pixel-art/"
+      ],
+      "screenshots": [
+        "16-cannon-aim.png",
+        "25-cannon-burst.png"
+      ],
+      "sourceDigest": "25589adb714332968a4bc95dbc53663dd2118febe8e08ef613d55ee1541b85c0"
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-11-19",
+      "summary": "기존 보고서 14개 그룹을 비교했습니다. 남음 10개와 부분 적용 4개를 확인하고, 게임에 이미 적용된 핵심 스프라이트 4개 그룹을 추가했습니다."
+    }
+  ]
+}

@@ -219,7 +219,8 @@ public sealed partial class LobbySession : MonoBehaviour
     {
         if (roster==null || !roster.IsSpawned || !manager.IsServer || !admitted.TryGetValue(id, out var player)) return;
         var game = FindFirstObjectByType<MultiplayerGameScene>();
-        if (!loadingGame && roster.Starting.Value && game != null) game.Assign(id,player.slot,new Unity.Collections.FixedString64Bytes(player.name));
+        if (!loadingGame && roster.Starting.Value && game != null)
+            game.Assign(id, player.slot, new Unity.Collections.FixedString64Bytes(player.name), seatKeys[player.slot]);
         roster.Players.Add(new LobbyPlayerInfo { ClientId = id, Slot = player.slot,
             Nickname = new Unity.Collections.FixedString64Bytes(player.name) });
     }
@@ -304,7 +305,8 @@ public sealed partial class LobbySession : MonoBehaviour
         foreach (var entry in admitted)
         {
             if (!completed.Contains(entry.Key) || !manager.ConnectedClients.ContainsKey(entry.Key)) continue;
-            spawn.Assign(entry.Key,entry.Value.slot,new Unity.Collections.FixedString64Bytes(entry.Value.name));
+            int slot = entry.Value.slot;
+            spawn.Assign(entry.Key, slot, new Unity.Collections.FixedString64Bytes(entry.Value.name), seatKeys[slot]);
         }
         if (LocalSeats == 2) spawn.Assign(NetworkManager.ServerClientId,1,new Unity.Collections.FixedString64Bytes("P2"));
         CartStations.Instance.Begin();

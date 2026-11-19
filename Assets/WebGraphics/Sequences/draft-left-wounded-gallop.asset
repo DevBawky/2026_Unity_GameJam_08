@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: draft-left-wounded-gallop
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: -241798152, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -1580948720, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -1925000829, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: 1613735385, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -1746310981, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -1415414327, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -551677929, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: 1566798941, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: -780837654, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: 616303262, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: 4077632026100757987, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
-  - {fileID: 3407246342396771275, guid: bb95273a139d01b45aeea6c3382bcd0e, type: 3}
+  - {fileID: -241798152, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -1580948720, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -1925000829, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: 1613735385, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -1746310981, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -1415414327, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -551677929, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: 1566798941, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: -780837654, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: 616303262, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: 4077632026100757987, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
+  - {fileID: 3407246342396771275, guid: c0a5c00e8a24cdb36f4abd2741993092, type: 3}
   frameStarts:
   - 0
   - 0.02358553

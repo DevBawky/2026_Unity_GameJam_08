@@ -1,0 +1,715 @@
+fileFormatVersion: 2
+guid: 2df106fd28d7abf4b2ddf21f5a2709d1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -821472742173015257
+    second: upper-shoulder_0
+  - first:
+      213: -6173446666807152467
+    second: upper-shoulder_1
+  - first:
+      213: -3564862133796061347
+    second: upper-shoulder_2
+  - first:
+      213: 2267211837836024206
+    second: upper-shoulder_3
+  - first:
+      213: 3450318914659473087
+    second: upper-shoulder_4
+  - first:
+      213: 7274127810638096343
+    second: upper-shoulder_5
+  - first:
+      213: -4044089441169557287
+    second: upper-shoulder_6
+  - first:
+      213: -7568127602832363429
+    second: upper-shoulder_7
+  - first:
+      213: 8150122396613289497
+    second: upper-shoulder_8
+  - first:
+      213: -6702147443621511773
+    second: upper-shoulder_9
+  - first:
+      213: -2174057685158051323
+    second: upper-shoulder_10
+  - first:
+      213: -5445521530775419652
+    second: upper-shoulder_11
+  - first:
+      213: 2258334709766280119
+    second: upper-shoulder_12
+  - first:
+      213: 7105311285206719530
+    second: upper-shoulder_13
+  - first:
+      213: 2399694240182619289
+    second: upper-shoulder_14
+  - first:
+      213: -6101946895085386163
+    second: upper-shoulder_15
+  - first:
+      213: -4599424830222598840
+    second: upper-shoulder_16
+  - first:
+      213: 6814745342563182125
+    second: upper-shoulder_17
+  - first:
+      213: 2657533447714759898
+    second: upper-shoulder_18
+  - first:
+      213: 8340527911656511670
+    second: upper-shoulder_19
+  - first:
+      213: -444781276820210257
+    second: upper-shoulder_20
+  - first:
+      213: -2717947349033247550
+    second: upper-shoulder_21
+  - first:
+      213: -7213610258777100013
+    second: upper-shoulder_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: upper-shoulder_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 721
+        width: 69
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7238c12b4ea8994f0800000000000000
+      internalID: -821472742173015257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_1
+      rect:
+        serializedVersion: 2
+        x: 344
+        y: 696
+        width: 146
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da0f32107f2835aa0800000000000000
+      internalID: -6173446666807152467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_2
+      rect:
+        serializedVersion: 2
+        x: 501
+        y: 729
+        width: 62
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5f38d9d6c0178ec0800000000000000
+      internalID: -3564862133796061347
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_3
+      rect:
+        serializedVersion: 2
+        x: 607
+        y: 729
+        width: 58
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e89d6c08721c67f10800000000000000
+      internalID: 2267211837836024206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_4
+      rect:
+        serializedVersion: 2
+        x: 766
+        y: 717
+        width: 57
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb6d616b5cef1ef20800000000000000
+      internalID: 3450318914659473087
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_5
+      rect:
+        serializedVersion: 2
+        x: 821
+        y: 726
+        width: 104
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d7afdb24b4e2f460800000000000000
+      internalID: 7274127810638096343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_6
+      rect:
+        serializedVersion: 2
+        x: 1137
+        y: 720
+        width: 64
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d83e2b641280e7c0800000000000000
+      internalID: -4044089441169557287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_7
+      rect:
+        serializedVersion: 2
+        x: 1443
+        y: 722
+        width: 27
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b50395afa0c98f690800000000000000
+      internalID: -7568127602832363429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_8
+      rect:
+        serializedVersion: 2
+        x: 79
+        y: 708
+        width: 94
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9162716732d0b1170800000000000000
+      internalID: 8150122396613289497
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_9
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 692
+        width: 160
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3adb5a6d8603df2a0800000000000000
+      internalID: -6702147443621511773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_10
+      rect:
+        serializedVersion: 2
+        x: 556
+        y: 698
+        width: 104
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50242f2dd0234d1e0800000000000000
+      internalID: -2174057685158051323
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_11
+      rect:
+        serializedVersion: 2
+        x: 662
+        y: 709
+        width: 97
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf4c365f40f9d64b0800000000000000
+      internalID: -5445521530775419652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_12
+      rect:
+        serializedVersion: 2
+        x: 872
+        y: 701
+        width: 146
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b3dd8f0477375f10800000000000000
+      internalID: 2258334709766280119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_13
+      rect:
+        serializedVersion: 2
+        x: 1337
+        y: 707
+        width: 97
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2c1255e7f22b9260800000000000000
+      internalID: 7105311285206719530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_14
+      rect:
+        serializedVersion: 2
+        x: 26
+        y: 691
+        width: 85
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99cc2a3823d6d4120800000000000000
+      internalID: 2399694240182619289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_15
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 679
+        width: 150
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d464320e0a7815ba0800000000000000
+      internalID: -6101946895085386163
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_16
+      rect:
+        serializedVersion: 2
+        x: 450
+        y: 686
+        width: 87
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84d78775c7f8b20c0800000000000000
+      internalID: -4599424830222598840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_17
+      rect:
+        serializedVersion: 2
+        x: 1032
+        y: 692
+        width: 73
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d26e93278c6d29e50800000000000000
+      internalID: 6814745342563182125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_18
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 680
+        width: 98
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad4e1c9279471e420800000000000000
+      internalID: 2657533447714759898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_19
+      rect:
+        serializedVersion: 2
+        x: 1191
+        y: 670
+        width: 184
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b8548512f18fb370800000000000000
+      internalID: 8340527911656511670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_20
+      rect:
+        serializedVersion: 2
+        x: 713
+        y: 660
+        width: 61
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fadf26809c1d3d9f0800000000000000
+      internalID: -444781276820210257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_21
+      rect:
+        serializedVersion: 2
+        x: 978
+        y: 667
+        width: 58
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cc98ae4949e74ad0800000000000000
+      internalID: -2717947349033247550
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: upper-shoulder_22
+      rect:
+        serializedVersion: 2
+        x: 1388
+        y: 665
+        width: 58
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3113a7160bb14eb90800000000000000
+      internalID: -7213610258777100013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      upper-shoulder_0: -821472742173015257
+      upper-shoulder_1: -6173446666807152467
+      upper-shoulder_10: -2174057685158051323
+      upper-shoulder_11: -5445521530775419652
+      upper-shoulder_12: 2258334709766280119
+      upper-shoulder_13: 7105311285206719530
+      upper-shoulder_14: 2399694240182619289
+      upper-shoulder_15: -6101946895085386163
+      upper-shoulder_16: -4599424830222598840
+      upper-shoulder_17: 6814745342563182125
+      upper-shoulder_18: 2657533447714759898
+      upper-shoulder_19: 8340527911656511670
+      upper-shoulder_2: -3564862133796061347
+      upper-shoulder_20: -444781276820210257
+      upper-shoulder_21: -2717947349033247550
+      upper-shoulder_22: -7213610258777100013
+      upper-shoulder_3: 2267211837836024206
+      upper-shoulder_4: 3450318914659473087
+      upper-shoulder_5: 7274127810638096343
+      upper-shoulder_6: -4044089441169557287
+      upper-shoulder_7: -7568127602832363429
+      upper-shoulder_8: 8150122396613289497
+      upper-shoulder_9: -6702147443621511773
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

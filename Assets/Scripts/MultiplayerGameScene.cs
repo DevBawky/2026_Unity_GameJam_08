@@ -12,11 +12,11 @@ public sealed class MultiplayerGameScene : MonoBehaviour
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             SceneManager.LoadScene("Lobby");
     }
-    public void Assign(ulong client, int slot, Unity.Collections.FixedString64Bytes name)
+    public void Assign(ulong client, int slot, Unity.Collections.FixedString64Bytes name, string seatKey = null)
     {
         var player = players[slot];
         if (player.Slot.Value < 0) player.transform.position = spawnPoints[slot].position;
-        player.Assign(client,slot,name);
+        player.Assign(client,slot,name,seatKey);
     }
     public void FillEmptySeats()
     {

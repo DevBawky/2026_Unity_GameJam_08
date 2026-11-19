@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: draft-right-gallop
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: -1716372402, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: -1053903152, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 1740287219, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 86706440, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: -1056458150, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 695792320, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: -1972252285, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 1032396208, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 368214671, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: 1267823395, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: -4003443882850253849, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
-  - {fileID: -2355855800339128200, guid: 563863006ec962949b1aaf3831c245c8, type: 3}
+  - {fileID: -1716372402, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: -1053903152, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 1740287219, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 86706440, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: -1056458150, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 695792320, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: -1972252285, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 1032396208, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 368214671, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: 1267823395, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: -4003443882850253849, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
+  - {fileID: -2355855800339128200, guid: 089c7158e1b8a026365b3d7074adc70a, type: 3}
   frameStarts:
   - 0
   - 0.02358553

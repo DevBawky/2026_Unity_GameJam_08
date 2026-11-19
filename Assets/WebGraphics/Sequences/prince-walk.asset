@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: prince-walk
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: 524820534, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -962895229, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: 827323094, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -770228042, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: 1278979375, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -1324598692, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: 544754478, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -1301934606, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: 1645439010, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -813450178, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -3894336527647071604, guid: 644c9424117e8934786c4aae321473dd, type: 3}
-  - {fileID: -5206364189132420602, guid: 644c9424117e8934786c4aae321473dd, type: 3}
+  - {fileID: 524820534, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -962895229, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: 827323094, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -770228042, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: 1278979375, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -1324598692, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: 544754478, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -1301934606, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: 1645439010, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -813450178, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -3894336527647071604, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
+  - {fileID: -5206364189132420602, guid: 046e3e2320883be042ca4cecf21d7745, type: 3}
   frameStarts:
   - 0
   - 0.037736848

@@ -336,7 +336,8 @@ public sealed partial class CartStations
     {
         var child=field.Value;
         var station = index == 0 ? StationAction.RoyalFamily : StationAction.Princess;
-        switch (AvailableCare(station, actor))
+        var care = AvailableCare(station, actor);
+        switch (care)
         {
             case CareAction.Reseat:
                 child.Pose = RiderPose.Seated;
@@ -364,6 +365,7 @@ public sealed partial class CartStations
                 return;
         }
         field.Value=child;
+        if (care == CareAction.Reseat) actor.AwardScore(CartRules.Active.childReseatScore);
     }
 
     private void KnockDown(NetworkVariable<RiderState> field,float chance)

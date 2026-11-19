@@ -113,7 +113,7 @@ public sealed partial class CartStations
                 bool right = direction > 0;
                 var uv = horseWhipZones[right ? 1 : 0].SteeringArea.center;
                 bot.DriverAim.Value = new Vector2(2f * uv.x - 1f, right ? uv.y : uv.y - 1f);
-                StrikeHorse(bot.DriverAim.Value);
+                StrikeHorse(bot, bot.DriverAim.Value);
                 nextDodgeWhip = careTicks + DodgeWhipTicks;
                 continue;
             }
@@ -124,6 +124,11 @@ public sealed partial class CartStations
                 Vector2 offset = ((Vector2)Enemy.Active[0].transform.position - (Vector2)cannonMuzzle.position) / WorldPerWebUnit;
                 bot.Aim.Value = CannonAim.CursorForOffset(offset);
                 Ignite(bot);
+            }
+            else if (action == StationAction.CannonCleaning)
+            {
+                Succeed(action, bot);
+                nextBotAction[slot] = careTicks + 5;
             }
             else if (action == StationAction.ShellDeposit) Enter(action,bot);
             else if (action != StationAction.Kitchen)

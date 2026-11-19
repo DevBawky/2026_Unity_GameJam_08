@@ -80,14 +80,20 @@ public sealed partial class CartStations
         status.Value = state;
     }
 
-    internal void StrikeHorse(Vector2 aim)
+    internal void StrikeHorse(NetworkPlayer actor, Vector2 aim)
     {
         if (!IsServer || !float.IsFinite(aim.x) || !float.IsFinite(aim.y) ||
             Mathf.Abs(aim.x) > 1f || Mathf.Abs(aim.y) > 1f) return;
         bool right = aim.y >= 0f;
         var state = right ? RightHorse : LeftHorse;
         if (state.Value.Mood != HorseMood.Normal) return;
-        if (AimsAtSteeringZone(aim)) WhipRump(right);
+        if (AimsAtSteeringZone(aim))
+        {
+            float before = right ? cart.RightHorseSpeed : cart.LeftHorseSpeed;
+            WhipRump(right);
+            float after = right ? cart.RightHorseSpeed : cart.LeftHorseSpeed;
+            if (after > before) actor.AwardScore(CartRules.Active.horseBoostScore);
+        }
         else
         {
             cart.ResetHorsePace(right);

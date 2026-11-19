@@ -36,13 +36,14 @@ public class Enemy : NetworkBehaviour
     public bool Knocked => airborne.Value;
     public bool IsApproaching => IsSpawned && !Knocked && Health.Value > 0f &&
         VisualPose.Value.StrikeAt < 0d && (rope == null || !rope.Attached);
-    public void KnockAway(Vector2 velocity)
+    public bool KnockAway(Vector2 velocity)
     {
-        if (!IsServer || !IsSpawned || Knocked) return;
+        if (!IsServer || !IsSpawned || Knocked || Health.Value <= 0f) return false;
         knockVelocity = velocity;
         knockLeft = 24f/30f;
         airborne.Value = true;
         if (rope != null && rope.Attached) rope.Detach();
+        return true;
     }
     private SpriteRenderer target;
     private EnemyRope rope;
@@ -90,16 +91,21 @@ public class Enemy : NetworkBehaviour
             ? NetworkManager.ServerTime.Time - saved.StrikeAge : -1d, Target = saved.StrikeTarget, DeathAt = -1d };
     }
 
-    public void TakeDamage(float damage, bool blast = false)
+    public bool TakeDamage(float damage, bool blast = false)
     {
-        if (!IsSpawned || !IsServer || Knocked || VisualPose.Value.DeathKind != 0 || !CartStations.Running) return;
+        if (!IsSpawned || !IsServer || Knocked || VisualPose.Value.DeathKind != 0 || !CartStations.Running) return false;
         hp -= Mathf.Max(0f,damage);
         Health.Value=hp;
-        if (hp > 0f) return;
-        if (cavalry == null) { NetworkObject.Despawn(true); return; }
+        if (hp > 0f) return false;
+        if (cavalry == null)
+        {
+            NetworkObject.Despawn(true);
+            return true;
+        }
         Active.Remove(this);
         if (TryGetComponent(out Collider2D collider)) collider.enabled = false;
         VisualPose.Value = new CavalryPose { DeathAt = NetworkManager.ServerTime.Time, StrikeAt = -1d, DeathKind = blast ? 2 : 1 };
+        return true;
     }
 
     public override void OnNetworkDespawn()

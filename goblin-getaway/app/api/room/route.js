@@ -1,9 +1,10 @@
 import {roomDb} from '#room-db';
-import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopCookingHold, royalTarget, feedTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
+import {initial, begin, advance, ensureDeck, operate, setInput, stationAt, leaveStation, stopStationInputs, royalActionTarget, nextStage, restartStage, restartChapter, setHumanSlots, addRackShell, HZ} from '../../../public/sim.mjs';
 import {nextStagePosition} from '../../../public/campaign.mjs';
 import {submitReport,voteForCard} from '../../../public/intermission.mjs';
 import {isRoomNumber,isLegacyRoomCode} from '../../../public/room-number.mjs';
 import {addEmote,recentEmotes} from '../../../public/emotes.mjs';
+import {normalizeCrewNickname} from '../../../public/crew-ranking.mjs';
 const respond=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const fail=(error,status=400)=>respond({error},status);
 
@@ -36,6 +37,10 @@ function leader(row){
   const present=joined(row);
   return present.find(seat=>seat.id===row.captain)?.id??present[0]?.id;
 }
+function setCrewNickname(state,id,name){
+  if(name)(state.crewNames??={})[id]=name;
+  else if(state.crewNames)delete state.crewNames[id];
+}
 function snapshot(row,seat,now=Date.now()){
   const state=ensureDeck(JSON.parse(row.state)),members=joined(row).map(member=>member.id);
   setHumanSlots(state,members);
@@ -51,11 +56,12 @@ function snapshot(row,seat,now=Date.now()){
   return {clock,data:{code:row.code,player:seat.id,host:seat.id===leader(row),captain:leader(row),crew:members.length,state,rev:row.rev,stamp:now}};
 }
 // Advance with the old controllers before handing an existing goblin to its new controller.
-async function changeSeat(db,row,seat,newToken,now,checkHeartbeat=false){
+async function changeSeat(db,row,seat,newToken,now,{checkHeartbeat=false,nickname=''}={}){
   const {data:snap,clock}=snapshot(row,seat,now);
   const next={...row,[seat.key]:newToken??seat.empty,[seat.seen]:newToken?now:null,rev:row.rev+1,clock};
   next.captain=leader(next);
   setHumanSlots(snap.state,joined(next).map(member=>member.id));
+  setCrewNickname(snap.state,seat.id,nickname);
   next.state=JSON.stringify(snap.state);
   const guard=checkHeartbeat?' AND '+seat.seen+' IS ?':'';
   const args=[next[seat.key],next[seat.seen],next.captain??null,next.state,clock,expiry(),row.code,row.host,row.rev,row[seat.key]];
@@ -69,7 +75,9 @@ export async function POST(req){
   const db=await roomDb();
   if(!db)return fail('온라인 협동 데이터베이스가 설정되어 있지 않습니다.',503);
   if(op==='create'){
-    const host=crypto.randomUUID(),now=Date.now(),state=JSON.stringify(initial());
+    const host=crypto.randomUUID(),now=Date.now(),fresh=initial();
+    setCrewNickname(fresh,'p1',normalizeCrewNickname(b.nickname));
+    const state=JSON.stringify(fresh);
     const start=100+crypto.getRandomValues(new Uint32Array(1))[0]%900;
     const [,inserted]=await db.batch([
       db.prepare('DELETE FROM rooms WHERE expires<=?').bind(now),
@@ -99,14 +107,14 @@ export async function POST(req){
     }
     const stale=members.find(member=>member!==seat&&row[member.seen]!=null&&now-row[member.seen]>disconnectAfter);
     if(stale){
-      await changeSeat(db,row,stale,null,now,true);
+      await changeSeat(db,row,stale,null,now,{checkHeartbeat:true});
       continue;
     }
     if(joining){
       if(seat)return respond({...snapshot(row,seat,now).data,token:attempt});
       const open=seats.find(member=>!row[member.key]);
       if(!open)return fail('이미 플레이어 4명이 탑승한 방입니다.',409);
-      const guest=attempt??crypto.randomUUID(),next=await changeSeat(db,row,open,guest,now);
+      const guest=attempt??crypto.randomUUID(),next=await changeSeat(db,row,open,guest,now,{nickname:normalizeCrewNickname(b.nickname)});
       if(next)return respond({...snapshot(next,open,now).data,token:guest});
       continue;
     }
@@ -145,8 +153,8 @@ export async function POST(req){
       if(op==='act'){
         const player=state.players[seat.id];
         const role=stationAt(player,state),atRole=!b.role||role===b.role;
-        const child=role==='royal-feed'?feedTarget(state,player):royalTarget(state,player);
-        const sameChild=b.royalId?child?.id===b.royalId:role!=='royal-feed';
+        const child=royalActionTarget(state,player,role);
+        const sameChild=b.royalId?child?.id===b.royalId:role!=='royal-feed'&&role!=='royal-attention';
         const staleWhip=role==='driver'&&b.input?.whipSequence!==undefined&&b.input.whipSequence!==(player.whipSwing?.sequence??0);
         if(atRole&&sameChild&&!staleWhip){
           if(role!=='cleaner')operate(state,seat.id,tick);
@@ -155,7 +163,7 @@ export async function POST(req){
       }
     }else if(op==='pause'&&snap.host&&['run','paused'].includes(state.mode)){
       state.mode=state.mode==='run'?'paused':'run';
-      if(state.mode==='paused')stopCookingHold(state);
+      if(state.mode==='paused')stopStationInputs(state);
     }
     else if(op==='report'&&snap.host&&state.mode==='clear'){
       const error=submitReport(state,b.id);

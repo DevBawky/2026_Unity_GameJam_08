@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: princess-walk
   m_EditorClassIdentifier: Assembly-CSharp::SpriteSequence
   frames:
-  - {fileID: -610586133, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 1606444902, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 631732312, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 1493073774, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: -984377755, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: -932092690, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 1420495825, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 2012352322, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: -1018415937, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: -2026475139, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 3423650453998177744, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
-  - {fileID: 8931365365660130102, guid: eb478134c54bc8146916c8cda281d3a2, type: 3}
+  - {fileID: -610586133, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 1606444902, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 631732312, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 1493073774, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: -984377755, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: -932092690, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 1420495825, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 2012352322, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: -1018415937, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: -2026475139, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 3423650453998177744, guid: db628b53112678c6716ac2c28d4af114, type: 3}
+  - {fileID: 8931365365660130102, guid: db628b53112678c6716ac2c28d4af114, type: 3}
   frameStarts:
   - 0
   - 0.037736848

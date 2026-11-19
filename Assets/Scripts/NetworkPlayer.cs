@@ -23,6 +23,10 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<bool> Assigned = new(false);
     public NetworkVariable<int> Slot = new(-1);
     public NetworkVariable<FixedString64Bytes> Nickname = new();
+    public readonly NetworkVariable<int> Score = new();
+    internal string ScoreOwnerKey { get; private set; }
+    // The host uses this generation to attribute shots to the player who lit the fuse.
+    internal int ScoreOwnerVersion { get; private set; }
     public NetworkVariable<bool> Carrying = new(false);
     public NetworkVariable<bool> CookingHeld = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<Vector2> DriverAim = new(new Vector2(.6f, .5f), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -184,9 +188,17 @@ public sealed class NetworkPlayer : NetworkBehaviour
         outlineProperties.SetFloat(LocalOutline, visible ? 1f : 0f);
         body.SetPropertyBlock(outlineProperties);
     }
-    public void Assign(ulong client, int slot, FixedString64Bytes nickname)
+    public void Assign(ulong client, int slot, FixedString64Bytes nickname, string seatKey = null)
     {
         if (!IsServer) return;
+        bool samePlayer = seatKey != null ? seatKey == ScoreOwnerKey :
+            ScoreOwnerKey == null && Assigned.Value && !Bot.Value && OwnerClientId == client;
+        if (!samePlayer)
+        {
+            Score.Value = 0;
+            ScoreOwnerVersion++;
+        }
+        ScoreOwnerKey = seatKey;
         Slot.Value = slot;
         Nickname.Value = nickname;
         // A host-owned bot must stay a bot until its new owner is assigned.
@@ -198,6 +210,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
     public void TakeBotControl(int slot)
     {
         if (!IsServer) return;
+        if (Assigned.Value && !Bot.Value) ScoreOwnerVersion++;
         Bot.Value = true;
         Slot.Value = slot;
         Nickname.Value = new FixedString64Bytes(LocalizationTable.F("도우미 {0}", slot + 1));
@@ -215,6 +228,27 @@ public sealed class NetworkPlayer : NetworkBehaviour
         TakeBotControl(Slot.Value);
         game.TallyChoices();
     }
+
+    internal void AwardScore(int points)
+    {
+        if (!IsServer || !IsSpawned || !Assigned.Value || Bot.Value || points <= 0) return;
+        Score.Value += Math.Min(points, int.MaxValue - Score.Value);
+    }
+
+    internal void RestoreScore(SeatCheckpoint saved)
+    {
+        string savedOwner = string.IsNullOrEmpty(saved.ScoreOwnerKey) ? null : saved.ScoreOwnerKey;
+        if (!Bot.Value && savedOwner != ScoreOwnerKey)
+        {
+            Score.Value = 0;
+            ScoreOwnerVersion = Math.Max(ScoreOwnerVersion, saved.ScoreOwnerVersion + 1);
+            return;
+        }
+        ScoreOwnerKey = savedOwner;
+        Score.Value = Math.Max(0, saved.Score);
+        ScoreOwnerVersion = Math.Max(Bot.Value ? 0 : 1, saved.ScoreOwnerVersion);
+    }
+
     public void RestoreSeat(SeatCheckpoint saved)
     {
         transform.localPosition = saved.Position;
@@ -356,7 +390,7 @@ public sealed class NetworkPlayer : NetworkBehaviour
         if (rateLimited) lastActionTime = now;
         if (action == StationAction.ShellDeposit) stations.Enter(action,this);
         else if (action == StationAction.Cannon) stations.Ignite(this);
-        else if (action == StationAction.Driver) stations.StrikeHorse(whipAim);
+        else if (action == StationAction.Driver) stations.StrikeHorse(this, whipAim);
         else if (action != StationAction.ShellPile && action != StationAction.Reload && action != StationAction.WheelRepair
             || timing.TimingSuccess(action, false, inputTime)) stations.Succeed(action,this);
         else stations.Fail(action, this, timing.NearMiss(action, inputTime));

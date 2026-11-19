@@ -7,6 +7,8 @@ using UnityEngine;
 public struct SeatCheckpoint
 {
     public int Slot;
+    public int Score, ScoreOwnerVersion;
+    public string ScoreOwnerKey;
     public int CompletedStationKey; // Zero also means no completed station in older saves.
     public Vector3 Position;
     public Vector2 Aim, DriverAim;
@@ -36,6 +38,7 @@ public struct ShotCheckpoint
     public Vector2 Landing;
     public bool Landed;
     public int Caliber;
+    public int ShooterSeatKey, ShooterScoreOwnerVersion;
     public int[] HitEnemies;
 }
 [Serializable]
@@ -54,6 +57,7 @@ public sealed class RunCheckpoint
     public bool HasShotVisual;
     public float ShockStrength, ShockPhase;
     public int Wave, CareTicks, GunnerSlot, AP, Report, Round, Barrel, Stabilizer, Porter, Hull, RightWounds, LeftWounds, PrincePoints, PrincessPoints;
+    public int GunnerScoreOwnerVersion;
     public uint RandomState;
     public RiderState Prince, Princess;
     public HorseCondition LeftHorse, RightHorse;
@@ -85,6 +89,7 @@ public sealed partial class CartStations
             Cart=State.Value, Failure=FailureReason, Motion=cart.Capture(), CartY=cart.transform.position.y,
             WaveTime=waveSpawner.Elapsed, Wave=Waves.Value, FuseRemaining=fuseRemaining, PostShotRemaining=postShotRemaining,
             GunnerSlot=gunner==null?-1:gunner.Slot.Value,
+            GunnerScoreOwnerVersion = gunner != null && gunner.ScoreOwnerVersion == gunnerScoreOwnerVersion ? gunnerScoreOwnerVersion : 0,
             AP=Affection.Value, Report=Report.Value, Round=ShopRound.Value, Barrel=Barrel.Value, Stabilizer=Stabilizer.Value,
             Porter=Porter.Value, Hull=Hull.Value, RightWounds=RightWounds.Value, LeftWounds=LeftWounds.Value,
             LeftHorse=LeftHorse.Value, RightHorse=RightHorse.Value,
@@ -93,7 +98,8 @@ public sealed partial class CartStations
             Votes=Enumerable.Range(0,4).Select(i=>Votes[i]).ToArray(), SeatKeys=keys, Seats=gameScene.Players.Select(p=>new SeatCheckpoint {
                 Slot=p.Slot.Value,Position=p.transform.localPosition,Aim=p.Aim.Value,DriverAim=p.DriverAim.Value,HasWhipAim=true,FacingRight=p.FacingRight.Value,Shell=p.Carrying.Value,Wheel=p.SpareWheel.Value,Snack=p.Snack.Value,
                 Holding=p.Holding.Value,HoldRemaining=(float)Math.Max(0,p.HoldDeadline.Value-now),Cooking=p.CookProgress.Value,
-                ShellSafetyRemaining=(float)Math.Max(0,p.ShellSafeUntil-now),CompletedStationKey=p.CompletedStation.Value+1
+                ShellSafetyRemaining=(float)Math.Max(0,p.ShellSafeUntil-now),CompletedStationKey=p.CompletedStation.Value+1,
+                Score=p.Score.Value,ScoreOwnerVersion=p.ScoreOwnerVersion,ScoreOwnerKey=p.ScoreOwnerKey
             }).ToArray(), Enemies=enemies.Select(e=>e.Capture()).ToArray(),
             Shots=FindObjectsByType<Projectile>(FindObjectsSortMode.None).Select(p=>p.Capture(enemies)).ToArray()
         };
@@ -145,6 +151,7 @@ public sealed partial class CartStations
             if (i == legacyCannonSlot && p.Timing.AreaFor(StationAction.Cannon) is RectTransform cannonArea)
                 saved.Position = p.transform.parent != null ? p.transform.parent.InverseTransformPoint(cannonArea.position) : cannonArea.position;
             p.RestoreSeat(saved);
+            p.RestoreScore(saved);
             p.Carrying.Value=saved.Shell;p.SpareWheel.Value=saved.Wheel;p.Snack.Value=saved.Snack;
             p.Holding.Value=saved.Holding;p.HoldDeadline.Value=now+saved.HoldRemaining;p.CookProgress.Value=saved.Cooking;
             p.ShellSafeUntil=now+saved.ShellSafetyRemaining;
@@ -156,11 +163,14 @@ public sealed partial class CartStations
         foreach(var saved in data.Shots)
         {
             var shot=Instantiate(shellPrefab,saved.Position,saved.Rotation).GetComponent<Projectile>();
+            if (saved.ShooterSeatKey > 0 && saved.ShooterSeatKey <= gameScene.Players.Length)
+                shot.SetShooter(gameScene.Players[saved.ShooterSeatKey - 1], saved.ShooterScoreOwnerVersion);
             shot.SetCaliber(saved.Caliber);shot.NetworkObject.Spawn(true);shot.Restore(saved,enemies);
         }
         if (fuseLit || data.PostShotRemaining > 0)
         {
             gunner = data.GunnerSlot >= 0 && data.GunnerSlot < gameScene.Players.Length ? gameScene.Players[data.GunnerSlot] : null;
+            gunnerScoreOwnerVersion = data.GunnerScoreOwnerVersion;
             Gunner.Value=gunner==null?NoStationOwner:gunner.NetworkObjectId;
             if (fuseLit) StartFuse(data.FuseRemaining);
             else if (gunner != null && HoldsStation(StationAction.Cannon, gunner)) StartPostShot(data.PostShotRemaining);

@@ -13,6 +13,8 @@ public sealed class Projectile : NetworkBehaviour
     private float speed, scrollAtImpact;
     private Vector2 landing;
     private CannonballHit hit;
+    private NetworkPlayer shooter;
+    private int shooterScoreOwnerVersion;
     private SpriteRenderer ball;
     private Collider2D shape;
     private void Awake()
@@ -24,6 +26,21 @@ public sealed class Projectile : NetworkBehaviour
 
     public void Launch(Vector2 point, float unitsPerSecond) { landing = point; speed = unitsPerSecond; }
     public void SetCaliber(int level) => startCaliber = level;
+
+    internal void SetShooter(NetworkPlayer player, int scoreOwnerVersion)
+    {
+        shooter = player;
+        shooterScoreOwnerVersion = scoreOwnerVersion;
+    }
+
+    private bool HasCurrentShooter => shooter != null && shooterScoreOwnerVersion > 0
+        && shooter.ScoreOwnerVersion == shooterScoreOwnerVersion;
+
+    internal void AwardElimination()
+    {
+        if (IsServer && HasCurrentShooter) shooter.AwardScore(CartRules.Active.enemyEliminationScore);
+    }
+
     public override void OnNetworkSpawn()
     {
         if (IsServer) { caliber.Value = startCaliber; CartStations.SimulationStep += Advance; }
@@ -99,6 +116,8 @@ public sealed class Projectile : NetworkBehaviour
     public ShotCheckpoint Capture(Enemy[] enemies) => new() {
         Position=transform.position, Rotation=transform.rotation, Landing=landing, Speed=speed, Caliber=caliber.Value,
         Landed=impactTime.Value!=double.MinValue, ImpactAge=impactTime.Value==double.MinValue ? 0 : (float)(NetworkManager.ServerTime.Time-impactTime.Value),
+        ShooterSeatKey = HasCurrentShooter ? shooter.Slot.Value + 1 : 0,
+        ShooterScoreOwnerVersion = HasCurrentShooter ? shooterScoreOwnerVersion : 0,
         ScrollAtImpact=scrollAtImpact, HitEnemies=hit.HitIndices(enemies) };
     public void Restore(ShotCheckpoint data, Enemy[] enemies)
     {

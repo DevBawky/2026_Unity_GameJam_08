@@ -49,9 +49,11 @@ public sealed partial class CartStations
 
     public void Ignite(NetworkPlayer actor)
     {
-        if (!IsServer || !Running || !CanUse(StationAction.Cannon, actor) || shellPrefab == null || cannonMuzzle == null) return;
+        if (!IsServer || !Running || !CanUse(StationAction.Cannon, actor) ||
+            !actor.Timing.IsInActionArea(StationAction.Cannon) || shellPrefab == null || cannonMuzzle == null) return;
         EndPostShot();
         gunner = actor;
+        gunnerScoreOwnerVersion = actor.Bot.Value ? 0 : actor.ScoreOwnerVersion;
         Gunner.Value = actor.NetworkObjectId;
         StartFuse();
     }
@@ -69,7 +71,9 @@ public sealed partial class CartStations
         if (!fuseLit) return;
         fuseRemaining -= Step;
         if (fuseRemaining > 0.00001f) return;
-        var target = CannonAim.AimPoint(gunner != null ? gunner.Aim.Value : Vector2.zero, cannonMuzzle.position,
+        var shooter = gunner;
+        int shooterScoreOwnerVersion = gunnerScoreOwnerVersion;
+        var target = CannonAim.AimPoint(shooter != null ? shooter.Aim.Value : Vector2.zero, cannonMuzzle.position,
             this, NetworkManager.ServerTime.Time, out var spread, out _);
         // Isolate shot scatter from child, horse and wave random rolls.
         uint seed = randomState ^ unchecked((uint)(careTicks+1)*1597334677u);
@@ -90,11 +94,11 @@ public sealed partial class CartStations
         float recoil = Owns(ShopPerk.RecoilMount) ? RecoilMountRate : 1f;
         AddImpactEffects(recoilAnxietyIncrease * recoil, recoilShakeStrength * recoil, CannonShock * recoil, .25f * recoil, cannon: true);
         var rotation = Quaternion.Euler(0f, 0f, angleDegrees);
-        GameObject shot = Instantiate(shellPrefab, cannonMuzzle.position + (Vector3)direction * CannonBarrelLength, rotation);
-        shot.GetComponent<Projectile>().SetCaliber(Barrel.Value);
-        shot.GetComponent<NetworkObject>().Spawn(true);
-        if (shot.TryGetComponent(out Projectile projectile))
-            projectile.Launch(target, 1750f * WorldPerWebUnit);
+        var projectile = Instantiate(shellPrefab, cannonMuzzle.position + (Vector3)direction * CannonBarrelLength, rotation).GetComponent<Projectile>();
+        projectile.SetCaliber(Barrel.Value);
+        projectile.SetShooter(shooter, shooterScoreOwnerVersion);
+        projectile.NetworkObject.Spawn(true);
+        projectile.Launch(target, 1750f * WorldPerWebUnit);
         Refresh();
     }
 
@@ -110,12 +114,14 @@ public sealed partial class CartStations
         PostShotEndsAt.Value = 0d;
         if (fuseLit) return;
         gunner = null;
+        gunnerScoreOwnerVersion = 0;
         Gunner.Value = NoStationOwner;
     }
 
     private void ResetGunner()
     {
         gunner = null;
+        gunnerScoreOwnerVersion = 0;
         Gunner.Value = NoStationOwner;
         FuseDeadline.Value = 0d;
         PostShotEndsAt.Value = 0d;

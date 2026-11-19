@@ -34,6 +34,16 @@ public sealed class CartRules : ScriptableObject
     [Min(0.01f)] public float fuseSeconds = 2.5f;
     [Min(0.01f)] public float shellHoldSeconds = 1.6f;
 
+    [Header("개인 점수")]
+    [Min(0)] public int horseBoostScore = 1;
+    [Min(0)] public int cannonCleanScore = 1;
+    [Min(0)] public int shellReloadScore = 2;
+    [Min(0)] public int enemyEliminationScore = 4;
+    [Min(0)] public int shellDeliveryScore = 8;
+    [Min(0)] public int childReseatScore = 20;
+    [Min(0)] public int wheelInstallScore = 8;
+    [Min(0)] public int wheelRepairScore = 12;
+
     private static CartRules active;
     public static CartRules Active
     {
