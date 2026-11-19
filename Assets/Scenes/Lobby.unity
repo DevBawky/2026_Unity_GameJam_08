@@ -945,6 +945,22 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 6236431417710056308, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 949.3157
+      objectReference: {fileID: 0}
+    - target: {fileID: 6236431417710056308, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 417.8979
+      objectReference: {fileID: 0}
+    - target: {fileID: 6236431417710056308, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -94
+      objectReference: {fileID: 0}
+    - target: {fileID: 6236431417710056308, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -28
+      objectReference: {fileID: 0}
     - target: {fileID: 6254189707504123277, guid: e59fe19d454858549b0a08304ed3dca6, type: 3}
       propertyPath: m_FontData.m_MaxSize
       value: 72
