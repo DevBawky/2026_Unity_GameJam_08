@@ -6,7 +6,17 @@ using UnityEngine.UI;
 public sealed class SettingsPanel : MonoBehaviour
 {
     [SerializeField] private Slider masterSlider, bgmSlider, sfxSlider;
-    [SerializeField] private TMP_Text screenModeLabel, languageLabel;
+    [SerializeField] private TMP_Text screenModeLabel, languageLabel, reducedMotionLabel;
+    private const string ReducedMotionKey = "ReducedMotion";
+    private static bool? reducedMotion;
+    public static bool ReducedMotion => reducedMotion ??= PlayerPrefs.GetInt(ReducedMotionKey) == 1;
+
+    public void ToggleReducedMotion()
+    {
+        reducedMotion = !ReducedMotion;
+        PlayerPrefs.SetInt(ReducedMotionKey, ReducedMotion ? 1 : 0);
+        RefreshLabels();
+    }
 
     private void Awake()
     {
@@ -56,6 +66,7 @@ public sealed class SettingsPanel : MonoBehaviour
     {
         bool windowed = Screen.fullScreenMode == FullScreenMode.Windowed;
         screenModeLabel.text = LocalizationTable.T(windowed ? "창 모드" : "전체 화면");
+        if (reducedMotionLabel != null) reducedMotionLabel.text = LocalizationTable.T(ReducedMotion ? "모션 감소 켜짐" : "모션 감소 꺼짐");
         languageLabel.text = LocalizationTable.Current == LocalizationTable.Language.Korean ? "한국어" : "English";
     }
 }

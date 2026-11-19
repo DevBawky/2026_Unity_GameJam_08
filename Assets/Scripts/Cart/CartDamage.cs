@@ -31,8 +31,10 @@ public sealed partial class CartStations
 
         float strength = Mathf.Min(CannonShock, workStrength * multiplier);
         // A hit and its wheel detachment can happen in the same simulation step.
-        pendingCookingShock = Mathf.Max(pendingCookingShock, strength);
         double time = NetworkManager.ServerTime.Time;
+        if (strength >= .9f)
+            royalSeatBounce.Value = new CartWorkShock { Time = time, Strength = strength };
+        pendingCookingShock = Mathf.Max(pendingCookingShock, strength);
         uint sequence = ++impactSequence;
         workShock.Value = new CartWorkShock
         {
@@ -58,11 +60,22 @@ public sealed partial class CartStations
     {
         if (sequence == lastPlayedImpact) return;
         lastPlayedImpact = sequence;
-        cameraRig.Shake(shake, duration);
-        if (secondCamera != null) secondCamera.Shake(shake, duration);
-        if (impactDust != null) impactDust.Emit(cannon ? 18 : 12);
-        if (cannon && muzzleVisual != null) muzzleFlashStart = Time.time;
+        if (!cannon)
+        {
+            cameraRig.Shake(shake, duration);
+            if (secondCamera != null) secondCamera.Shake(shake, duration);
+            if (impactDust != null) impactDust.Emit(12);
+        }
         var clip = cannon ? cannonSound : hitSound;
         if (impactAudio != null && clip != null) impactAudio.PlayOneShot(clip);
+    }
+
+    internal void PlayCannonLanding() => CannonLandingRpc();
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void CannonLandingRpc()
+    {
+        if (impactAudio != null && cannonLandingSound != null)
+            impactAudio.PlayOneShot(cannonLandingSound);
     }
 }

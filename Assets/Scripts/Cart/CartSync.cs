@@ -26,7 +26,7 @@ public sealed partial class CartStations
     {
         if (!IsSpawned || !IsServer) return;
         State.Value = new CartNetworkState { Flow=flow, Durability=durability, Prince=princeAnxiety, Princess=princessAnxiety,
-            StageStart=stageStartDistance, Stage=stageNumber, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
+            StageStart=stageStartDistance, Stage=stageNumber, StageTick=careTicks, Stored=depositedShells, Pile=shellsInPile, Lost=lostShells,
             RepairSteps=wheelRepairSteps, Tire=detachedTire != null ? tires.IndexOf(detachedTire) : -1,
             Cushion=cushionAxleLevel, Horse=horseLevel, Precision=precisionLevel, CleaningTaps=cleaningTaps,
             Loaded=loaded, Firing=fuseLit, Wheel=wheelDetached, EverWheel=wheelEverDetached };

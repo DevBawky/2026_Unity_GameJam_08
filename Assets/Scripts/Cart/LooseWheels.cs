@@ -47,7 +47,7 @@ public sealed partial class CartStations
     public bool IsInsideDetachedTire(Vector3 position)
     {
         if (!wheelDetached || detachedTire == null || detachedTire.sprite == null) return false;
-        float radius = 28f * WorldPerWebUnit;
+        float radius = 28f * WorldPerWebUnit * PlayerTiming.WorkRadiusFraction;
         return ((Vector2)(position - WheelWorkPoint)).sqrMagnitude <= radius * radius;
     }
 
@@ -114,7 +114,7 @@ public sealed partial class CartStations
     }
 
     // Solve in ellipse space so a fast wheel or a moving target cannot skip a contact.
-    private static float Entry(Vector2 start,Vector2 step,Vector2 radii)
+    internal static float EllipseEntry(Vector2 start,Vector2 step,Vector2 radii)
     {
         var p=start/radii;var v=step/radii;
         float c=p.sqrMagnitude-1;
@@ -137,7 +137,7 @@ public sealed partial class CartStations
             if(body==null)continue;
             var radii=(Vector2)body.bounds.extents+Vector2.one*(20*WorldPerWebUnit);
             start+=(Vector2)body.bounds.center-pos;
-            float at=Entry(w.Position-start,step-delta*(to-from),radii);
+            float at=EllipseEntry(w.Position-start,step-delta*(to-from),radii);
             if(at>1)continue;
             float side=start.y+delta.y*(to-from)*at>=w.Position.y+step.y*at ? 1:-1;
             enemy.KnockAway(new Vector2(Mathf.Max(102,w.Velocity.x/WorldPerWebUnit*.82f+48),
@@ -159,7 +159,7 @@ public sealed partial class CartStations
             {
                 var radius=half+Vector2.one*(20*scale);
                 var start=w.Position-center+ground*Step;
-                float at=Entry(start,relative,radius);
+                float at=EllipseEntry(start,relative,radius);
                 if(at>=fraction)return;
                 var n=((start+relative*at)/(radius*radius)).normalized;
                 if(Vector2.Dot(relative,n)>=0)return;
