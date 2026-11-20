@@ -24,9 +24,9 @@ public sealed class TeamEmotes : MonoBehaviour
     private void OnEnable() => NetworkPlayer.Emoted += Show;
     private void OnDisable() => NetworkPlayer.Emoted -= Show;
 
-    internal int LayoutNotices(Rect safe, float top, float height)
+    internal void LayoutNotices(Rect safe, float top, float height)
     {
-        if (notices == null) return 0;
+        if (notices == null) return;
         float time = Time.unscaledTime;
         int count = 0;
         foreach (var notice in notices)
@@ -63,7 +63,6 @@ public sealed class TeamEmotes : MonoBehaviour
                 Vector2.one * iconSize, canvas);
             index++;
         }
-        return (count + columns - 1) / columns;
     }
 
     private void Show(NetworkPlayer player, int key)

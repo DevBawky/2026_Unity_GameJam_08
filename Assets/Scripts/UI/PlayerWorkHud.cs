@@ -133,8 +133,9 @@ public sealed class PlayerWorkHud : MonoBehaviour
         bool twoNotices = showOne && showTwo;
         bool columns = twoNotices && Screen.width > Screen.height && Screen.width >= 540f && Screen.width <= 750f;
         if (twoNotices && Screen.width <= 750f) gap = columns ? 4f : 6f;
-        int emoteRows = teamEmotes != null ? teamEmotes.LayoutNotices(safe, baseTop, noticeHeight) : 0;
-        float top = baseTop - emoteRows * (noticeHeight + gap);
+        // 이모트 알림은 상단 거리/내구도 HUD 위에 덮어 가운데 표시한다.
+        if (teamEmotes != null) teamEmotes.LayoutNotices(campaignArea, campaignArea.yMax, campaignArea.height);
+        float top = baseTop;
         float width = columns ? (workWidth - gap) * .5f : workWidth;
         float font = twoNotices && Screen.width <= 750f ? Mathf.Clamp(Vmin * .038f, 13f, 24f) : Mathf.Clamp(Vmin * .043f, 14f, 32f);
         float shift = columns ? (width + gap) * .5f : 0f;
