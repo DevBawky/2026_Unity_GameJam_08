@@ -47,6 +47,11 @@ public sealed partial class CartStations
         if (HasWork(StationAction.CannonCleaning, bot) && BotCanTake(StationAction.CannonCleaning, bot))
             return StationAction.CannonCleaning;
         if (HasWork(StationAction.Reload,bot) && BotCanTake(StationAction.Reload,bot)) return StationAction.Reload;
+        if (upperCannonPivot != null)
+        {
+            var upperJob = CannonActionAt(true);
+            if (HasWork(upperJob, bot) && BotCanTake(upperJob, bot)) return upperJob;
+        }
         if (depositedShells < 2 && shellsInPile > 0 && BotCanTake(StationAction.ShellPile,bot)) return StationAction.ShellPile;
         if (!driverNeededElsewhere && BotCanTake(StationAction.Driver,bot)) return StationAction.Driver;
         return null;
@@ -84,6 +89,11 @@ public sealed partial class CartStations
                 if (PlayerHasPriority(StationAction.Cannon)) YieldBotStation(bot, walk, StationAction.Cannon);
                 continue;
             }
+            if (!carryingChild && FiringAt(true) && upperGunner == bot)
+            {
+                if (PlayerHasPriority(StationAction.UpperCannon)) YieldBotStation(bot, walk, StationAction.UpperCannon);
+                continue;
+            }
             if (!carryingChild && botJobs[slot] >= 0)
             {
                 var previous = (StationAction)botJobs[slot];
@@ -96,6 +106,7 @@ public sealed partial class CartStations
             StationAction? choice;
             if (carryingChild) choice = IsCarrier(Prince.Value, bot) ? StationAction.RoyalFamily : StationAction.Princess;
             else if (HoldsStation(StationAction.Cannon, bot) && HasWork(CannonAction, bot)) choice = CannonAction;
+            else if (HoldsStation(StationAction.UpperCannon, bot) && HasWork(CannonActionAt(true), bot)) choice = CannonActionAt(true);
             else if (bot == driver) choice = StationAction.Driver;
             else choice = BotJob(bot, driver != null);
             botJobs[slot] = choice.HasValue ? (int)choice.Value : -1;
@@ -144,17 +155,18 @@ public sealed partial class CartStations
                 continue;
             }
             if (careTicks < nextBotAction[slot]) continue;
-            if (action == StationAction.Cannon)
+            if (TimingArea.CannonRole(action) == StationAction.Cannon)
             {
                 if (Enemy.Active.Count == 0) continue;
-                Vector2 offset = ((Vector2)Enemy.Active[0].transform.position - (Vector2)cannonMuzzle.position) / WorldPerWebUnit;
+                bool upper = TimingArea.IsUpper(action);
+                Vector2 offset = ((Vector2)Enemy.Active[0].transform.position - (Vector2)PivotAt(upper).position) / WorldPerWebUnit;
                 bot.Aim.Value = CannonAim.CursorForOffset(offset);
-                Ignite(bot);
+                Ignite(bot, upper);
             }
             else if (action == StationAction.ShellDeposit) Enter(action,bot);
             else if (action != StationAction.Kitchen)
             {
-                if (action is StationAction.ShellPile or StationAction.Reload or StationAction.WheelRepair)
+                if (TimingArea.UsesTimingFor(action))
                     if (!bot.Timing.TimingSuccess(action,false,NetworkManager.ServerTime.Time)) continue;
                 Succeed(action,bot);
                 nextBotAction[slot] = careTicks + 8;

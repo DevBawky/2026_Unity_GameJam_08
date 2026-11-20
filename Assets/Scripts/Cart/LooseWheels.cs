@@ -33,6 +33,8 @@ public sealed partial class CartStations
     public bool IsWheelMounted(int index) =>
         (damagedTires & (1 << index)) == 0 || tires[index] == detachedTire && wheelRepairSteps > 0;
 
+    internal bool IsWheelSecured(int index) => (damagedTires & (1 << index)) == 0;
+
     private void RefreshTireArtwork(int index)
     {
         var tire = tires[index];
@@ -80,7 +82,7 @@ public sealed partial class CartStations
         Publish();
     }
 
-    private bool IsAxleBroken
+    internal bool IsAxleBroken
     {
         get
         {

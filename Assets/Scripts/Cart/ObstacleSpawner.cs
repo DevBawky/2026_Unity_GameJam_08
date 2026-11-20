@@ -13,6 +13,8 @@ public sealed class ObstacleSpawner : MonoBehaviour
 {
     // 웹판 ROAD_STRIKE_MARGIN: 착탄과 장애물 통과 사이에 두는 여유(초)
     private const float StrikeMargin = 1f;
+    private const float HitCenter = 315.5f;
+    private const float HitHalfLength = 28.5f * 2f;
 
     [SerializeField] private CartMotion cart;
     [SerializeField] private CartStations stations;
@@ -39,8 +41,8 @@ public sealed class ObstacleSpawner : MonoBehaviour
     [SerializeField, Min(0f)] private float randomGap = 12f;
 
     private float SpawnX => RoadX(-1100f);
-    private float HitStartX => RoadX(287f);
-    private float HitEndX => RoadX(344f);
+    private float HitStartX => RoadX(HitCenter - HitHalfLength);
+    private float HitEndX => RoadX(HitCenter + HitHalfLength);
     private float DespawnX => RoadX(1260f);
 
     private float RoadX(float x) => cartBody.bounds.min.x + (x - 363f) * stations.WorldPerWebUnit;
@@ -127,7 +129,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
     }
 
     // x에 있는 장애물이 spawnIn초 뒤부터 흘러와 마차 앞면 충돌 구간을 지나는 동안(앞뒤 여유 포함) landIn초 뒤 바위가 떨어지는지.
-    private bool StrikeNear(float x, float landIn, float spawnIn)
+    internal bool StrikeNear(float x, float landIn, float spawnIn)
     {
         float speed = Mathf.Max(0.1f, cart.ScrollVelocity.x);
         float contact = spawnIn + Mathf.Max(0f, HitStartX - x) / speed;
@@ -203,7 +205,7 @@ public sealed class ObstacleSpawner : MonoBehaviour
         {
             pendingRemaining -= dt;
             if (pendingRemaining > .0001f) return;
-            if (catapult != null && catapult.Airborne(out float landIn) && StrikeNear(SpawnX, landIn, 0f))
+            if (catapult != null && catapult.ConflictsWithRoadSpawn(this, SpawnX))
                 pendingRemaining = StrikeMargin;
             else
                 SpawnPending();

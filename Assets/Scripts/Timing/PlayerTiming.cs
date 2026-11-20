@@ -79,10 +79,10 @@ public sealed class PlayerTiming : MonoBehaviour
         || (NearbyRoyal is StationAction royal && stations.CanUse(royal, actor))
         || (CurrentAction is StationAction action && stations.CanUse(action, actor));
     public bool HasStationAccess => CurrentAction is StationAction action && stations.HoldsStation(action, actor);
-    public bool IsAt(StationAction action) => CurrentAction == action;
+    public bool IsAt(StationAction action) => CurrentAction is StationAction current && TimingArea.CannonRole(current) == action;
     public StationAction? CurrentAction { get; private set; }
     private bool UsesTiming => CurrentAction is StationAction action && TimingArea.UsesTimingFor(action);
-    private StationAction ActionAt(TimingArea area) => area.Action == StationAction.Cannon ? stations.CannonAction : area.Action;
+    private StationAction ActionAt(TimingArea area) => TimingArea.IsCannon(area.Action) ? stations.CannonActionAt(TimingArea.IsUpper(area.Action)) : area.Action;
     private Bounds BodyBounds => actor.BodyArtwork != null && actor.BodyArtwork.sprite != null ? actor.BodyArtwork.bounds : default;
     public RectTransform ActiveTimingRect => timingPanel == null || !timingPanel.activeInHierarchy ? null
         : circularGraphic != null && circularGraphic.gameObject.activeInHierarchy ? circularGraphic.rectTransform : background;
@@ -181,7 +181,7 @@ public sealed class PlayerTiming : MonoBehaviour
         if (NearbyRoyal.HasValue || (settings != null && (int)settings.Action == actor.CompletedStation.Value)) area = null;
         if (ignoredArea != area) ignoredArea = null;
         if (area == ignoredArea) area = null;
-        if (area != null && !(settings.Action == StationAction.Cannon ? actor.HandsFree : stations.HasWork(settings.Action, actor)))
+        if (area != null && !(TimingArea.IsCannon(settings.Action) ? actor.HandsFree : stations.HasWork(settings.Action, actor)))
             area = null;
         StationAction? nextAction = area != null ? ActionAt(settings) : null;
         if (area == currentArea && nextAction == CurrentAction) return;
@@ -207,7 +207,7 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         if (hold) return CatchTargetDegrees;
         if (action == StationAction.WheelRepair) return 360f * (repairStep == 0 ? .46f : .82f);
-        return 360f * (action == StationAction.Reload ? .68f : .54f);
+        return 360f * (TimingArea.CannonRole(action) == StationAction.Reload ? .68f : .54f);
     }
 
     private static float PinAt(double time, float speed) =>
@@ -275,10 +275,10 @@ public sealed class PlayerTiming : MonoBehaviour
             if (!area.TryGetComponent<TimingArea>(out var station) || station.Action == StationAction.Stairs) continue;
             bool royal = TimingArea.IsRoyal(station.Action);
             if (royal && !stations.WithinRoyalInteraction(station.Action, actor)) continue;
-            if (station.Action == StationAction.Cannon)
+            if (TimingArea.IsCannon(station.Action))
             {
                 if (actor.InCellar || !OverlapsCannon(station, body)) continue;
-                if (stations.HoldsStation(StationAction.Cannon, actor)) return area;
+                if (stations.HoldsStation(station.Action, actor)) return area;
                 if (workArea == null) workArea = area;
                 continue;
             }
@@ -306,7 +306,7 @@ public sealed class PlayerTiming : MonoBehaviour
     public RectTransform AreaFor(StationAction action)
     {
         if (action == StationAction.WheelRepair) return repairRect;
-        if (TimingArea.IsCannon(action)) action = StationAction.Cannon;
+        if (TimingArea.IsCannon(action)) action = TimingArea.CannonStation(action);
         foreach (RectTransform area in interactionAreas)
             if (area.TryGetComponent<TimingArea>(out var station) && station.Action == action) return area;
         return null;
@@ -323,7 +323,7 @@ public sealed class PlayerTiming : MonoBehaviour
     {
         if (TimingArea.IsCannon(action))
         {
-            var cannon = AreaFor(StationAction.Cannon);
+            var cannon = AreaFor(action);
             return !actor.InCellar && cannon != null && cannon.gameObject.activeInHierarchy
                 && cannon.TryGetComponent<TimingArea>(out var station) && OverlapsCannon(station, BodyBounds);
         }
@@ -337,7 +337,7 @@ public sealed class PlayerTiming : MonoBehaviour
     private bool OverlapsCannon(TimingArea station, Bounds body)
     {
         // 긴 손잡이 솔: 포신 청소 차례면 조금 더 멀리서도 닿는다.
-        float reach = stations.CannonAction == StationAction.CannonCleaning && stations.Owns(ShopPerk.LongBrush) ? CartStations.LongBrushReach : 1f;
+        float reach = TimingArea.CannonRole(stations.CannonActionAt(TimingArea.IsUpper(station.Action))) == StationAction.CannonCleaning && stations.Owns(ShopPerk.LongBrush) ? CartStations.LongBrushReach : 1f;
         return station.OverlapsPlayer(body, reach);
     }
 

@@ -18,6 +18,7 @@ public sealed partial class CartStations
     public void Succeed(StationAction action, NetworkPlayer actor)
     {
         if (!IsServer) return;
+        if (TimingArea.IsUpper(action)) { SucceedUpper(action, actor); return; }
         switch (action)
         {
             case StationAction.RoyalFamily: CareFor(Prince, actor, 0); break;
@@ -89,6 +90,9 @@ public sealed partial class CartStations
             case StationAction.ShellPile: return actor.HandsFree && shellsInPile > 0;
             case StationAction.Kitchen: return actor.HandsFree;
             case StationAction.WheelRack: return wheelDetached && wheelRepairSteps == 0 && actor.HandsFree;
+            case StationAction.UpperCleaning: return upperCannon.Value.Cleaning < CleaningTapsRequired && actor.HandsFree;
+            case StationAction.UpperReload: return CanReloadUpper && actor.HandsFree;
+            case StationAction.UpperCannon: return upperCannon.Value.Loaded && !FiringAt(true) && actor.HandsFree;
             case StationAction.CannonCleaning: return NeedsCleaning && actor.HandsFree;
             case StationAction.Reload: return CanReload && actor.HandsFree;
             case StationAction.Cannon: return loaded && !fuseLit && actor.HandsFree;
@@ -100,7 +104,7 @@ public sealed partial class CartStations
 
     public bool HoldsStation(StationAction action, NetworkPlayer actor)
     {
-        int index = TimingArea.IsCannon(action) ? (int)StationAction.Cannon : (int)action;
+        int index = TimingArea.IsCannon(action) ? (int)TimingArea.CannonStation(action) : (int)action;
         return actor != null && actor.Assigned.Value && index >= 0 && index < StationOwners.Count
             && StationOwners[index] == actor.NetworkObjectId;
     }
@@ -115,7 +119,7 @@ public sealed partial class CartStations
     public void ReserveStation(NetworkPlayer actor, int requested)
     {
         if (!IsServer || !actor.Assigned.Value) return;
-        if (requested >= 0 && TimingArea.IsCannon((StationAction)requested)) requested = (int)StationAction.Cannon;
+        if (requested >= 0 && TimingArea.IsCannon((StationAction)requested)) requested = (int)TimingArea.CannonStation((StationAction)requested);
         ReleaseStations(actor.NetworkObjectId, requested);
         if (!Running || requested < 0 || requested >= StationCount) return;
         var action = (StationAction)requested;
@@ -138,6 +142,13 @@ public sealed partial class CartStations
         {
             gunner = actor;
             Gunner.Value = actor.NetworkObjectId;
+        }
+        if (action == StationAction.UpperCannon && !actor.Bot.Value && FiringAt(true) && upperGunner != null && upperGunner.Bot.Value)
+        {
+            upperGunner = actor;
+            var state = upperCannon.Value;
+            state.Gunner = actor.NetworkObjectId;
+            upperCannon.Value = state;
         }
     }
 
@@ -193,7 +204,7 @@ public sealed partial class CartStations
     {
         if (!IsServer) return;
         actor.PlayWorkCue(GameSfx.UiReject);
-        if (action != StationAction.Reload || !CanReload) return;
+        if (TimingArea.CannonRole(action) != StationAction.Reload || !(TimingArea.IsUpper(action) ? CanReloadUpper : CanReload)) return;
         if (KeepsShellOnReloadFail(nearMiss))
         {
             actor.ShowShellReturned();

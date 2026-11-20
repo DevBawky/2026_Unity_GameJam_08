@@ -34,15 +34,18 @@ public sealed class StageHud : MonoBehaviour
 
     private void Update()
     {
+        bool shopOpen = stations.IsSpawned && stations.ChoosingUpgrade && stations.ResultsVisible;
+        if (upgradePanel.activeSelf != shopOpen) upgradePanel.SetActive(shopOpen);
         if (NetworkPlayer.LocalPlayer == null || !stations.IsSpawned) return;
         player=NetworkPlayer.LocalPlayer.Timing;
         UpdateIndicators();
-        restartButton.SetActive((stations.Failed || stations.ChapterComplete) && stations.IsHost);
-        upgradePanel.SetActive(stations.ChoosingUpgrade);
-        if (stations.ChoosingUpgrade || stations.ChapterComplete)
+        restartButton.SetActive(stations.Failed && stations.IsHost && stations.ResultsVisible);
+        if (stations.Failed && !stations.ResultsVisible) return;
+        if (stations.ChapterComplete) return;
+        if (shopOpen)
         {
             // 정비 화면 문구·버튼은 보고·구매·점수가 바뀔 때만 다시 만든다.
-            int shopKey = HashCode.Combine(stations.ChapterComplete, stations.Report.Value, stations.ShopRound.Value,
+            int shopKey = HashCode.Combine(true, stations.Report.Value, stations.ShopRound.Value,
                 stations.Affection.Value, stations.PrincePoints.Value, stations.PrincessPoints.Value, stations.IsHost,
                 stations.KingReply.Value.GetHashCode());
             if (shopKey == lastStatusKey) return;
@@ -87,10 +90,10 @@ public sealed class StageHud : MonoBehaviour
             stationStatus.text = stations.FailureReason;
             return;
         }
-        if (stations.ChapterComplete || stations.ChoosingUpgrade)
+        if (stations.ChoosingUpgrade)
         {
             bool reporting=stations.Report.Value<0;
-            string headline=stations.ChapterComplete ? "챕터 완료" : reporting ? "마왕에게 보고" : stations.KingReply.Value.ToString();
+            string headline=reporting ? "마왕에게 보고" : stations.KingReply.Value.ToString();
             stationStatus.text=$"{LocalizationTable.T(headline)}  ·  {LocalizationTable.F("왕자 {0}점  공주 {1}점", stations.PrincePoints.Value, stations.PrincessPoints.Value)}  ·  {stations.Affection.Value} AP";
             for(int i=0;i<upgradeButtons.Length;i++)
             {

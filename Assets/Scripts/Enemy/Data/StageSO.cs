@@ -5,6 +5,8 @@ using System.Collections.Generic;
 [CreateAssetMenu(menuName = "GameJam/Enemy/Stage", fileName = "Stage_")]
 public class StageSO : ScriptableObject
 {
+    [Min(0)] public int goalMeters;
+
     [Tooltip("이 스테이지의 웨이브들. 시작 시간이 빠른 순서대로 넣는다")]
     public List<WaveSO> waves = new();
 

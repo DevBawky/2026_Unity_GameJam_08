@@ -50,6 +50,8 @@ public sealed class PlayerWorkHud : MonoBehaviour
     [SerializeField] private RoyalRow[] royalRows;
     [SerializeField] private TMP_Text[] cries;
     [SerializeField] private WorldHud[] worlds;
+    [SerializeField] private SeatMarker[] deckSeatMarkers = Array.Empty<SeatMarker>();
+    [SerializeField] private Image[] deckHearts = Array.Empty<Image>();
     [SerializeField] private Sprite seatHeart, seatSnack, seatCrown;
     [SerializeField] private Sprite[] crosshairFrames, flameFrames;
     [SerializeField] private Sprite edgeArrow;
@@ -144,6 +146,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
             top - (showOne && !columns ? noticeHeight + gap : 0f), width, noticeHeight, font);
 
         PresentWorld(worlds[0], primary, first, split ? null : second, game);
+        PresentDeckHearts(game, first != null && !first.InCellar ? first : second, second);
         PresentWorld(worlds[1], secondary, split ? second : null, null, game);
     }
 
@@ -306,15 +309,36 @@ public sealed class PlayerWorkHud : MonoBehaviour
         int tick = SettingsPanel.ReducedMotion ? 0 : Mathf.Max(0, (int)(now * 30d));
         var gunner = viewer.Timing.IsCannonFocus ? viewer : shared != null && shared.Timing.IsCannonFocus ? shared : null;
         DrawAim(hud, view, pane, gunner, game, now, tick, unit);
-        if (hud.seatMarkers is { Length: 2 })
+        if (deckSeatMarkers.Length != 2 && hud.seatMarkers is { Length: 2 })
         {
             bool feeding = CarriesSnackOnDeck(viewer, game) || CarriesSnackOnDeck(shared, game);
             Vector3 cartOffset = game.CartArtworkOffset(now);
             DrawSeatMarker(hud.seatMarkers[0], view, viewer, shared, game, game.Prince.Value, 0, feeding, unit, cartOffset);
             DrawSeatMarker(hud.seatMarkers[1], view, viewer, shared, game, game.Princess.Value, 1, feeding, unit, cartOffset);
         }
-        DrawHeart(hud.hearts[0], view, game, game.Prince.Value, game.PrinceHeart.Value, now, unit, viewer);
-        DrawHeart(hud.hearts[1], view, game, game.Princess.Value, game.PrincessHeart.Value, now, unit, viewer);
+        if (deckHearts.Length != 2)
+        {
+            DrawHeart(hud.hearts[0], view, game, game.Prince.Value, game.PrinceHeart.Value, now, unit, viewer);
+            DrawHeart(hud.hearts[1], view, game, game.Princess.Value, game.PrincessHeart.Value, now, unit, viewer);
+        }
+    }
+
+    private void PresentDeckHearts(CartStations game, NetworkPlayer viewer, NetworkPlayer shared)
+    {
+        if (deckSeatMarkers.Length != 2 || deckHearts.Length != 2) return;
+        if (viewer == null || viewer.InCellar)
+        {
+            foreach (var marker in deckSeatMarkers) marker.panel.gameObject.SetActive(false);
+            foreach (var heart in deckHearts) heart.enabled = false;
+            return;
+        }
+        double now = game.NetworkManager.ServerTime.Time;
+        float unit = game.WorldPerWebUnit;
+        bool feeding = CarriesSnackOnDeck(viewer, game) || CarriesSnackOnDeck(shared, game);
+        DrawSeatMarker(deckSeatMarkers[0], null, viewer, shared, game, game.Prince.Value, 0, feeding, unit, Vector3.zero);
+        DrawSeatMarker(deckSeatMarkers[1], null, viewer, shared, game, game.Princess.Value, 1, feeding, unit, Vector3.zero);
+        DrawHeart(deckHearts[0], null, game, game.Prince.Value, game.PrinceHeart.Value, now, unit, viewer);
+        DrawHeart(deckHearts[1], null, game, game.Princess.Value, game.PrincessHeart.Value, now, unit, viewer);
     }
 
     private static bool CarriesSnackOnDeck(NetworkPlayer actor, CartStations game) =>
@@ -363,9 +387,10 @@ public sealed class PlayerWorkHud : MonoBehaviour
         }
         marker.rim.enabled = !reseat;
         marker.icon.sprite = icon;
-        marker.icon.rectTransform.sizeDelta = iconSize * (unit / Scale);
-        marker.icon.rectTransform.anchoredPosition = !reseat && !feeding ? Vector2.down * (unit / Scale) : Vector2.zero;
-        Place(marker.panel, view.WorldToScreenPoint(position), marker.pad.sprite.rect.size * unit);
+        float localUnit = view != null ? unit / Scale : unit;
+        marker.icon.rectTransform.sizeDelta = iconSize * localUnit;
+        marker.icon.rectTransform.anchoredPosition = !reseat && !feeding ? Vector2.down * localUnit : Vector2.zero;
+        PlaceWorldArt(marker.panel, view, position, marker.pad.sprite.rect.size * unit);
     }
 
     private void DrawAim(WorldHud hud, Camera view, Rect pane, NetworkPlayer gunner, CartStations game, double now, int tick, float unit)
@@ -373,13 +398,14 @@ public sealed class PlayerWorkHud : MonoBehaviour
         bool visible = gunner != null && gunner.Cannon != null;
         Vector2 target = visible ? view.WorldToScreenPoint(gunner.Cannon.Target) : Vector2.zero;
         bool onScreen = visible && pane.Contains(target);
-        bool firing = onScreen && game.IsFiring;
+        bool upper = onScreen && gunner.Cannon.Upper;
+        bool firing = onScreen && game.FiringAt(upper);
         hud.crosshair.enabled = visible;
         hud.rope.enabled = hud.flame.enabled = firing;
         hud.remaining.enabled = onScreen;
         hud.dash.enabled = visible;
         if (!visible) return;
-        Vector2 muzzle = view.WorldToScreenPoint(game.RenderedMuzzle(gunner.Cannon.Direction, now));
+        Vector2 muzzle = view.WorldToScreenPoint(game.RenderedMuzzle(gunner.Cannon.Direction, now, upper));
         Vector2 direction = (target - muzzle).normalized;
         float length = Vector2.Distance(muzzle, target);
         float angle = Vector2.SignedAngle(Vector2.right, direction);
@@ -396,7 +422,7 @@ public sealed class PlayerWorkHud : MonoBehaviour
         Place(aim.rectTransform, cross, aim.sprite.rect.size * (onScreen ? 22f / 12f * unit : unit));
         if (!onScreen) return;
         float artScale = 2.5f * unit;
-        float left = firing ? Mathf.Clamp01((float)(game.FuseDeadline.Value - now) / game.FuseDuration) : 1f;
+        float left = firing ? Mathf.Clamp01((float)(game.FuseAt(upper) - now) / game.FuseDuration) : 1f;
         Vector2 ropeSize = hud.remaining.sprite.rect.size * artScale;
         Vector2 ropeCenter = target + Vector2.up * (2f * artScale);
         Place(hud.remaining.rectTransform, ropeCenter, ropeSize);
@@ -420,7 +446,14 @@ public sealed class PlayerWorkHud : MonoBehaviour
         Vector3 to = game.Cart.transform.TransformPoint(child.Position) + Vector3.up * (19f * game.WorldPerWebUnit);
         Vector3 at = Vector3.Lerp(from, to, travel) + Vector3.up * (15f * game.WorldPerWebUnit * Mathf.Sin(travel * Mathf.PI));
         heart.color = new Color(1f, 1f, 1f, Mathf.Min(1f, (1f - age) * 5f));
-        Place(heart.rectTransform, view.WorldToScreenPoint(at), new Vector2(18f, 14f) * unit);
+        PlaceWorldArt(heart.rectTransform, view, at, new Vector2(18f, 14f) * unit);
+    }
+
+    private void PlaceWorldArt(RectTransform rect, Camera view, Vector3 position, Vector2 size)
+    {
+        if (view != null) { Place(rect, view.WorldToScreenPoint(position), size); return; }
+        rect.position = position;
+        rect.sizeDelta = size;
     }
 
     private void Place(RectTransform rect, Vector2 center, Vector2 size) => GameplayHudLayout.PlacePixels(rect, center, size, canvas);

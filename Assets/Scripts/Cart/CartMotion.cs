@@ -17,6 +17,7 @@ public sealed class CartMotion : NetworkBehaviour
     private float obstacleSlowRemaining;
 
     public float BaseSpeed => baseSpeed;
+    internal bool ObstacleSlowActive => obstacleSlowRemaining > 0f;
     public float LateralLimit => CartStations.Instance != null ? 100f * CartStations.Instance.WorldPerWebUnit : 0f;
 
     public float Speed { get; private set; }
@@ -61,6 +62,9 @@ public sealed class CartMotion : NetworkBehaviour
 
     // 출발용 당근 묶음: 기본 속도의 일정 비율로 출발한다.
     public void Kickstart(float fraction) => Speed = Mathf.Max(Speed, baseSpeed * fraction);
+
+    internal void ScrollDuringIntro(float dt) =>
+        ScrollDistance += baseSpeed * RoadScrollUnitsPerMeter * CartStations.Instance.WorldPerWebUnit * dt;
 
     public void Advance(float dt)
     {

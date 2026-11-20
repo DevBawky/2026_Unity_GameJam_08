@@ -16,7 +16,8 @@ public sealed class CannonAim : MonoBehaviour
     private NetworkPlayer actor;
     private Vector2 cursor;
     private float nextSend;
-    public Transform Muzzle => muzzle;
+    public bool Upper => actor != null && CartStations.Instance != null && CartStations.Instance.HoldsStation(StationAction.UpperCannon, actor);
+    public Transform Muzzle => Upper ? CartStations.Instance.PivotAt(true) : muzzle;
     public Vector2 Direction { get; private set; } = Vector2.right;
     public float LineLength { get; private set; } = 8f;
     public float Accuracy { get; private set; }
@@ -30,16 +31,16 @@ public sealed class CannonAim : MonoBehaviour
     }
 
     public static Vector2 AimPoint(Vector2 cursor, Vector2 pivot, CartStations game, double time,
-        out Vector2 spread, out float accuracy, int? simulationTick = null)
+        out Vector2 spread, out float accuracy, int? simulationTick = null, bool upper = false)
     {
         float scale = game.WorldPerWebUnit;
         int tick = simulationTick ?? game.CannonTick;
         float wave = .105f*Sin(tick*.105) + .045f*Sin(tick*.21+.9);
         float shake = game.WorkShakeAt(time, out float shakePhase);
         float roll = .017f*Sin(tick*.28) + .012f*Sin(tick*.53);
-        if (game.IsFiring)
+        if (game.FiringAt(upper))
         {
-            double end = tick + System.Math.Round((game.FuseDeadline.Value - time) * 30d);
+            double end = tick + System.Math.Round((game.FuseAt(upper) - time) * 30d);
             double lit = tick-end+75;
             roll += Mathf.Clamp01((float)lit/8f)*(.23f*Sin(lit*.31+end*.618)+.085f*Sin(lit*.67-end*.618));
         }
@@ -74,8 +75,11 @@ public sealed class CannonAim : MonoBehaviour
     private void Update()
     {
         var game = CartStations.Instance;
-        bool aiming = game != null && CartStations.Running && actor.IsSpawned && actor.Assigned.Value && muzzle != null &&
-            game.CannonAction == StationAction.Cannon && game.HoldsStation(StationAction.Cannon, actor);
+        bool upper = Upper;
+        Transform pivot = Muzzle;
+        bool aiming = game != null && CartStations.Running && actor.IsSpawned && actor.Assigned.Value && pivot != null &&
+            TimingArea.CannonRole(game.CannonActionAt(upper)) == StationAction.Cannon &&
+            game.HoldsStation(upper ? StationAction.UpperCannon : StationAction.Cannon, actor);
         if (crosshair != null) crosshair.enabled = false;
         if (aimLine != null) aimLine.enabled = false;
         if (spreadRing != null) spreadRing.enabled = false;
@@ -99,7 +103,7 @@ public sealed class CannonAim : MonoBehaviour
             else if (!mobile && !actor.SecondLocal && Mouse.current != null &&
                 gameCamera != null && Mouse.current.delta.ReadValue().sqrMagnitude > .01f)
             {
-                Vector2 d = ((Vector2)gameCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - (Vector2)muzzle.position) / game.WorldPerWebUnit;
+                Vector2 d = ((Vector2)gameCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - (Vector2)pivot.position) / game.WorldPerWebUnit;
                 cursor = CursorForOffset(d);
             }
             cursor = new Vector2(Mathf.Clamp(cursor.x,-1,1), Mathf.Clamp(cursor.y,-1,1));
@@ -110,11 +114,11 @@ public sealed class CannonAim : MonoBehaviour
             }
         }
         else cursor = actor.Aim.Value;
-        var target = AimPoint(cursor, muzzle.position, game, actor.NetworkManager.ServerTime.Time, out var spread, out var accuracy);
+        var target = AimPoint(cursor, pivot.position, game, actor.NetworkManager.ServerTime.Time, out var spread, out var accuracy, upper: upper);
         Accuracy = accuracy;
         Target = target;
         LandingBounds = new Bounds(target, spread * 2f);
-        Vector2 delta = target - Origin(muzzle.position, game, actor.NetworkManager.ServerTime.Time, game.CannonTick);
+        Vector2 delta = target - Origin(pivot.position, game, actor.NetworkManager.ServerTime.Time, game.CannonTick);
         Direction = delta.normalized;
         LineLength = delta.magnitude;
     }

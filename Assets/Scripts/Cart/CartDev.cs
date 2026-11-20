@@ -22,7 +22,7 @@ public sealed partial class CartStations
         rider.Value = child;
     }
     public void DevRefillShells() { if (!IsServer) return; shellsInPile = StartShellsInPile; loaded = true; Refresh(); }
-    public void DevClearStage() { if (IsServer && flow == StageFlow.Running) BeginUpgradeSelection(); }
+    public void DevClearStage() { if (IsServer && flow == StageFlow.Running) CompleteRun(); }
     // 스테이지를 끝내고 마왕 보고도 건너뛰어 바로 상점을 연다.
     public void DevOpenShop()
     {

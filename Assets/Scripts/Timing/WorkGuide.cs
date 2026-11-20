@@ -52,16 +52,16 @@ internal readonly struct WorkGuide
         if (timing.IsCannonFocus)
         {
             float accuracy = Mathf.Clamp01(player.Cannon.Accuracy);
-            if (game.IsFiring)
+            if (game.FiringAt(player.Cannon.Upper))
             {
-                float left = Mathf.Max(0f, (float)(game.FuseDeadline.Value - player.NetworkManager.ServerTime.Time));
+                float left = Mathf.Max(0f, (float)(game.FuseAt(player.Cannon.Upper) - player.NetworkManager.ServerTime.Time));
                 return new WorkGuide("점화 중", "착탄점을 조정하세요", Orange, progress: accuracy, progressName: "조준률", seconds: left);
             }
             return new WorkGuide("점화", "왼쪽 스틱으로 착탄점을 맞추세요", Orange, progress: accuracy, progressName: "조준률");
         }
         if (timing.HasStationAccess)
         {
-            switch (timing.CurrentAction)
+            switch (timing.CurrentAction is StationAction current ? TimingArea.CannonRole(current) : (StationAction?)null)
             {
                 case StationAction.Driver: return Driving(game);
                 case StationAction.Kitchen:
@@ -70,7 +70,7 @@ internal readonly struct WorkGuide
                 case StationAction.WheelRack: return new WorkGuide("예비 바퀴 들기", "예비 바퀴를 드세요", Sand);
                 case StationAction.CannonCleaning:
                     return new WorkGuide("청소하기", "포신을 청소하세요", Orange,
-                        progress: (float)game.CleaningTaps / CartStations.CleaningTapsRequired);
+                        progress: (float)game.CleaningAt(timing.CurrentAction == StationAction.UpperCleaning) / CartStations.CleaningTapsRequired);
                 case StationAction.Reload:
                     return game.IsDeposited ? new WorkGuide("장전", color: Green, timed: true)
                         : new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
@@ -82,10 +82,9 @@ internal readonly struct WorkGuide
         }
         if (player.SpareWheel.Value)
             return new WorkGuide(hint: player.InCellar ? "고장 난 바퀴의 수리 원으로 이동하세요" : "계단으로 지하층에 내려가세요", color: Sand);
-        if (timing.NearbyStation == StationAction.Reload)
+        if (timing.NearbyStation is StationAction nearby && TimingArea.CannonRole(nearby) == StationAction.Reload)
         {
-            if (game.NeedsCleaning) return new WorkGuide("장전 대기", "포신을 먼저 청소하세요", Orange);
-            if (!game.IsDeposited && !game.IsLoaded)
+            if (!game.IsDeposited)
                 return new WorkGuide("장전 대기", "적재칸에 포탄을 가져오세요", Green);
         }
         if (timing.NearbyStation == StationAction.WheelRepair && game.WheelDetached && game.WheelRepairSteps == 0)

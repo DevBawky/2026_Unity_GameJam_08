@@ -18,7 +18,7 @@ public struct HorseRageState : INetworkSerializeByMemcpy, IEquatable<HorseRageSt
 public sealed partial class CartStations
 {
     internal const float DriverSteeringSpeed = 140f;
-    private const int RageRestTicks = 60, BoostTicks = 150, TiredTicks = 360, WhipCooldownTicks = 3;
+    private const int RageRestTicks = 30, BoostTicks = 150, TiredTicks = 360, WhipCooldownTicks = 3;
     [SerializeField] private HorseWhipZone[] horseWhipZones;
     public readonly NetworkVariable<HorseRageState> HorseRage = new();
     private float botSteering;
@@ -59,7 +59,7 @@ public sealed partial class CartStations
                     : default;
         }
         else if (rage.RestTicks > 0) rage.RestTicks--;
-        else if (rage.Value > 0f) rage.Value = Mathf.Max(0f, rage.Value - .10f * Step);
+        else if (rage.Value > 0f) rage.Value = Mathf.Max(0f, rage.Value - .09f * Step);
         HorseRage.Value = rage;
     }
 

@@ -16,7 +16,8 @@ public enum StageFlow : byte
     Running,
     ChoosingUpgrade,
     Failed,
-    Complete
+    Complete,
+    OperationIntro
 }
 
 public struct CartWorkShock : INetworkSerializeByMemcpy, System.IEquatable<CartWorkShock>
@@ -30,13 +31,14 @@ public struct CartWorkShock : INetworkSerializeByMemcpy, System.IEquatable<CartW
 
 public sealed partial class CartStations : NetworkBehaviour
 {
-    public const float MaxDurability = 100f;
+    public const float MaxDurability = 150f;
     public const int WheelRepairStepsNeeded = 2;
     [SerializeField] private ParticleSystem impactDust;
     [SerializeField] private AudioSource impactAudio;
     [SerializeField] private AudioClip cannonSound, cannonLandingSound, hitSound;
     [SerializeField] private AudioSource music;
     [SerializeField] private AudioClip[] stageMusic;
+    [SerializeField] private AudioClip waitingMusic, chaseMusic, clearMusic, defeatMusic;
     [SerializeField] private CameraRig secondCamera;
     private uint impactSequence, lastPlayedImpact;
 
@@ -100,7 +102,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public NetworkVariable<ulong> Gunner = new(ulong.MaxValue);
     // Indexed by StationAction. Only the server grants or releases a workstation.
     public NetworkList<ulong> StationOwners = new();
-    private const int StationCount = (int)StationAction.CannonCleaning + 1;
+    private const int StationCount = (int)StationAction.UpperCannon + 1;
     public const ulong NoStationOwner = ulong.MaxValue;
     public static bool Running => Instance != null && Instance.IsSpawned && Instance.flow == StageFlow.Running;
     private SpriteRenderer cartBody;
@@ -155,7 +157,7 @@ public sealed partial class CartStations : NetworkBehaviour
     public bool ChoosingUpgrade => flow == StageFlow.ChoosingUpgrade;
     public int StageNumber => stageNumber;
     public float StageDistance => Mathf.Max(0f, cart.Distance - stageStartDistance);
-    public int StageGoal => baseStageGoal;
+    public int StageGoal => waveSpawner != null ? waveSpawner.GoalFor(stageNumber, baseStageGoal) : baseStageGoal;
     public float Durability => durability;
     public bool WheelDetached => wheelDetached;
     public SpriteRenderer DetachedTire => detachedTire;
@@ -209,6 +211,9 @@ public sealed partial class CartStations : NetworkBehaviour
                 return;
             case StageFlow.ChoosingUpgrade:
                 return;
+            case StageFlow.OperationIntro:
+                cart.ScrollDuringIntro(Time.deltaTime);
+                return;
         }
         accumulator += Time.deltaTime;
         while (accumulator >= Step && Running)
@@ -220,7 +225,13 @@ public sealed partial class CartStations : NetworkBehaviour
 
     private void UpdateMusic()
     {
-        if (music == null || stageMusic == null || stageMusic.Length == 0) return;
+        if (music == null) return;
+        if (chaseMusic != null)
+        {
+            UpdateCampaignMusic();
+            return;
+        }
+        if (stageMusic == null || stageMusic.Length == 0) return;
         if (!IsSpawned || flow is not (StageFlow.Running or StageFlow.ChoosingUpgrade))
         {
             if (music.isPlaying) music.Stop();
@@ -241,6 +252,11 @@ public sealed partial class CartStations : NetworkBehaviour
                 && player.Timing.IsInActionArea(StationAction.ShellDeposit)) Enter(StationAction.ShellDeposit, player);
         AdvanceBots();
         cart.Advance(Step);
+        if (!Endless.Value && StageDistance >= StageGoal)
+        {
+            CompleteRun();
+            return;
+        }
         if (obstacles != null) obstacles.Advance(Step);
         if (!Running) return;
         RingCallBell();
@@ -248,19 +264,13 @@ public sealed partial class CartStations : NetworkBehaviour
         SimulationStep?.Invoke(Step);
         AdvanceWheels();
         AdvanceFuse();
+        AdvanceUpperFuse();
         CannonProjectileStep?.Invoke(Step);
         waveSpawner.Advance(Step);
-        int wave = waveSpawner.SpawnedWaves;
-        if (wave > Waves.Value) PlayCartCueRpc(GameSfx.PursuitHorn);
-        Waves.Value = wave;
+        Waves.Value = waveSpawner.SpawnedWaves;
         if (!Running) return;
         AdvanceCare();
         if (Endless.Value && shellsInPile == 0) shellsInPile = StartShellsInPile;
-        if (!Endless.Value && StageDistance >= StageGoal)
-        {
-            BeginUpgradeSelection();
-            return;
-        }
         princeAnxiety = 1f - Prince.Value.Attention / 100f;
         princessAnxiety = 1f - Princess.Value.Attention / 100f;
         Refresh();
@@ -271,16 +281,30 @@ public sealed partial class CartStations : NetworkBehaviour
         if (flow != StageFlow.Running) return;
         FailureReason = reason;
         flow = StageFlow.Failed;
-        PlayCartCueRpc(GameSfx.DefeatSting);
+        if (defeatMusic == null) PlayCartCueRpc(GameSfx.DefeatSting);
         Publish();
     }
 
     private void BeginUpgradeSelection()
     {
+        if (!waveSpawner.HasStageAfter(stageNumber))
+        {
+            CompleteRun();
+            return;
+        }
         FinishCare();
-        flow = stageNumber == 3 ? StageFlow.Complete : StageFlow.ChoosingUpgrade;
-        PlayCartCueRpc(GameSfx.StageResult);
-        if (flow == StageFlow.ChoosingUpgrade) RollShopOffer();
+        flow = StageFlow.ChoosingUpgrade;
+        RollShopOffer();
+        if (clearMusic == null) PlayCartCueRpc(GameSfx.StageResult);
+        Publish();
+    }
+
+    private void CompleteRun()
+    {
+        flow = StageFlow.Complete;
+        ClearStations();
+        ClearTransientObjects();
+        if (clearMusic == null) PlayCartCueRpc(GameSfx.StageResult);
         Publish();
     }
 
@@ -333,6 +357,8 @@ public sealed partial class CartStations : NetworkBehaviour
         if (IsSpawned && IsServer)
         {
             ResetGunner();
+            ResetUpperCannon();
+            CannonCombo.Value = 0;
             LastCannonShot.Value = new CannonShotVisual { Time = -1d };
             WheelMount.Value = default;
         }
@@ -389,6 +415,17 @@ public sealed partial class CartStations : NetworkBehaviour
         ResetCare();
         gameScene.FillEmptySeats();
         Endless.Value = LobbySession.LocalSeats > 0 && LobbySession.PracticeTest;
+        if (operationIntroEnabled && stageNumber == 1 && !Endless.Value)
+        {
+            flow = StageFlow.OperationIntro;
+            SetIntroLine(0);
+            return;
+        }
+        StartStage();
+    }
+
+    private void StartStage()
+    {
         flow = StageFlow.Running;
         obstacles.ResetForStage();
         Publish();
